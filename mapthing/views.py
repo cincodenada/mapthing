@@ -3,6 +3,8 @@ from pyramid.view import view_config
 
 from sqlalchemy.exc import DBAPIError
 
+import json
+
 from .models import (
     DBSession,
     Track,
@@ -14,7 +16,12 @@ from .models import (
 def view_track(request):
     trackid = request.matchdict['id']
     track = DBSession.query(Track).filter_by(id=trackid).first()
-    return {'track': track}
+    points = track.getPoints(trackid)
+    pointlist = []
+    for t, p in points:
+        pointlist.append((p.latitude,p.longitude))
+    
+    return { 'track': track, 'points': points, 'json_points': json.dumps(pointlist)}
 
 conn_err_msg = """\
 Pyramid is having a problem using your SQL database.  The problem

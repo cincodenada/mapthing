@@ -1,0 +1,3 @@
+[submodule "mapthing/static/mapstraction"]
+	path = mapthing/static/mapstraction
+	url = git@github.com:cincodenada/mxn.git
