@@ -82,7 +82,12 @@ def date_track(request):
 
         if not p.segment_id in pointlist:
             pointlist[p.segment_id] = []
-        pointlist[p.segment_id].append((p.latitude,p.longitude,color))
+        pointlist[p.segment_id].append({
+            'lat': p.latitude,
+            'lon': p.longitude,
+            'color': color,
+            'time': p.time,
+        })
         if not s.id in segments:
             segments[s.id] = {
                 'id': s.id,

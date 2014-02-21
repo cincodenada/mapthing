@@ -1,0 +1,33 @@
+.ui-timerange {
+    height: auto;
+    min-height: .8em;
+    margin: 0;
+    padding: 0;
+}
+.ui-timerange .ui-slider-handle {
+    height: 100%;
+    padding: .2em 0;
+    width: .1em;
+    margin-left: -.05em;
+}
+
+.ui-timerange .ui-slider-range {
+    opacity: 0.5;
+}
+
+.ui-timerange .ui-timerange-event {
+    height: .8em;
+    min-width: .8em;
+    display: inline-block;
+    top: 0px;
+    margin: .2em 0;
+    position: absolute;
+    border: none;
+}
+
+.ui-timerange .ui-timerange-event a {
+    display: block;
+    max-height: 1em;
+    overflow: hidden;
+    font-size: 0.5em;
+}
