@@ -36,6 +36,15 @@ class Point(Base):
     bearing = Column(Float)
     segment_id = Column(Integer, ForeignKey('segments.id'))
 
+    @staticmethod
+    def getByDate(start, end):
+        return DBSession.query(Point,Segment,Track)\
+                .join(Track.children)\
+                .join(Segment.children)\
+                .filter(Point.time >= int(start.strftime('%s'))*1000)\
+                .filter(Point.time <= int(end.strftime('%s'))*1000)\
+                .order_by(Point.time)
+
 class Segment(Base):
     __tablename__ = 'segments'
     id = Column(Integer, primary_key=True)
@@ -51,7 +60,8 @@ class Track(Base):
     
     children = relationship("Segment")
 
-    def getPoints(self, id, bb = None):
+    @staticmethod
+    def getPoints(id, bb = None):
         return DBSession.query(Track,Point).join(Track.children).join(Segment.children)\
         .filter(Track.id==id).all()
 
