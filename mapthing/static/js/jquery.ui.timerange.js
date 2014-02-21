@@ -102,6 +102,11 @@ $.widget('cincodenada.timerange',$.ui.slider,{
             start = moment($evt.data('start'));
             if($evt.data('end')) {
                 end = moment($evt.data('end'));
+                if(end < start) {
+                    temp = start;
+                    start = end;
+                    end = temp;
+                }
                 length = moment.duration(end - start);
             } else if(lenstr = $evt.data('length')) {
                 if(lenstr.indexOf(' ') > -1) {

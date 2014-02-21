@@ -41,10 +41,7 @@
    	<div id="map"></div>
    	<div id="timeline"></div>
     <script type="text/javascript">
-        var json_points = ${json_points};
-        var tracks = ${json_tracks};
-        var segments = ${json_segments};
-        //var points = ${points};
+        var params = ${json_params};
     </script>
 	<script type="text/javascript">
     var seglist = {};
@@ -64,9 +61,24 @@
             scale:true,
             map_type:true,
         });
-        show_points();
-        make_seglist();
-		map.polylineCenterAndZoom();
+        //show_points();
+        $.get('/tracks.json/' + params.start + '/' + params.end, function(data) {
+            bounds = make_tracklist(data);
+            map.setBounds(bounds);
+
+            $('#seg_list').timerange({
+                range: true,
+                change: function(evt, ui) {
+                    starttime = moment(ui.values[0],'X');
+                    endtime = moment(ui.values[1],'X');
+                    $.get('/points.json/' + starttime.format('YYYY-MM-DD') + '/' + endtime.format('YYYY-MM-DD'), function(data) {
+                        show_points(data, ui.values);
+                        map.polylineCenterAndZoom();
+                    }, 'json');
+                },
+            });
+        }, 'json')
+		//map.polylineCenterAndZoom();
 
         $('#seg_list').on('mouseover','li a',function() {
             segid = $(this).data('segid');
@@ -85,15 +97,10 @@
                 seg.update();
             })
         });
-        $('#seg_list').timerange({
-            range: true,
-            change: function(evt, ui) {
-                show_points(ui.values);
-            },
-        });
     });
 
     function make_seglist() {
+        $('#seg_list').empty();
         for(segid in json_points) {
             starttime = moment(segments[segid].start_time/1000,'X');
             endtime = moment(segments[segid].end_time/1000,'X');
@@ -105,29 +112,53 @@
         }
     }
 
-    function show_points(timerange) {
-        mintime = maxtime = false;
+    function make_tracklist(tracklist) {
+        bounds = new mxn.BoundingBox();
+        $('#seg_list').empty();
+        for(idx in tracklist) {
+            trackdata = tracklist[idx];
+            //Parse our dates
+            starttime = moment(trackdata.start/1000,'X');
+            endtime = moment(trackdata.end/1000,'X');
+
+            //Extend bounds
+            bounds.extend({lat: trackdata.minlat, lon: trackdata.minlon});
+            bounds.extend({lat: trackdata.maxlat, lon: trackdata.maxlon});
+
+            //Add the list item
+            newli = $('<li></li>');
+            newli.append('<a href="#" data-trackid="' + trackdata.id + '"> (' + trackdata.id + ') (' + starttime.format('YYYY/MM/DD h:mm') + '-' + endtime.format('YYYY/MM/DD h:mm') + ')</a>');
+            newli.attr('data-start',starttime.format());
+            newli.attr('data-end',endtime.format());
+            $('#seg_list').append(newli);
+        }
+
+        return bounds;
+    }
+
+    function show_points(point_data, timerange) {
+        var points = Array();
+        var curseg;
+        var mintime = false, maxtime = false;
         if(timerange) {
             mintime = timerange[0];
             maxtime = timerange[1];
         }
-        var points = Array();
-        var curseg;
         seglist = {};
         newpolys = [];
-        for(segid in json_points) {
+        for(segid in point_data.points) {
             last_color = false;
             curseg = Array();
-            for(idx in json_points[segid]) {
-                //console.log([mintime, maxtime, json_points[segid][idx].time]);
-                if((mintime && json_points[segid][idx].time/1000 < mintime)
-                    || (maxtime && json_points[segid][idx].time/1000 > maxtime)
+            for(idx in point_data.points[segid]) {
+                //console.log([mintime, maxtime, point_data.points[segid][idx].time]);
+                if((mintime && point_data.points[segid][idx].time/1000 < mintime)
+                    || (maxtime && point_data.points[segid][idx].time/1000 > maxtime)
                 ) { continue; }
 
-                curpoint = json_points[segid][idx];
+                curpoint = point_data.points[segid][idx];
                 if(last_color && curpoint.color != last_color) {
                     //Add the current point so they're connected
-                    points.push(new mxn.LatLonPoint(json_points[segid][idx].lat, json_points[segid][idx].lon)) 
+                    points.push(new mxn.LatLonPoint(point_data.points[segid][idx].lat, point_data.points[segid][idx].lon)) 
                     newline = new mxn.Polyline(points);
                     newline.setColor(last_color);
                     newline.setWidth('4');
@@ -135,10 +166,10 @@
                     points = [];
                 }
                 last_color = curpoint.color;
-                points.push(new mxn.LatLonPoint(json_points[segid][idx].lat, json_points[segid][idx].lon)) 
+                points.push(new mxn.LatLonPoint(point_data.points[segid][idx].lat, point_data.points[segid][idx].lon)) 
             }
             if(points.length) {
-                points.push(new mxn.LatLonPoint(json_points[segid][idx].lat, json_points[segid][idx].lon)) 
+                points.push(new mxn.LatLonPoint(point_data.points[segid][idx].lat, point_data.points[segid][idx].lon)) 
                 newline = new mxn.Polyline(points);
                 newline.setColor(last_color);
                 newline.setWidth('4');

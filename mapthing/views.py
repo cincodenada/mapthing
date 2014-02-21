@@ -25,7 +25,31 @@ def view_track(request):
     
     return { 'tracks': json.dumps({trackid:track}), 'points': points, 'json_points': json.dumps({trackid: pointlist})}
 
-@view_config(route_name='date_track', renderer='templates/view_track.pt')
+@view_config(route_name='get_tracks', renderer='templates/get_track.pt')
+def get_tracks(request):
+    startdate = date_parse(request.matchdict['start'])
+    enddate = date_parse(request.matchdict['end'])
+    trackdata = []
+    query = Track.getByDate(startdate, enddate)
+    data = DBSession.execute(query)
+    while(True):
+        curtrack = data.fetchone()
+        if(curtrack is None):
+            break;
+        trackdata.append(dict(zip(('id','start','end','minlat','maxlat','minlon','maxlon'),curtrack)))
+    return { 'json_data': json.dumps(trackdata) }
+
+@view_config(route_name='ajax_track', renderer='templates/view_track.pt')
+def ajax_track(request):
+    startdate = date_parse(request.matchdict['start'])
+    enddate = date_parse(request.matchdict['end'])
+    params = {
+        'start': request.matchdict['start'],
+        'end': request.matchdict['end'],
+    }
+    return { 'json_params': json.dumps(params) }
+
+@view_config(route_name='ajax_points', renderer='templates/json.pt')
 def date_track(request):
     startdate = date_parse(request.matchdict['start'])
     enddate = date_parse(request.matchdict['end'])
@@ -55,7 +79,7 @@ def date_track(request):
     mode_len = 20
     rollingavg = [0]*avg_len
     rollingcat = ['walking']*mode_len
-    for p, s, t in points:
+    for t, s, p in points:
         rollingavg.insert(0,p.speed)
         rollingavg.pop()
         avg = sum(rollingavg)/avg_len
@@ -107,9 +131,14 @@ def date_track(request):
                 'name': t.name,
                 'segments': [],
             }
-        tracks[t.id]['segments'].append(s.id)
+        if not s.id in tracks[t.id]['segments']:
+            tracks[t.id]['segments'].append(s.id)
      
-    return {'json_tracks': json.dumps(tracks), 'json_segments': json.dumps(segments), 'points': points, 'json_points': json.dumps(pointlist)}
+    return {'json_data': json.dumps({
+        'tracks': tracks, 
+        'segments': segments, 
+        'points': pointlist,
+    })}
 
 conn_err_msg = """\
 Pyramid is having a problem using your SQL database.  The problem
