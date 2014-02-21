@@ -7,6 +7,7 @@ from sqlalchemy import (
     DateTime,
     String,
     ForeignKey,
+    func,
     )
 
 from sqlalchemy.ext.declarative import declarative_base
@@ -36,6 +37,15 @@ class Point(Base):
     bearing = Column(Float)
     segment_id = Column(Integer, ForeignKey('segments.id'))
 
+    @staticmethod
+    def getByDate(start, end):
+        return DBSession.query(Track,Segment,Point)\
+                .join(Track.children)\
+                .join(Segment.children)\
+                .filter(Point.time >= int(start.strftime('%s'))*1000)\
+                .filter(Point.time <= int(end.strftime('%s'))*1000)\
+                .order_by(Point.time)
+
 class Segment(Base):
     __tablename__ = 'segments'
     id = Column(Integer, primary_key=True)
@@ -51,7 +61,26 @@ class Track(Base):
     
     children = relationship("Segment")
 
-    def getPoints(self, id, bb = None):
+    @staticmethod
+    def getByDate(start, end):
+        return DBSession.query(
+                Track.id,
+                func.max(Point.time),
+                func.min(Point.time),
+                func.max(Point.latitude),
+                func.min(Point.latitude),
+                func.max(Point.longitude),
+                func.min(Point.longitude),
+                )\
+                .join(Track.children)\
+                .join(Segment.children)\
+                .filter(Point.time >= int(start.strftime('%s'))*1000)\
+                .filter(Point.time <= int(end.strftime('%s'))*1000)\
+                .group_by(Track.id)\
+                .order_by(Point.time)
+
+    @staticmethod
+    def getPoints(id, bb = None):
         return DBSession.query(Track,Point).join(Track.children).join(Segment.children)\
         .filter(Track.id==id).all()
 
