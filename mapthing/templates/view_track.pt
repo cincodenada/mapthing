@@ -23,6 +23,12 @@
     <script src="${request.static_url('mapthing:static/js/moment.min.js')}" type="text/javascript"></script>
     <style>
         #map { height: 400px; }
+        #sel_view {
+            height: 1em;
+            border: 1px solid;
+            width: 100%;
+            clear: both;
+        }
     </style>
     <script type="text/javascript">
         $('timerange_ul').timerange();
@@ -46,6 +52,7 @@
 	<script type="text/javascript">
     var seglist = {};
     var map = new mxn.Mapstraction('map', 'googlev3'); 
+    var canvas, dc;
     $(function() {
         /*
         tm = TimeMap.init({
@@ -55,6 +62,10 @@
             datasets: [],
         });
         */
+        canvas = document.getElementById('sel_view');
+        canvas.width = $(canvas).innerWidth();
+        canvas.height = $(canvas).innerHeight();
+        dc = canvas.getContext('2d');
 
         map.enableScrollWheelZoom();
         map.addControls({
@@ -71,7 +82,7 @@
                 change: function(evt, ui) {
                     starttime = moment(ui.values[0],'X');
                     endtime = moment(ui.values[1],'X');
-                    $.get('/points.json/' + starttime.format('YYYY-MM-DD') + '/' + endtime.format('YYYY-MM-DD'), function(data) {
+                    $.get('/points.json/' + starttime.format('YYYY-MM-DD HH:mm:ss') + '/' + endtime.format('YYYY-MM-DD HH:mm:ss'), function(data) {
                         show_points(data, ui.values);
                         map.polylineCenterAndZoom();
                     }, 'json');
@@ -146,14 +157,27 @@
         }
         seglist = {};
         newpolys = [];
+
+        dc.fillStyle = "rgba(0,0,0,0.2)";
+        dc.clearRect(0,0,canvas.width,canvas.height);
+
         for(segid in point_data.points) {
+            segdata = point_data.segments[segid];
             last_color = false;
             curseg = Array();
+
             for(idx in point_data.points[segid]) {
                 //console.log([mintime, maxtime, point_data.points[segid][idx].time]);
-                if((mintime && point_data.points[segid][idx].time/1000 < mintime)
-                    || (maxtime && point_data.points[segid][idx].time/1000 > maxtime)
+                curtime = point_data.points[segid][idx].time/1000;
+                //console.log(curtime);
+                //console.log((curtime > maxtime));
+                if((mintime && (curtime < mintime))
+                    || (maxtime && (curtime > maxtime))
                 ) { continue; }
+
+                xpos = (curtime-mintime)/(maxtime-mintime)*canvas.width;
+                dc.fillRect(xpos,0,1,canvas.height);
+
 
                 curpoint = point_data.points[segid][idx];
                 if(last_color && curpoint.color != last_color) {
@@ -188,5 +212,7 @@
 	</script> 
     <ul id="seg_list">
     </ul> 
+    <canvas id="sel_view">
+    </canvas>
 </body>
 </html>
