@@ -36,14 +36,8 @@
     </style>
 </head>
 <body>
-    <div id="timerange_json">
-    </div>
-    <div id="timerange_ul">
-        <ul>
-            <li data-start="2013-01-01 5:50am" data-end="2013-02-05 2:03am"></li>
-            <li data-start="2013-01-02" data-length="50 minutes"></li>
-        <ul>
-    </div>
+    <h1 id="full_timerange"></h1>
+    <h2 id="sel_timerange"></h2>
    	<div id="datepicker"></div>
    	<div id="map"></div>
    	<div id="timeline"></div>
@@ -116,6 +110,11 @@
     function update_selview(timerange) {
         starttime = moment(timerange[0],'X');
         endtime = moment(timerange[1],'X');
+        $('#full_timerange').text(
+            starttime.format('MMM D, YYYY H:mm')
+            + ' - ' +
+            endtime.format('MMM D, YYYY H:mm')
+        );
         $.get('/points.json/' + starttime.format('YYYY-MM-DD HH:mm:ss') + '/' + endtime.format('YYYY-MM-DD HH:mm:ss'), function(data) {
             point_data = data;
             draw_selview(timerange);
@@ -123,6 +122,16 @@
     }
 
     function update_mapview(timerange) {
+        starttime = moment(timerange[0],'X');
+        endtime = moment(timerange[1],'X');
+        length = moment.duration(starttime.diff(endtime));
+        $('#sel_timerange').text(
+            length.humanize()
+            + ' starting on ' +
+            starttime.format('ddd MMM D, YYYY')
+            + ' at ' +
+            starttime.format('H:mm')
+        );
         draw_mapview(timerange);
         map.polylineCenterAndZoom();
     }
