@@ -79,7 +79,7 @@ def date_track(request):
     mode_len = 20
     rollingavg = [0]*avg_len
     rollingcat = ['walking']*mode_len
-    for t, s, p in points:
+    for p, s, t in points:
         rollingavg.insert(0,p.speed)
         rollingavg.pop()
         avg = sum(rollingavg)/avg_len

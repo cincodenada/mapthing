@@ -39,9 +39,9 @@ class Point(Base):
 
     @staticmethod
     def getByDate(start, end):
-        query = DBSession.query(Track,Segment,Point)\
+        query = DBSession.query(Point,Segment,Track)\
                 .join(Segment)\
-                .join(Point)\
+                .join(Track)\
                 .filter(Point.time >= int(start.strftime('%s'))*1000)\
                 .filter(Point.time <= int(end.strftime('%s'))*1000)\
                 .order_by(Point.time)
