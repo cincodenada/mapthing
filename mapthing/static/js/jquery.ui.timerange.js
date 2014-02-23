@@ -1,6 +1,9 @@
 $.widget('cincodenada.timerange',$.ui.slider,{
     options: {
         evtheight: 1.2,
+        range: true,
+        min: null,
+        max: null,
     },
 
     _create: function() {
@@ -94,7 +97,7 @@ $.widget('cincodenada.timerange',$.ui.slider,{
     },
     _prepareEvents: function() {
         var slider = this;
-        var min = null, max = null;
+        var min = this.options.min, max = this.options.max;
         this.events.each(function(idx) {
             var start, end, length;
             $evt = $(this);
@@ -163,8 +166,8 @@ $.widget('cincodenada.timerange',$.ui.slider,{
         });
         */
 
-        this.options.max = max/1000;
-        this.options.min = min/1000;
+        if(min) { this.options.min = min/1000 }
+        if(max) { this.options.max = max/1000 }
 
         this.element.css('height',evtrows.length*this.options.evtheight + 'em')
         
