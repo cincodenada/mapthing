@@ -1,5 +1,5 @@
 var seglist = {};
-var map = new mxn.Mapstraction('map', 'googlev3'); 
+var map = new mxn.Mapstraction('map', 'googlev3');
 var canvas, dc;
 $(function() {
     /*
@@ -57,15 +57,37 @@ $(function() {
             seg.update();
         })
     });
+    $('#controls').on('click','button',function(evt, ui) {
+        doAction($(this).data('action'),$(this).data('value'));
+    });
 });
+
+function doAction(action, value) {
+    switch(action) {
+        case "step":
+
+    }
+}
+function start_anim() {
+    anim_state = {
+        start: $('#sel_view').timerange('option','min'),
+        end: $('#sel_view').timerange('option','max'),
+        curpoint: 0,
+    }
+    anim_state.curpoint = 0;
+    update_anim();
+}
+function update_anim() {
+
+}
 
 function update_selview(timerange) {
     starttime = moment(timerange[0],'X');
     endtime = moment(timerange[1],'X');
     $('#full_timerange').text(
-        starttime.format('MMM D, YYYY H:mm') 
+        starttime.format('MMM D, YYYY H:mm')
         + ' - ' +
-        endtime.format('MMM D, YYYY H:mm') 
+        endtime.format('MMM D, YYYY H:mm')
     );
     $.get('/points.json/' + starttime.format('YYYY-MM-DD HH:mm:ss') + '/' + endtime.format('YYYY-MM-DD HH:mm:ss'), function(data) {
         point_data = data;
@@ -80,9 +102,9 @@ function update_mapview(timerange) {
     $('#sel_timerange').text(
         length.humanize()
         + ' starting on ' +
-        starttime.format('ddd MMM D, YYYY') 
+        starttime.format('ddd MMM D, YYYY')
         + ' at ' +
-        starttime.format('H:mm') 
+        starttime.format('H:mm')
     );
     draw_mapview(timerange);
     map.polylineCenterAndZoom();
@@ -136,17 +158,14 @@ function draw_selview(timerange) {
     dc.fillStyle = "rgba(0,0,0,0.2)";
     dc.clearRect(0,0,canvas.width,canvas.height);
 
-    for(segid in point_data.points) {
-        segdata = point_data.segments[segid];
-        for(idx in point_data.points[segid]) {
-            curtime = point_data.points[segid][idx].time/1000;
-            if((mintime && (curtime < mintime))
-                || (maxtime && (curtime > maxtime))
-            ) { continue; }
+    for(idx in point_data.timepoints) {
+        curtime = point_data.points[segid][idx].time/1000;
+        if((mintime && (curtime < mintime))
+            || (maxtime && (curtime > maxtime))
+        ) { continue; }
 
-            xpos = (curtime-mintime)/(maxtime-mintime)*canvas.width;
-            dc.fillRect(xpos,0,1,canvas.height);
-        }
+        xpos = (curtime-mintime)/(maxtime-mintime)*canvas.width;
+        dc.fillRect(xpos,0,1,canvas.height);
     }
 }
 
@@ -161,47 +180,46 @@ function draw_mapview(timerange) {
     seglist = {};
     newpolys = [];
 
-    for(segid in point_data.points) {
-        segdata = point_data.segments[segid];
-        last_color = false;
-        curseg = Array();
+    for(idx in point_data.timepoints) {
+        curpoint = point_data.points[idx];
+        curtime = curpoint.time/1000;
+        if((mintime && (curtime < mintime))
+            || (maxtime && (curtime > maxtime))
+        ) { continue; }
 
-        for(idx in point_data.points[segid]) {
-            //console.log([mintime, maxtime, point_data.points[segid][idx].time]);
-            curtime = point_data.points[segid][idx].time/1000;
-            //console.log(curtime);
-            //console.log((curtime > maxtime));
-            if((mintime && (curtime < mintime))
-                || (maxtime && (curtime > maxtime))
-            ) { continue; }
-
-            curpoint = point_data.points[segid][idx];
-            if(last_color && curpoint.color != last_color) {
-                //Add the current point so they're connected
-                points.push(new mxn.LatLonPoint(point_data.points[segid][idx].lat, point_data.points[segid][idx].lon)) 
-                newline = new mxn.Polyline(points);
-                newline.setColor(last_color);
-                newline.setWidth('4');
-                curseg.push(newline);
-                points = [];
-            }
-            last_color = curpoint.color;
-            points.push(new mxn.LatLonPoint(point_data.points[segid][idx].lat, point_data.points[segid][idx].lon)) 
+        if(!seglist[curpoint.segid]) {
+            seglist[curpoint.segid] = {
+                lines: [],
+                lastcolor: false,
+                points: [],
+            };
         }
-        if(points.length) {
-            points.push(new mxn.LatLonPoint(point_data.points[segid][idx].lat, point_data.points[segid][idx].lon)) 
-            newline = new mxn.Polyline(points);
-            newline.setColor(last_color);
+        curseg = seglist[curpoint.segid];
+
+        if(curseg.last_color && curpoint.color != curseg.last_color) {
+            //Add the current point so they're connected
+            curseg.points.push(new mxn.LatLonPoint(curpoint.lat, curpoint.lon))
+            newline = new mxn.Polyline(curseg.points);
+            newline.setColor(curseg.last_color);
             newline.setWidth('4');
-            curseg.push(newline);
-            points = [];
+            curseg.lines.push(newline);
+            curseg.points = [];
         }
-        if(curseg.length) { seglist[segid] = curseg; }
+        curseg.last_color = curpoint.color;
+        curseg.points.push(new mxn.LatLonPoint(curpoint.lat, curpoint.lon))
     }
     map.removeAllPolylines();
-    for(segid in seglist) {
-        for(subseg in seglist[segid]) {
-            map.addPolyline(seglist[segid][subseg]);
+    for(segnum in seglist) {
+        curseg = seglist[segnum];
+        if(curseg.points.length) {
+            newline = new mxn.Polyline(curseg.points);
+            newline.setColor(curseg.last_color);
+            newline.setWidth('4');
+            curseg.lines.push(newline);
+            curseg.points = [];
+        }
+        for(subseg in curseg.lines) {
+            map.addPolyline(curseg.lines[subseg]);
         }
     }
 }

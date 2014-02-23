@@ -56,6 +56,7 @@ def date_track(request):
     points = Point.getByDate(startdate, enddate).all()
     pointlist = {}
     segments = {}
+    timepoints = []
     tracks = {}
     speedpoints = {
         'walking': {
@@ -104,14 +105,17 @@ def date_track(request):
         else:
             color = '#000000'
 
-        if not p.segment_id in pointlist:
-            pointlist[p.segment_id] = []
-        pointlist[p.segment_id].append({
+        if not s.id in pointlist:
+            pointlist[s.id] = []
+        pointnum = len(timepoints)
+        timepoints.append({
             'lat': p.latitude,
             'lon': p.longitude,
             'color': color,
             'time': p.time,
+            'segid': s.id,
         })
+        pointlist[s.id].append(pointnum)
         if not s.id in segments:
             segments[s.id] = {
                 'id': s.id,
@@ -138,6 +142,7 @@ def date_track(request):
         'tracks': tracks, 
         'segments': segments, 
         'points': pointlist,
+        'timepoints': timepoints,
     })}
 
 conn_err_msg = """\
