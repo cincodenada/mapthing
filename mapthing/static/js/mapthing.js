@@ -1,5 +1,5 @@
 var seglist = {};
-var map = new mxn.Mapstraction('map', 'googlev3');
+var map;
 var canvas, dc;
 $(function() {
     /*
@@ -10,6 +10,8 @@ $(function() {
         datasets: [],
     });
     */
+    map = new mxn.Mapstraction('map', 'googlev3')
+
     canvas = document.getElementById('sel_view').firstElementChild;
     canvas.width = $(canvas).innerWidth();
     canvas.height = $(canvas).innerHeight();
@@ -159,7 +161,7 @@ function draw_selview(timerange) {
     dc.clearRect(0,0,canvas.width,canvas.height);
 
     for(idx in point_data.timepoints) {
-        curtime = point_data.points[segid][idx].time/1000;
+        curtime = point_data.timepoints[idx].time/1000;
         if((mintime && (curtime < mintime))
             || (maxtime && (curtime > maxtime))
         ) { continue; }
@@ -181,7 +183,7 @@ function draw_mapview(timerange) {
     newpolys = [];
 
     for(idx in point_data.timepoints) {
-        curpoint = point_data.points[idx];
+        curpoint = point_data.timepoints[idx];
         curtime = curpoint.time/1000;
         if((mintime && (curtime < mintime))
             || (maxtime && (curtime > maxtime))
