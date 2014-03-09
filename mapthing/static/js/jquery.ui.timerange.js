@@ -4,6 +4,7 @@ $.widget('cincodenada.timerange',$.ui.slider,{
         range: true,
         min: null,
         max: null,
+        clickdist: 0.25,
     },
 
     _create: function() {
@@ -48,6 +49,22 @@ $.widget('cincodenada.timerange',$.ui.slider,{
                 this._rangeAnchor = newVal;
             }
             return;
+        } else if(this._newSel === true) {
+            diff = newVal - this.values(0);
+            if(Math.abs(diff) > this._clickDistNorm()) {
+                if(diff < 0) {
+                    index = this._handleIndex = 0;
+                } else {
+                    index = this._handleIndex = 1;
+                }
+                this._trigger( "start", event, {
+                    handle: this.handles[ index ],
+                    value: this.value(index),
+                    values: this.values(),
+                })
+                //We're done starting the selection
+                this._newSel = false;
+            }
         }
         return this._super(event, index, newVal);
     },
@@ -82,6 +99,7 @@ $.widget('cincodenada.timerange',$.ui.slider,{
 		position = { x: event.pageX, y: event.pageY };
 		normValue = this._normValueFromMouse( position );
         if(this.handles.length == 2 && this.options.range === true && 
+            //Move the range by clicking on it
             this.values(0) < normValue && normValue < this.values(1) &&
             !this.handles.hasClass( "ui-state-hover" )) {
 
@@ -91,9 +109,23 @@ $.widget('cincodenada.timerange',$.ui.slider,{
             return this._trigger( "start", event, {value: this.value()});
         } else {
             this._draggingRange = false;
+            //Check for new selection creation
+            distance = Math.abs(this.values(index) - normValue);
+            if(distance > this._clickDistNorm()) {
+                //Start a new selection
+                this.options.values = [ normValue, normValue ];
+                this._newSel = true;
+                return;
+            }
         }
 
         return this._super(event, index);
+
+    },
+    _clickDistNorm: function() {
+        return (this.options.clickdist < 1)
+            ? Math.abs(this.values(1) - this.values(0)) * this.options.clickdist
+            : this.options.clickdist;
     },
     _prepareEvents: function() {
         var slider = this;
