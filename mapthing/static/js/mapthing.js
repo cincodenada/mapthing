@@ -24,7 +24,7 @@ $(function() {
         map_type:true,
     });
     //show_points();
-    $.get('/tracks.json/' + params.start + '/' + params.end, function(data) {
+    $.get('/tracks.json/', {'start': params.start, 'end': params.end}, function(data) {
         bounds = make_tracklist(data);
         map.setBounds(bounds);
 
@@ -67,6 +67,18 @@ $(function() {
     $('#controls').on('click','button',function(evt, ui) {
         doAction($(this).data('action'),$(this).data('value'));
     });
+
+    $('#getarea').on('click',function() {
+        bounds = map.getBounds();
+        $.get('/points.json/', {
+            'ne': [bounds.ne.lat,bounds.ne.lon].join(','),
+            'sw': [bounds.sw.lat,bounds.sw.lon].join(','),
+        }, function(data) {
+            point_data = data;
+            draw_mapview();
+        }, 'json');
+
+    });
 });
 
 function doAction(action, value) {
@@ -96,7 +108,7 @@ function update_selview(timerange) {
         + ' - ' +
         endtime.format('MMM D, YYYY H:mm')
     );
-    $.get('/points.json/' + starttime.format('YYYY-MM-DD HH:mm:ss') + '/' + endtime.format('YYYY-MM-DD HH:mm:ss'), function(data) {
+    $.get('/points.json/', {start: starttime.format('YYYY-MM-DD HH:mm:ss'), end: endtime.format('YYYY-MM-DD HH:mm:ss')}, function(data) {
         point_data = data;
         draw_selview(timerange);
     }, 'json');

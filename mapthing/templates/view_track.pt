@@ -53,6 +53,7 @@
         <label for="uni_interp">Interpolation Threshhold</label>
         <input id="uni_interp" type="text" value="10"/> seconds
     </div>
+    <button id="getarea">Get All in Map</button>
    	<div id="datepicker"></div>
    	<div id="map"></div>
    	<div id="timeline"></div>

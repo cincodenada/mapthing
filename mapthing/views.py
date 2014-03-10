@@ -27,8 +27,8 @@ def view_track(request):
 
 @view_config(route_name='get_tracks', renderer='templates/json.pt')
 def get_tracks(request):
-    startdate = date_parse(request.matchdict['start'])
-    enddate = date_parse(request.matchdict['end'])
+    startdate = date_parse(request.params['start'])
+    enddate = date_parse(request.params['end'])
     trackdata = []
     query = Track.getByDate(startdate, enddate)
     data = DBSession.execute(query)
@@ -41,19 +41,29 @@ def get_tracks(request):
 
 @view_config(route_name='ajax_track', renderer='templates/view_track.pt')
 def ajax_track(request):
-    startdate = date_parse(request.matchdict['start'])
-    enddate = date_parse(request.matchdict['end'])
+    startdate = date_parse(request.params['start'])
+    enddate = date_parse(request.params['end'])
     params = {
-        'start': request.matchdict['start'],
-        'end': request.matchdict['end'],
+        'start': request.params['start'],
+        'end': request.params['end'],
     }
     return { 'json_params': json.dumps(params) }
 
 @view_config(route_name='ajax_points', renderer='templates/json.pt')
 def date_track(request):
-    startdate = date_parse(request.matchdict['start'])
-    enddate = date_parse(request.matchdict['end'])
-    points = Point.getByDate(startdate, enddate).all()
+    if('start' in request.params):
+        startdate = date_parse(request.params['start'])
+        enddate = date_parse(request.params['end'])
+        points = Point.getByDate(startdate, enddate).all()
+    elif('ne' in request.params):
+        ne = request.params['ne'].split(',')
+        sw = request.params['sw'].split(',')
+        for i in range(1):
+            if(ne[i] < sw[i]):
+                ne[i], sw[i] = sw[i], ne[i]
+
+        points = Point.getByLatLon(ne, sw)
+
     pointlist = {}
     segments = {}
     timepoints = []

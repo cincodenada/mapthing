@@ -47,6 +47,18 @@ class Point(Base):
                 .order_by(Point.time)
         return query
 
+    @staticmethod
+    def getByLatLon(ne, sw):
+        query = DBSession.query(Point,Segment,Track)\
+                .join(Segment)\
+                .join(Track)\
+                .filter(Point.latitude >= sw[0])\
+                .filter(Point.latitude <= ne[0])\
+                .filter(Point.longitude >= sw[1])\
+                .filter(Point.longitude <= ne[1])\
+                .order_by(Point.time)
+        return query
+
 class Segment(Base):
     __tablename__ = 'segments'
     id = Column(Integer, primary_key=True)
