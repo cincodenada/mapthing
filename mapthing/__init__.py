@@ -21,5 +21,6 @@ def main(global_config, **settings):
     config.add_route('ajax_points', '/points.json/')
     config.add_route('ajax_track', '/tracks/')
     config.add_route('get_tracks', '/tracks.json/')
+    config.add_route('upload_data', '/upload')
     config.scan()
     return config.make_wsgi_app()

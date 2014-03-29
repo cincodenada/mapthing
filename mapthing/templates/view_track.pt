@@ -42,18 +42,31 @@
             width: 100%;
             height: 100%;
         }
+
+        #details {
+            float: right;
+        }
     </style>
 </head>
 <body>
     <h1 id="full_timerange"></h1>
     <h2 id="sel_timerange"></h2>
-    <div id="uni_controls">
-        <label for="uni_interval">Interval</label>
-        <input id="uni_interval" type="text" value="5"/> seconds
-        <label for="uni_interp">Interpolation Threshhold</label>
-        <input id="uni_interp" type="text" value="10"/> seconds
+    <div id="details">
+        <div id="uni_controls">
+            <label for="uni_interval">Interval</label>
+            <input id="uni_interval" type="text" value="5"/> seconds
+            <label for="uni_interp">Interpolation Threshhold</label>
+            <input id="uni_interp" type="text" value="10"/> seconds
+        </div>
+        <div id="upload">
+            <form action="/upload" enctype="multipart/form-data" method="POST">
+                Add data: <input type="file" name="data"/>
+                <input type="submit" value="Upload"/>
+            </form>
+        </div>
+        <button id="getarea">Get All in Map</button>
     </div>
-    <button id="getarea">Get All in Map</button>
+    <div style="clear: both;"></div>
    	<div id="datepicker"></div>
    	<div id="map"></div>
    	<div id="timeline"></div>

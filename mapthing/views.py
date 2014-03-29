@@ -6,6 +6,8 @@ from sqlalchemy.exc import DBAPIError
 import json
 from dateutil.parser import parse as date_parse
 from operator import itemgetter, attrgetter
+import tempfile
+import sqlite3
 
 from .models import (
     DBSession,
@@ -154,6 +156,69 @@ def date_track(request):
         'points': pointlist,
         'timepoints': timepoints,
     })}
+
+@view_config(route_name='upload_data', renderer='templates/json.pt')
+def upload_data(request):
+    myfile = request.params['data']
+    dest = tempfile.NamedTemporaryFile(delete=False)
+    myfile.file.seek(0)
+    while True:
+        data = myfile.file.read(2<<16)
+        if not data:
+            break
+        dest.write(data)
+    dest.close()
+
+    conn = sqlite3.connect(dest.name)
+    c = conn.cursor()
+    tables = {
+        'segments': {
+            '_tablename_': 'segments',
+            '_id': 'id',
+            'track': 'track_id',
+        },
+        'tracks': {
+            '_tablename_': 'tracks',
+            '_id': 'id',
+            'name': 'name',
+            'creationtime': 'created',
+        },
+        'waypoints': {
+            '_tablename_': 'points',
+            '_id': 'id',
+            'latitude': 'latitude',
+            'longitude': 'longitude',
+            'time': 'time',
+            'speed': 'speed',
+            'tracksegment': 'segment_id',
+            'accuracy': 'accuracy',
+            'altitude': 'altitude',
+            'bearings': 'bearings',
+        },
+    }
+    querylist = []
+    for t, tmap in tables.iteritems():
+        newtable = tmap.pop('_tablename_',t)
+        cols = ', '.join(tmap.keys())
+        destcols = ', '.join(tmap.values())
+        fromquery = 'SELECT %s FROM %s' % (cols, t)
+        paramstr = ','.join(['?']*len(tmap));
+        toquery = 'INSERT INTO %s(%s) VALUES(%s)' % (newtable, destcols, paramstr)
+        querylist.append(fromquery)
+        querylist.append(toquery)
+        for row in c.execute(fromquery):
+            print row
+            DBSession.execute(toquery, row)
+
+#   upload_directory = os.path.join(os.getcwd(), '/myapp/static/uploads/')
+#   tempfile = os.path.join(upload_directory, myfile)
+#   startdate = date_parse(request.params['start'])
+#   enddate = date_parse(request.params['end'])
+#   params = {
+#       'start': request.params['start'],
+#       'end': request.params['end'],
+#   }
+    return { 'json_data': json.dumps(querylist) }
 
 conn_err_msg = """\
 Pyramid is having a problem using your SQL database.  The problem
