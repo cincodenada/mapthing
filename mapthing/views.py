@@ -202,7 +202,7 @@ def upload_data(request):
         curmap = tmap.copy()
         curtable = curmap.pop('_tablename_',t)
         for new, orig in curmap.iteritems():
-            col_list.append('`%s`.`%s`' % (curtable, orig))
+            col_list.append('`%s`.`%s` as %s_%s' % (curtable, orig, curtable, orig))
         
     fromquery = 'SELECT %(fields)s FROM %(point)s ' + \
     'LEFT JOIN %(seg)s ON %(seg)s.%(sid)s = %(point)s.%(sid_field)s ' + \
@@ -218,8 +218,30 @@ def upload_data(request):
         'tid_field': tables['segments']['track_id'],
     }
     querylist.append(fromquery)
+    c.row_factory = sqlite3.Row
+    idmap = {k:{} for k in tables.keys()}
+    #new shit starts at 138 btw in case everything goes to hell
     for row in c.execute(fromquery):
-        print row
+        #Find or create the track
+        if(row['tracks__id'] in idmap['tracks']):
+            t = idmap['tracks'][row['tracks__id']]
+        else:
+            t = Track()
+            add_row_data(row, tables, 'tracks', t)
+            DBSession.add(t)
+            idmap['tracks'][row['tracks__id']] = t
+        #And the segment
+        if(row['segments__id'] in idmap['segments']):
+            s = idmap['segments'][row['segments__id']]
+        else:
+            s = Segment()
+            add_row_data(row, tables, 'segments', s)
+            t.segments.append(s)
+            idmap['segments'][row['segments__id']] = s
+        #Now point!
+        p = Point()
+        add_row_data(row, tables, 'points', p)
+        s.points.append(p)
 
 #   upload_directory = os.path.join(os.getcwd(), '/myapp/static/uploads/')
 #   tempfile = os.path.join(upload_directory, myfile)
@@ -230,6 +252,13 @@ def upload_data(request):
 #       'end': request.params['end'],
 #   }
     return { 'json_data': json.dumps(querylist) }
+
+def add_row_data(row, tableinfo, table, obj):
+    oldtable = tableinfo[table]['_tablename_']
+    for new, old in tableinfo[table].iteritems():
+        if(not new in ['_tablename_','id','track_id','segment_id']):
+            setattr(obj, new, row[oldtable + '_' + old])
+
 
 conn_err_msg = """\
 Pyramid is having a problem using your SQL database.  The problem

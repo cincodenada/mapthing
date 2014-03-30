@@ -64,7 +64,7 @@ class Segment(Base):
     id = Column(Integer, primary_key=True)
     track_id = Column(Integer, ForeignKey('tracks.id'))
     
-    children = relationship(Point)
+    points = relationship(Point)
 
 class Track(Base):
     __tablename__ = 'tracks'
@@ -72,7 +72,7 @@ class Track(Base):
     name = Column(String)
     created = Column(Integer)
     
-    children = relationship(Segment)
+    segments = relationship(Segment)
 
     @staticmethod
     def getByDate(start, end):
@@ -85,8 +85,8 @@ class Track(Base):
                 func.min(Point.longitude),
                 func.max(Point.longitude),
                 )\
-                .join(Track.children)\
-                .join(Segment.children)\
+                .join(Track.segments)\
+                .join(Segment.points)\
                 .filter(Point.time >= int(start.strftime('%s'))*1000)\
                 .filter(Point.time <= int(end.strftime('%s'))*1000)\
                 .group_by(Track.id)\
@@ -94,7 +94,7 @@ class Track(Base):
 
     @staticmethod
     def getPoints(id, bb = None):
-        return DBSession.query(Track,Point).join(Track.children).join(Segment.children)\
+        return DBSession.query(Track,Point).join(Track.segments).join(Segment.points)\
         .filter(Track.id==id).all()
 
 #Index('my_index', MyModel.name, unique=True, mysql_length=255)
