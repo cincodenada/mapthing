@@ -174,41 +174,52 @@ def upload_data(request):
     tables = {
         'segments': {
             '_tablename_': 'segments',
-            '_id': 'id',
-            'track': 'track_id',
+            'id': '_id',
+            'track_id': 'track',
         },
         'tracks': {
             '_tablename_': 'tracks',
-            '_id': 'id',
+            'id': '_id',
             'name': 'name',
-            'creationtime': 'created',
+            'created': 'creationtime',
         },
-        'waypoints': {
-            '_tablename_': 'points',
-            '_id': 'id',
+        'points': {
+            '_tablename_': 'waypoints',
+            'id': '_id',
             'latitude': 'latitude',
             'longitude': 'longitude',
             'time': 'time',
             'speed': 'speed',
-            'tracksegment': 'segment_id',
+            'segment_id': 'tracksegment',
             'accuracy': 'accuracy',
             'altitude': 'altitude',
-            'bearings': 'bearings',
+            'bearing': 'bearing',
         },
     }
     querylist = []
+    col_list = []
     for t, tmap in tables.iteritems():
-        newtable = tmap.pop('_tablename_',t)
-        cols = ', '.join(tmap.keys())
-        destcols = ', '.join(tmap.values())
-        fromquery = 'SELECT %s FROM %s' % (cols, t)
-        paramstr = ','.join(['?']*len(tmap));
-        toquery = 'INSERT INTO %s(%s) VALUES(%s)' % (newtable, destcols, paramstr)
-        querylist.append(fromquery)
-        querylist.append(toquery)
-        for row in c.execute(fromquery):
-            print row
-            DBSession.execute(toquery, row)
+        curmap = tmap.copy()
+        curtable = curmap.pop('_tablename_',t)
+        for new, orig in curmap.iteritems():
+            col_list.append('`%s`.`%s`' % (curtable, orig))
+        
+    fromquery = 'SELECT %(fields)s FROM %(point)s ' + \
+    'LEFT JOIN %(seg)s ON %(seg)s.%(sid)s = %(point)s.%(sid_field)s ' + \
+    'LEFT JOIN %(track)s ON %(track)s.%(tid)s = %(seg)s.%(tid_field)s'
+    fromquery = fromquery % {
+        'fields': ','.join(col_list), 
+        'point': tables['points']['_tablename_'],
+        'seg': tables['segments']['_tablename_'], 
+        'track': tables['tracks']['_tablename_'],
+        'sid': tables['segments']['id'],
+        'tid': tables['tracks']['id'],
+        'sid_field': tables['points']['segment_id'],
+        'tid_field': tables['segments']['track_id'],
+    }
+    querylist.append(fromquery)
+    for row in c.execute(fromquery):
+        print row
 
 #   upload_directory = os.path.join(os.getcwd(), '/myapp/static/uploads/')
 #   tempfile = os.path.join(upload_directory, myfile)
