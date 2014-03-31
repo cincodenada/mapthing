@@ -64,8 +64,13 @@ $(function() {
             })
         }
     });
-    $('#controls').on('click','button',function(evt, ui) {
+    $('#anim_controls').on('click','button',function(evt, ui) {
         doAction($(this).data('action'),$(this).data('value'));
+    });
+    $('#anim_options').on('keyup','input',function(evt, ui) {
+        $ao = $(evt.delegateTarget);
+        if(to = $ao.data('to')) { clearTimeout(to); }
+        $ao.data('to', setTimeout(update_anim_opts, 500))
     });
 
     $('#getarea').on('click',function() {
@@ -82,22 +87,50 @@ $(function() {
 });
 
 function doAction(action, value) {
+    if(action == "playpause") {
+        action = anim_state.timeout ? 'pause' : 'play';
+    }
     switch(action) {
+        case "play":
+            start_anim();
+            break;
+        case "pause":
+        case "stop":
+            while(to = anim_state.timeout) {
+                clearTimeout(to);
+                anim_state.timeout = null;
+            }
+            break;
         case "step":
-
+            break;
     }
 }
 function start_anim() {
     anim_state = {
         start: $('#sel_view').timerange('option','min'),
         end: $('#sel_view').timerange('option','max'),
+        trailpoint: 0,
         curpoint: 0,
     }
+    anim_state.curtime = anim_state.start;
+    update_anim_opts()
+
     anim_state.curpoint = 0;
     update_anim();
 }
+function update_anim_opts() {
+    anim_opts = {};
+    $('#anim_options').find('input').each(function() {
+        anim_opts[$(this).data('param')] = $(this).val();
+    });
+    anim_opts.spf = 1/anim_opts.fps;
+    anim_opts.real_spf = anim_opts.spf * anim_opts.speedup;
+}
 function update_anim() {
-
+    anim_state.curtime += anim_opts.real_spf;
+    trailstart = anim_state.curtime - anim_opts.traillen;
+    update_mapview([trailstart, anim_state.curtime], anim_state.curpoint);
+    anim_state.timeout = setTimeout(update_anim, anim_opts.spf*1000);
 }
 
 function update_selview(timerange) {
@@ -114,7 +147,7 @@ function update_selview(timerange) {
     }, 'json');
 }
 
-function update_mapview(timerange) {
+function update_mapview(timerange, startpoint) {
     starttime = moment(timerange[0],'X');
     endtime = moment(timerange[1],'X');
     length = moment.duration(starttime.diff(endtime));
@@ -125,7 +158,7 @@ function update_mapview(timerange) {
         + ' at ' +
         starttime.format('H:mm')
     );
-    draw_mapview(timerange);
+    draw_mapview(timerange, startpoint);
     map.polylineCenterAndZoom();
 }
 
@@ -218,7 +251,8 @@ function draw_uniview() {
     }
 }
 
-function draw_mapview(timerange) {
+function draw_mapview(timerange, startpoint) {
+    if(!startpoint) { startpoint = 0; }
     var points = Array();
     var curseg;
 
@@ -239,7 +273,7 @@ function draw_mapview(timerange) {
 
     var lastpoint = null;
     var lasttick = null;
-    for(idx in point_data.timepoints) {
+    for(idx = startpoint; idx < point_data.timepoints.length; idx++) {
         curpoint = point_data.timepoints[idx];
         curtime = curpoint.time/1000;
         if((mintime && (curtime < mintime))

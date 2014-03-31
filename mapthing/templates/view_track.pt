@@ -22,6 +22,8 @@
     <script type="text/javascript">
         var params = ${json_params};
         var point_data;
+        var anim_state = {};
+        var anim_opts = {};
     </script>
     <script src="${request.static_url('mapthing:static/js/mapthing.js')}" type="text/javascript"></script>
     <style>
@@ -71,12 +73,33 @@
    	<div id="map"></div>
    	<div id="timeline"></div>
     <ul id="seg_list">
-    </ul> 
+    </ul>
     <div id="sel_view">
         <canvas></canvas>
     </div>
     <div id="uni_view">
         <canvas></canvas>
+    </div>
+    <div id="anim_controls">
+        <button data-action="step" data-value="-1">&#x23EE;</button>
+        <button data-action="playpause" data-value="play">&#x25B8; &#x25AE; &#x25AE;</button>
+        <button data-action="rewind" data-value="rewind">&#x23ea;</button>
+        <button data-action="step" data-value="1">&#x23ED;</button>
+
+        <!--
+        Bigger play: &#x25B6;<br/>
+        Pause: &#x25AE;&#x25AE;<br/>
+
+        Other pauses:
+        &#x2503;&#x2503;<br/>
+        &#x275A;&#x275A;<br/>
+        &#x2590;&#x2590;<br/>
+        -->
+    </div>
+    <div id="anim_options">
+        FPS: <input type="text" data-param="fps" value="2"/>
+        Speedup: <input type="text" data-param="speedup" value="60"/>
+        Trail length (sec): <input type="text" data-param="traillen" value="300"/>
     </div>
 </body>
 </html>
