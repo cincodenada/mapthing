@@ -2,6 +2,14 @@ var seglist = {};
 var uni_list, uni_missing, uni_interp;
 var map;
 var selview, dc;
+
+var point_data;
+var anim_state = {
+    trailpoint: 0,
+    curpoint: 0,
+    stopped: true,
+}
+var anim_opts = {};
 $(function() {
     /*
     tm = TimeMap.init({
@@ -87,15 +95,23 @@ $(function() {
 });
 
 function doAction(action, value) {
-    if(action == "playpause") {
-        action = anim_state.timeout ? 'pause' : 'play';
+    if(action == "pausestop") {
+        action = anim_state.timeout ? 'pause' : 'stop';
     }
     switch(action) {
+        case "rewind":
         case "play":
-            start_anim();
+            anim_state.direction = (action == 'rewind' ? -1 : 1)
+            if(anim_state.stopped) {
+                start_anim();
+            } else {
+                //If we're not actively playing, kick it off again
+                if(!anim_state.timeout) { update_anim(); }
+            }
             break;
-        case "pause":
         case "stop":
+            anim_state.stopped = true;
+        case "pause":
             while(to = anim_state.timeout) {
                 clearTimeout(to);
                 anim_state.timeout = null;
@@ -106,20 +122,17 @@ function doAction(action, value) {
     }
 }
 function start_anim() {
-    anim_state = {
-        start: $('#sel_view').timerange('option','min'),
-        end: $('#sel_view').timerange('option','max'),
-        trailpoint: 0,
-        curpoint: 0,
-    }
+    anim_state.start = $('#sel_view').timerange('option','min');
+    anim_state.end = $('#sel_view').timerange('option','max');
     anim_state.curtime = anim_state.start;
-    update_anim_opts()
 
-    anim_state.curpoint = 0;
+    update_anim_opts();
+    anim_state.direction = 1;
+
+    anim_state.stopped = false;
     update_anim();
 }
 function update_anim_opts() {
-    anim_opts = {};
     $('#anim_options').find('input').each(function() {
         anim_opts[$(this).data('param')] = $(this).val();
     });
@@ -127,9 +140,19 @@ function update_anim_opts() {
     anim_opts.real_spf = anim_opts.spf * anim_opts.speedup;
 }
 function update_anim() {
-    anim_state.curtime += anim_opts.real_spf;
-    trailstart = anim_state.curtime - anim_opts.traillen;
-    update_mapview([trailstart, anim_state.curtime], anim_state.curpoint);
+    anim_state.curtime += anim_opts.real_spf*anim_state.direction;
+    if(anim_state.curtime > anim_state.end) {
+        anim_state.curtime = anim_state.start;
+    } else if(anim_state.curtime < anim_state.start) {
+        anim_state.curtime = anim_state.end;
+    }
+    trailpoint = anim_state.curtime - anim_opts.traillen*anim_state.direction;
+
+    timeframe = (anim_state.direction < 0)
+    ? [anim_state.curtime, trailpoint] 
+    : [trailpoint, anim_state.curtime]
+    update_mapview(timeframe);
+
     anim_state.timeout = setTimeout(update_anim, anim_opts.spf*1000);
 }
 
