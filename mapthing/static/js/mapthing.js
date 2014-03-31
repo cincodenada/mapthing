@@ -2,6 +2,7 @@ var seglist = {};
 var uni_list, uni_missing, uni_interp;
 var map;
 var selview, dc;
+var curbounds;
 
 var point_data;
 var anim_state = {
@@ -122,9 +123,11 @@ function doAction(action, value) {
     }
 }
 function start_anim() {
-    anim_state.start = $('#sel_view').timerange('option','min');
-    anim_state.end = $('#sel_view').timerange('option','max');
+    selrange = $('#sel_view').timerange('values');
+    anim_state.start = selrange[0];
+    anim_state.end = selrange[1];
     anim_state.curtime = anim_state.start;
+    anim_state.bounds = map.getBounds();
 
     update_anim_opts();
     anim_state.direction = 1;
@@ -151,7 +154,26 @@ function update_anim() {
     timeframe = (anim_state.direction < 0)
     ? [anim_state.curtime, trailpoint] 
     : [trailpoint, anim_state.curtime]
-    update_mapview(timeframe);
+    update_mapview(timeframe, true);
+    if(curbounds && !curbounds.isEmpty()) {
+        min_area = 3e-6;
+        max_unused = 5;
+        cur_area = curbounds.getArea();
+        if(anim_state.bounds.contains(curbounds)) {
+            //If we're > 50% unused space, shrink things down
+            if(anim_state.bounds.getArea() > cur_area*max_unused) {
+                if(cur_area < min_area) {
+                    curbounds.zoom(Math.sqrt(min_area/cur_area));
+                }
+                anim_state.bounds = curbounds;
+                map.setBounds(curbounds);
+            }
+        } else {
+            anim_state.bounds.extend(curbounds.ne);
+            anim_state.bounds.extend(curbounds.sw);
+            map.setBounds(anim_state.bounds);
+        }
+    }
 
     anim_state.timeout = setTimeout(update_anim, anim_opts.spf*1000);
 }
@@ -170,7 +192,7 @@ function update_selview(timerange) {
     }, 'json');
 }
 
-function update_mapview(timerange, startpoint) {
+function update_mapview(timerange, is_anim) {
     starttime = moment(timerange[0],'X');
     endtime = moment(timerange[1],'X');
     length = moment.duration(starttime.diff(endtime));
@@ -181,8 +203,8 @@ function update_mapview(timerange, startpoint) {
         + ' at ' +
         starttime.format('H:mm')
     );
-    draw_mapview(timerange, startpoint);
-    map.polylineCenterAndZoom();
+    draw_mapview(timerange, is_anim);
+    if(!is_anim) { map.polylineCenterAndZoom(); }
 }
 
 function make_seglist() {
@@ -274,8 +296,7 @@ function draw_uniview() {
     }
 }
 
-function draw_mapview(timerange, startpoint) {
-    if(!startpoint) { startpoint = 0; }
+function draw_mapview(timerange, is_anim) {
     var points = Array();
     var curseg;
 
@@ -296,54 +317,60 @@ function draw_mapview(timerange, startpoint) {
 
     var lastpoint = null;
     var lasttick = null;
-    for(idx = startpoint; idx < point_data.timepoints.length; idx++) {
+    curbounds = new mxn.BoundingBox();
+    for(idx = 0; idx < point_data.timepoints.length; idx++) {
         curpoint = point_data.timepoints[idx];
         curtime = curpoint.time/1000;
         if((mintime && (curtime < mintime))
             || (maxtime && (curtime > maxtime))
         ) { continue; }
 
-        curtick = Math.round(curtime/uni_tick);
-        if(lasttick && (lasttick != curtick)) {
-            //We're in a new point, check on our points
-            var lat, lon;
-            if(uni_avg.length > 1) {
-                lat = lon = 0;
-                for(i=0;i<uni_avg.length;i++) {
-                    lat += uni_avg[i].lat;
-                    lon += uni_avg[i].lon;
-                }
-                lat = lat/uni_avg.length;
-                lon = lon/uni_avg.length;
-            } else if(uni_avg.length == 1) {
-                lat = uni_avg[0].lat;
-                lon = uni_avg[0].lon;
-            }
-            
-            uni_avg = [];
-            uni_list[lasttick] = [lat, lon];
+        //Curpoint has lat/lon properties, so we're great
+        curbounds.extend(curpoint);
 
-            var diff = curtick - lasttick;
-            if(diff == 1) {
-                //No interpolation necessary
-                //Carry on
-            } else if(diff <= uni_thresh) {
-                //Just do some linear interpolation
-                for(var t = 1; t < diff; t++) {
-                    uni_list[lasttick + t] = [
-                        (curpoint.lat - uni_list[lasttick][0])*(t/diff),
-                        (curpoint.lon - uni_list[lasttick][1])*(t/diff)
-                    ];
+        if(!is_anim) {
+            curtick = Math.round(curtime/uni_tick);
+            if(lasttick && (lasttick != curtick)) {
+                //We're in a new point, check on our points
+                var lat, lon;
+                if(uni_avg.length > 1) {
+                    lat = lon = 0;
+                    for(i=0;i<uni_avg.length;i++) {
+                        lat += uni_avg[i].lat;
+                        lon += uni_avg[i].lon;
+                    }
+                    lat = lat/uni_avg.length;
+                    lon = lon/uni_avg.length;
+                } else if(uni_avg.length == 1) {
+                    lat = uni_avg[0].lat;
+                    lon = uni_avg[0].lon;
                 }
-                uni_interp.push([lasttick + 1, curtick - 1]);
-            } else {
-                //Too much missing, add it to the missing list
-                uni_missing.push([lasttick + 1, curtick - 1]);
+                
+                uni_avg = [];
+                uni_list[lasttick] = [lat, lon];
+
+                var diff = curtick - lasttick;
+                if(diff == 1) {
+                    //No interpolation necessary
+                    //Carry on
+                } else if(diff <= uni_thresh) {
+                    //Just do some linear interpolation
+                    for(var t = 1; t < diff; t++) {
+                        uni_list[lasttick + t] = [
+                            (curpoint.lat - uni_list[lasttick][0])*(t/diff),
+                            (curpoint.lon - uni_list[lasttick][1])*(t/diff)
+                        ];
+                    }
+                    uni_interp.push([lasttick + 1, curtick - 1]);
+                } else {
+                    //Too much missing, add it to the missing list
+                    uni_missing.push([lasttick + 1, curtick - 1]);
+                }
             }
+            //In any case, throw the point on the average list
+            uni_avg.push(curpoint);
+            lasttick = curtick;
         }
-        //In any case, throw the point on the average list
-        uni_avg.push(curpoint);
-        lasttick = curtick;
 
         if(!seglist[curpoint.segid]) {
             seglist[curpoint.segid] = {
@@ -381,5 +408,5 @@ function draw_mapview(timerange, startpoint) {
         }
     }
 
-    draw_uniview();
+    if(is_anim) { draw_uniview(); }
 }
