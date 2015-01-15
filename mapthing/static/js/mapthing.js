@@ -11,6 +11,7 @@ var anim_state = {
     stopped: true,
 }
 var anim_opts = {};
+var play_scrubber;
 $(function() {
     /*
     tm = TimeMap.init({
@@ -21,6 +22,12 @@ $(function() {
     });
     */
     map = new mxn.Mapstraction('map', 'googlev3')
+
+    play_scrubber = $('#play_pos').slider({
+        slide: function(evt, ui) {
+            update_anim(ui.value);
+        }
+    });
 
     selview = document.getElementById('sel_view').firstElementChild;
     selview.width = $(selview).innerWidth();
@@ -43,6 +50,7 @@ $(function() {
                     min: ui.values[0],
                     max: ui.values[1],
                     change: function(evt, ui) {
+                        init_anim();
                         update_mapview(ui.values);
                     }
                 });
@@ -122,15 +130,21 @@ function doAction(action, value) {
             break;
     }
 }
-function start_anim() {
+function init_anim() {
     selrange = $('#sel_view').timerange('values');
     anim_state.start = selrange[0];
     anim_state.end = selrange[1];
     anim_state.curtime = anim_state.start;
     anim_state.bounds = map.getBounds();
 
+    play_scrubber.slider('option','min',anim_state.start);
+    play_scrubber.slider('option','max',anim_state.end);
+
     update_anim_opts();
     anim_state.direction = 1;
+}
+function start_anim() {
+    init_anim();
 
     anim_state.stopped = false;
     update_anim();
@@ -142,8 +156,13 @@ function update_anim_opts() {
     anim_opts.spf = 1/anim_opts.fps;
     anim_opts.real_spf = anim_opts.spf * anim_opts.speedup;
 }
-function update_anim() {
-    anim_state.curtime += anim_opts.real_spf*anim_state.direction;
+function update_anim(scrubtime) {
+    if(scrubtime) {
+        anim_state.curtime = scrubtime;
+    } else {
+        anim_state.curtime += anim_opts.real_spf*anim_state.direction;
+    }
+
     if(anim_state.curtime > anim_state.end) {
         anim_state.curtime = anim_state.start;
     } else if(anim_state.curtime < anim_state.start) {
@@ -175,7 +194,10 @@ function update_anim() {
         }
     }
 
-    anim_state.timeout = setTimeout(update_anim, anim_opts.spf*1000);
+    if(!scrubtime) {
+        play_scrubber.slider('option','value',anim_state.curtime);
+        anim_state.timeout = setTimeout(update_anim, anim_opts.spf*1000);
+    }
 }
 
 function update_selview(timerange) {

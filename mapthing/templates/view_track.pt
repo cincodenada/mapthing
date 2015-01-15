@@ -77,6 +77,7 @@
     <div id="uni_view">
         <canvas></canvas>
     </div>
+    <div id="play_pos"></div>
     <div id="anim_controls">
         <button data-action="step" data-value="-1">&#x23EE;</button>
         <button data-action="rewind" data-value="rewind">&#x23EA;</button>
