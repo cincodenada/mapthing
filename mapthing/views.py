@@ -51,6 +51,22 @@ def ajax_track(request):
     }
     return { 'json_params': json.dumps(params) }
 
+@view_config(route_name='ajax_times', renderer='templates/json.pt')
+def ajax_times(request):
+    ne = request.params['ne'].split(',')
+    sw = request.params['sw'].split(',')
+    for i in range(1):
+        if(ne[i] < sw[i]):
+            ne[i], sw[i] = sw[i], ne[i]
+
+    points = Point.getTimes(ne, sw)
+    pointdata = []
+    for c, t in points:
+        pointdata.append((t,c))
+
+    return {'json_data': json.dumps(pointdata)}
+
+
 @view_config(route_name='ajax_points', renderer='templates/json.pt')
 def date_track(request):
     if('start' in request.params):

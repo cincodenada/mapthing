@@ -8,6 +8,7 @@ from sqlalchemy import (
     String,
     ForeignKey,
     func,
+    literal_column,
     )
 
 from sqlalchemy.ext.declarative import declarative_base
@@ -56,6 +57,18 @@ class Point(Base):
                 .filter(Point.latitude <= ne[0])\
                 .filter(Point.longitude >= sw[1])\
                 .filter(Point.longitude <= ne[1])\
+                .order_by(Point.time)
+        return query
+
+    @staticmethod
+    def getTimes(ne, sw):
+        timestr = r"strftime('%w %H:%M',points.time/1000,'unixepoch','localtime')"
+        query = DBSession.query(func.count(),Point.time)\
+                .filter(Point.latitude >= sw[0])\
+                .filter(Point.latitude <= ne[0])\
+                .filter(Point.longitude >= sw[1])\
+                .filter(Point.longitude <= ne[1])\
+                .group_by(timestr)\
                 .order_by(Point.time)
         return query
 
