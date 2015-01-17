@@ -8,6 +8,7 @@ from dateutil.parser import parse as date_parse
 from operator import itemgetter, attrgetter
 import tempfile
 import sqlite3
+import gps_history
 
 from .models import (
     DBSession,
@@ -86,6 +87,7 @@ def date_track(request):
     segments = {}
     timepoints = []
     tracks = {}
+    trips = []
     speedpoints = {
         'walking': {
             'color': '#00FF00',
@@ -108,7 +110,12 @@ def date_track(request):
     mode_len = 20
     rollingavg = [0]*avg_len
     rollingcat = ['walking']*mode_len
+
+    hist = gps_history.History()
+
     for p, s, t in points:
+        hist.add_point(p)
+
         rollingavg.insert(0,p.speed)
         rollingavg.pop()
         avg = sum(rollingavg)/avg_len
@@ -171,6 +178,7 @@ def date_track(request):
         'segments': segments, 
         'points': pointlist,
         'timepoints': timepoints,
+        'trips': hist.get_trips(),
     })}
 
 @view_config(route_name='upload_data', renderer='templates/json.pt')

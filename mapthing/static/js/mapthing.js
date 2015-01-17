@@ -101,6 +101,13 @@ $(function() {
         }, 'json');
 
     });
+
+    $('#triplist').on('mouseover', 'li', function(evt) {
+        elm = $(this);
+        update_mapview([elm.data('start'), elm.data('end')]);
+        evt.stopPropagation();
+        evt.preventDefault();
+    });
 });
 
 function doAction(action, value) {
@@ -170,6 +177,7 @@ function update_anim(scrubtime) {
     }
     trailpoint = anim_state.curtime - anim_opts.traillen*anim_state.direction;
 
+
     timeframe = (anim_state.direction < 0)
     ? [anim_state.curtime, trailpoint] 
     : [trailpoint, anim_state.curtime]
@@ -211,7 +219,22 @@ function update_selview(timerange) {
     $.get('/points.json/', {start: starttime.format('YYYY-MM-DD HH:mm:ss'), end: endtime.format('YYYY-MM-DD HH:mm:ss')}, function(data) {
         point_data = data;
         draw_selview(timerange);
+        update_trips();
     }, 'json');
+}
+
+function update_trips() {
+    triplist = $('#triplist');
+    triplist.empty();
+    for(i in point_data.trips) {
+        curtrip = point_data.trips[i];
+        nummin = (curtrip.end - curtrip.start)/1000/60;
+        nummin = Math.round(nummin*10)/10;
+        newli = $('<li><a href="#">Trip ' + i + ' (' + nummin + ' min)</a></li>');
+        newli.data('start', curtrip.start/1000);
+        newli.data('end', curtrip.end/1000);
+        triplist.append(newli);
+    }
 }
 
 function update_mapview(timerange, is_anim) {

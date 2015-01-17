@@ -24,7 +24,17 @@
     </script>
     <script src="${request.static_url('mapthing:static/js/mapthing.js')}" type="text/javascript"></script>
     <style>
-        #map { height: 400px; }
+        #trips { 
+            height: 400px; 
+            width: 25%; 
+            float: left; 
+            overflow-y: scroll;
+        }
+        #map {
+            height: 400px;
+            width: 75%;
+            float: left; 
+        }
         #sel_view, #uni_view {
             height: 1em;
             border: 1px solid;
@@ -67,7 +77,13 @@
     </div>
     <div style="clear: both;"></div>
    	<div id="datepicker"></div>
-   	<div id="map"></div>
+    <div>
+        <div id="trips">
+            <ul id="triplist">
+            </ul>
+        </div>
+        <div id="map"></div>
+    </div>
    	<div id="timeline"></div>
     <ul id="seg_list">
     </ul>
