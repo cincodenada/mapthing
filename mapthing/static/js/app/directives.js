@@ -115,7 +115,7 @@ angular.module('mapApp.directives', [])
 
           scope.slider = scope.elm.timerange({
             change: function(evt, ui) {
-              $scope.apply(function(scope) {
+              scope.$apply(function(scope) {
                 scope.selrange = ui.values;
               })
             }
@@ -123,16 +123,23 @@ angular.module('mapApp.directives', [])
 
           scope.$watchGroup(['start','end'], function(prev, cur, scope) {
             if(cur) {
-              scope.tracks = Track.query({start: cur[0], end: cur[1]})
-              scope.bounds = new mxn.BoundingBox();
+              scope.tracks = Track.query({start: cur[0], end: cur[1]}, function() {
+                scope.bounds = new mxn.BoundingBox();
 
-              for(idx in scope.tracks) {
-                  trackdata = scope.tracks[idx];
+                for(var idx in scope.tracks) {
+                    var trackdata = scope.tracks[idx];
 
-                  //Extend bounds
-                  scope.bounds.extend({lat: trackdata.minlat, lon: trackdata.minlon});
-                  scope.bounds.extend({lat: trackdata.maxlat, lon: trackdata.maxlon});
-              }
+                    //Extend bounds
+                    scope.bounds.extend({lat: trackdata.minlat, lon: trackdata.minlon});
+                    scope.bounds.extend({lat: trackdata.maxlat, lon: trackdata.maxlon});
+                }
+              })
+            }
+          });
+
+          scope.$watch('tracks', function(prev, cur, scope) {
+            if(cur) {
+              scope.slider.slider("refresh");
             }
           });
         },

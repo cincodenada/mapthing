@@ -5,5 +5,5 @@ angular.module('mapApp.controllers', [])
     .controller('mapController', function($scope) {
       $scope.params = $scope.params || {};
       $scope.params.start = params.start;
-      $scope.params.end = params.start;
+      $scope.params.end = params.end;
     })

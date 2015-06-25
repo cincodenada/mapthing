@@ -3,7 +3,7 @@
 
 angular.module('mapApp.services', ['ngResource'])
     .factory('Track', function($resource) {
-      return $resource('/tracks.json/')
+      return $resource('/tracks.json')
     })
     .factory('Point', function($resource) {
       return $resource('/points.json')
