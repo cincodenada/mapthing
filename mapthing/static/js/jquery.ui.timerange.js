@@ -11,9 +11,6 @@ $.widget('cincodenada.timerange',$.ui.slider,{
         this.element
             .addClass('ui-timerange');
 
-        this.events = this.element.find('li');
-        this.events.addClass('ui-timerange-event ui-widget-header');
-
         return this._super();
     },
     refresh: function() { this._refresh(); },
@@ -130,6 +127,10 @@ $.widget('cincodenada.timerange',$.ui.slider,{
     _prepareEvents: function() {
         var slider = this;
         var min = this.options.min, max = this.options.max;
+
+        this.events = this.element.find('li');
+        this.events.addClass('ui-timerange-event ui-widget-header');
+
         this.events.each(function(idx) {
             var start, end, length;
             $evt = $(this);

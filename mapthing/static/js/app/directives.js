@@ -113,7 +113,7 @@ angular.module('mapApp.directives', [])
               */
           });
 
-          scope.slider = scope.elm.timerange({
+          scope.timerange = scope.elm.timerange({
             change: function(evt, ui) {
               scope.$apply(function(scope) {
                 scope.selrange = ui.values;
@@ -137,10 +137,8 @@ angular.module('mapApp.directives', [])
             }
           });
 
-          scope.$watch('tracks', function(prev, cur, scope) {
-            if(cur) {
-              scope.slider.slider("refresh");
-            }
+          scope.$on('lastItemDone', function() {
+            scope.timerange.timerange("refresh");
           });
         },
       }
@@ -158,12 +156,12 @@ angular.module('mapApp.directives', [])
           scope.view.canvas.attr('height', 1);
           scope.view.dc = scope.view.canvas[0].getContext('2d');
 
-          scope.slider = {}
-          scope.slider.elm = elm.find('.uni_view');
-          scope.slider.canvas = scope.slider.elm.find('canvas');
-          scope.slider.canvas.attr('width', scope.slider.canvas.innerWidth());
-          scope.slider.canvas.attr('height', scope.slider.canvas.innerHeight());
-          scope.slider.dc = scope.slider.canvas[0].getContext('2d');
+          scope.timerange = {}
+          scope.timerange.elm = elm.find('.uni_view');
+          scope.timerange.canvas = scope.timerange.elm.find('canvas');
+          scope.timerange.canvas.attr('width', scope.timerange.canvas.innerWidth());
+          scope.timerange.canvas.attr('height', scope.timerange.canvas.innerHeight());
+          scope.timerange.dc = scope.timerange.canvas[0].getContext('2d');
         }
       }
     })
@@ -254,5 +252,12 @@ angular.module('mapApp.directives', [])
           if(is_anim) { draw_uniview(); }
         }
       },
+    }
+  })
+  .directive('notifyLast', function() {
+    return function(scope, elm, attr) {
+      if(scope.$last) setTimeout(function() {
+        scope.$emit('lastItemDone', elm, attr);
+      }, 0)
     }
   })

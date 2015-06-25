@@ -10,7 +10,7 @@
     <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
     -->
     <script src="${request.static_url('mapthing:static/bower_components/jquery/jquery.js')}"></script>
-    <script src="${request.static_url('mapthing:static/bower_components/jquery-ui/jquery-ui.js')}"></script>
+    <script src="${request.static_url('mapthing:static/bower_components/jquery-ui/ui/jquery-ui.js')}"></script>
     
     <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
     <!-- 
@@ -136,11 +136,12 @@
     <script type="text/ng-template" id="track_sel.html">
         <ul>
             <li ng-repeat="track in tracks"
-                data-start="{{trackdata.start|date:'yyyy-MM-ddTHH:mm:ss'}}"
-                data-end="{{trackdata.end|date:'yyyy-MM-ddTHH:mm:ss'}}">
+                data-start="{{track.start|date:'yyyy-MM-ddTHH:mm:ss'}}"
+                data-end="{{track.end|date:'yyyy-MM-ddTHH:mm:ss'}}"
+                notify-last>
                 <a href="#" data-trackid="{{track.id}}">
                     ({{track.id}})
-                    ({{trackdata.start|date:'YYYY/MM/DD h:mm'}} - {{trackdata.end|date:'YYYY/MM/DD h:mm'}})
+                    ({{track.start|date:'yyyy/MM/dd h:mm'}} - {{track.end|date:'yyyy/MM/dd h:mm'}})
                 </a>
             </li>
         </ul>
