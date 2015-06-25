@@ -83,6 +83,7 @@ angular.module('mapApp.directives', [])
           start: '=',
           end: '=',
           bounds: '=',
+          selrange: '=',
         },
         templateUrl: 'track_sel.html',
         link: function(scope, elm, attrs) {
@@ -143,11 +144,16 @@ angular.module('mapApp.directives', [])
         },
       }
     })
-    .directive('pointSel', function() {
+    .directive('pointSel', function(PointList) {
       return {
         template: 
           '<div class="sel_view"><canvas></canvas></div>' +
           '<div class="uni_view"><canvas></canvas></div>',
+        scope: {
+          range: '=',
+          selrange: '=',
+          point_data: '=',
+        },
         link: function(scope, elm, attrs) {
           scope.view = {}
           scope.view.elm = elm.find('.sel_view');
@@ -162,6 +168,40 @@ angular.module('mapApp.directives', [])
           scope.timerange.canvas.attr('width', scope.timerange.canvas.innerWidth());
           scope.timerange.canvas.attr('height', scope.timerange.canvas.innerHeight());
           scope.timerange.dc = scope.timerange.canvas[0].getContext('2d');
+
+          scope.$watch('range', function(cur, prev, scope) {
+            debugger;
+            PointList.get({start: cur[0], end: cur[1]}, function(p) {
+              scope.point_data = p;
+              scope.draw();
+            });
+            scope.timerange.elm.timerange('option','min',cur[0]);
+            scope.timerange.elm.timerange('option','max',cur[1]);
+          });
+        },
+        controller: function($scope) {
+          $scope.draw = function() {
+            var mintime, maxtime;
+            if($scope.selrange) {
+                mintime = $scope.selrange[0];
+                maxtime = $scope.selrange[1];
+            } else {
+                return false;
+            }
+
+            $scope.view.dc.fillStyle = "rgba(0,0,0,0.2)";
+            $scope.view.dc.clearRect(0,0,$scope.view.canvas.width,$scope.view.canvas.height);
+
+            for(var idx in $scope.point_data.timepoints) {
+                var curtime = $scope.point_data.timepoints[idx].time/1000;
+                if((mintime && (curtime < mintime))
+                    || (maxtime && (curtime > maxtime))
+                ) { continue; }
+
+                var xpos = (curtime-mintime)/(maxtime-mintime)*$scope.view.canvas.width;
+                $scope.view.dc.fillRect(xpos,0,1,$scope.view.canvas.height);
+            }
+          }
         }
       }
     })
@@ -169,7 +209,7 @@ angular.module('mapApp.directives', [])
       return {
         scope: {
           bounds: '=',
-          points: '=',
+          point_data: '=',
         },
         link: function(scope, elm, attrs) {
           scope.map = new mxn.Mapstraction(attrs.id, 'leaflet')

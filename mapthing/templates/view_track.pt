@@ -69,8 +69,16 @@
     </style>
 </head>
 <body ng-controller="mapController" ng-app="mapApp">
-    <h1 id="full_timerange"></h1>
-    <h2 id="sel_timerange"></h2>
+    <h1 id="full_timerange">
+        {{params.track_range[0]|date:'MMM d, yyy H:mm'}}
+        -
+        {{params.track_range[1]|date:'MMM d, yyy H:mm'}}
+    </h1>
+    <h2 id="sel_timerange">
+        {{params.view_range[0]|date:'MMM d, yyy H:mm'}}
+        -
+        {{params.view_range[1]|date:'MMM d, yyy H:mm'}}
+    </h2>
     <div id="details">
         <div id="uni_controls">
             <label for="uni_interval">Interval</label>
@@ -91,11 +99,14 @@
     <div>
         <div id="trips">
             <ul id="triplist">
+                <li ng-repeat="trip in params.view_points.trips" data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
+                    <a href="#">Trip {{$index}} ({{(trip.end-trip.start)/1000/60|number:1}} min</a>
+                </li>
             </ul>
         </div>
         <path-map id="map"
             bounds="params.track_bounds"
-            points="params.view_points"
+            point_data="params.view_points"
         ></path-map>
     </div>
    	<div id="timeline"></div>
@@ -105,7 +116,7 @@
         selrange="params.track_range"
         bounds="params.track_bounds"
     ></track-sel>
-    <point-sel range="params.track_range" selrange="params.view_range"></point-sel>
+    <point-sel range="params.track_range" selrange="params.view_range" point_data="params.view_points"></point-sel>
     <anim-control></anim-control>
 
     <script type="text/ng-template" id="anim_controls.html">
