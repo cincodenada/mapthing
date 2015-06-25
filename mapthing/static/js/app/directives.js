@@ -13,14 +13,14 @@ angular.module('mapApp.directives', [])
               scope.tick();
             }
           });
-        },
-        controller: function($scope) {
+
           // Set up derived anim opts
-          $scope.watch('params.fps', function(prev, cur, scope) {
+          scope.$watch('params.fps', function(cur, prev, scope) {
             scope.params.spf = 1/cur;
             scope.params.real_spf = scope.params.spf * scope.params.speedup;
           });
-
+        },
+        controller: function($scope) {
           $scope.setAnim = function(action, value) {
             if(action == "pausestop") {
                 action = $scope.state.timeout ? 'pause' : 'stop';
@@ -121,7 +121,7 @@ angular.module('mapApp.directives', [])
             }
           });
 
-          scope.$watchGroup(['start','end'], function(prev, cur, scope) {
+          scope.$watchGroup(['start','end'], function(cur, prev, scope) {
             if(cur) {
               scope.tracks = Track.query({start: cur[0], end: cur[1]}, function() {
                 scope.bounds = new mxn.BoundingBox();
@@ -167,6 +167,10 @@ angular.module('mapApp.directives', [])
     })
     .directive('pathMap', function() {
       return {
+        scope: {
+          bounds: '=',
+          points: '=',
+        },
         link: function(scope, elm, attrs) {
           scope.map = new mxn.Mapstraction(attrs.id, 'leaflet')
 
@@ -175,12 +179,12 @@ angular.module('mapApp.directives', [])
               scale:true,
               map_type:true,
           });
+
+          scope.$watch('bounds', function(cur, prev, scope) {
+            if(scope.map && cur) { scope.map.setBounds(cur); }
+          });
         },
         controller: function($scope) {
-          $scope.watch('bounds', function(prev, cur, scope) {
-            scope.map.setBounds(bounds);
-          })
-
           $scope.update = function(timerange, smoothzoom) {
             var starttime = moment(timerange[0],'X');
             var endtime = moment(timerange[1],'X');
