@@ -152,54 +152,97 @@ angular.module('mapApp.directives', [])
         scope: {
           range: '=',
           selrange: '=',
-          point_data: '=',
+          pointData: '=',
         },
         link: function(scope, elm, attrs) {
           scope.view = {}
-          scope.view.elm = elm.find('.sel_view');
+          scope.view.elm = elm.find('.uni_view');
           scope.view.canvas = scope.view.elm.find('canvas');
           scope.view.canvas.attr('width', scope.view.canvas.innerWidth());
           scope.view.canvas.attr('height', 1);
           scope.view.dc = scope.view.canvas[0].getContext('2d');
 
           scope.timerange = {}
-          scope.timerange.elm = elm.find('.uni_view');
+          scope.timerange.elm = elm.find('.sel_view');
           scope.timerange.canvas = scope.timerange.elm.find('canvas');
           scope.timerange.canvas.attr('width', scope.timerange.canvas.innerWidth());
           scope.timerange.canvas.attr('height', scope.timerange.canvas.innerHeight());
           scope.timerange.dc = scope.timerange.canvas[0].getContext('2d');
+          
+          scope.timerange.elm.timerange({
+            change: function(evt, ui) {
+              scope.$apply(function(scope) {
+                scope.selrange = ui.values;
+              });
+            }
+          });
 
           scope.$watch('range', function(cur, prev, scope) {
-            debugger;
-            PointList.get({start: cur[0], end: cur[1]}, function(p) {
-              scope.point_data = p;
-              scope.draw();
-            });
-            scope.timerange.elm.timerange('option','min',cur[0]);
-            scope.timerange.elm.timerange('option','max',cur[1]);
+            if(cur) {
+              var starttime = moment(cur[0],'X');
+              var endtime = moment(cur[1],'X');
+              scope.timerange.elm.timerange('option','min',cur[0]);
+              scope.timerange.elm.timerange('option','max',cur[1]);
+
+              PointList.get({start: starttime.format('YYYY-MM-DD HH:mm:ss'), end: endtime.format('YYYY-MM-DD HH:mm:ss')}, function(p) {
+                scope.pointData = p;
+                scope.draw();
+              });
+            }
+          });
+
+          scope.$watch('selrange', function(cur, prev, scope) {
+            if(cur) {
+              console.log("TODO: Update uniview");
+              //scope.draw_uni();
+            }
           });
         },
         controller: function($scope) {
           $scope.draw = function() {
             var mintime, maxtime;
-            if($scope.selrange) {
-                mintime = $scope.selrange[0];
-                maxtime = $scope.selrange[1];
+            if($scope.range) {
+                mintime = $scope.range[0];
+                maxtime = $scope.range[1];
             } else {
                 return false;
             }
 
-            $scope.view.dc.fillStyle = "rgba(0,0,0,0.2)";
-            $scope.view.dc.clearRect(0,0,$scope.view.canvas.width,$scope.view.canvas.height);
+            $scope.timerange.dc.fillStyle = "rgba(0,0,0,0.2)";
+            $scope.timerange.dc.clearRect(0,0,$scope.timerange.canvas.attr('width'),$scope.timerange.canvas.attr('height'));
 
-            for(var idx in $scope.point_data.timepoints) {
-                var curtime = $scope.point_data.timepoints[idx].time/1000;
+            for(var idx in $scope.pointData.timepoints) {
+                var curtime = $scope.pointData.timepoints[idx].time/1000;
                 if((mintime && (curtime < mintime))
                     || (maxtime && (curtime > maxtime))
                 ) { continue; }
 
-                var xpos = (curtime-mintime)/(maxtime-mintime)*$scope.view.canvas.width;
-                $scope.view.dc.fillRect(xpos,0,1,$scope.view.canvas.height);
+                var xpos = (curtime-mintime)/(maxtime-mintime)*$scope.timerange.canvas.attr('width');
+                $scope.timerange.dc.fillRect(xpos,0,1,$scope.timerange.canvas.attr('height'));
+            }
+          }
+
+          $scope.draw_uni = function() {
+            var start, end;
+            for(var i in uni_list) { start = i; break; }
+            end = uni_list.length;
+
+            var scalefact = $scope.view.canvas.attr('width')/(end-start);
+            $scope.view.dc.fillStyle = "rgb(255,0,0)";
+            for(var r in uni_missing) {
+                var range = uni_missing[r];
+                $scope.view.dc.fillRect(
+                    (range[0]-start)*scalefact,0,
+                    (range[1]-start+1)*scalefact,1
+                );
+            }
+            $scope.view.dc.fillStyle = "rgb(255,255,0)";
+            for(var r in uni_interp) {
+                var range = uni_interp[r];
+                $scope.view.dc.fillRect(
+                    (range[0]-start+1)*scalefact,0,
+                    (range[1]-start-1)*scalefact,1
+                );
             }
           }
         }
@@ -209,7 +252,8 @@ angular.module('mapApp.directives', [])
       return {
         scope: {
           bounds: '=',
-          point_data: '=',
+          pointRange: '=',
+          pointData: '=',
         },
         link: function(scope, elm, attrs) {
           scope.map = new mxn.Mapstraction(attrs.id, 'leaflet')
@@ -223,13 +267,18 @@ angular.module('mapApp.directives', [])
           scope.$watch('bounds', function(cur, prev, scope) {
             if(scope.map && cur) { scope.map.setBounds(cur); }
           });
+
+          scope.$watch('pointData', function(cur, prev, scope) {
+            scope.update();
+          });
         },
         controller: function($scope) {
-          $scope.update = function(timerange, smoothzoom) {
-            var starttime = moment(timerange[0],'X');
-            var endtime = moment(timerange[1],'X');
+          $scope.update = function(smoothzoom) {
+            var starttime = moment($scope.pointRange[0],'X');
+            var endtime = moment($scope.pointRange[1],'X');
             var length = moment.duration(starttime.diff(endtime));
 
+            //TODO: Angular templatize this
             $('#sel_timerange').text(
                 length.humanize()
                 + ' starting on ' +
@@ -238,7 +287,7 @@ angular.module('mapApp.directives', [])
                 starttime.format('H:mm')
             );
 
-            $scope.draw(timerange, autocenter);
+            $scope.draw(smoothzoom);
 
             if(smoothzoom) {
               //Do fancy shit
@@ -266,34 +315,29 @@ angular.module('mapApp.directives', [])
             }
         }
 
-        $scope.draw = function(timerange, autocenter) {
+        $scope.draw = function() {
           var points = Array();
           var curseg;
 
-          var uni_tick = $('#uni_interval').val();
-          var uni_thresh = $('#uni_interp').val();
-
           var mintime = false, maxtime = false;
-          if(timerange) {
-              mintime = timerange[0];
-              maxtime = timerange[1];
+          if($scope.pointRange) {
+              mintime = $scope.pointRange[0];
+              maxtime = $scope.pointRange[1];
           }
-          map.removeAllPolylines();
+          $scope.map.removeAllPolylines();
           for(segnum in seglist) {
               curseg = seglist[segnum];
               if(curseg.points.length) {
-                  newline = new mxn.Polyline(curseg.points);
+                  var newline = new mxn.Polyline(curseg.points);
                   newline.setColor(curseg.last_color);
                   newline.setWidth('4');
                   curseg.lines.push(newline);
                   curseg.points = [];
               }
-              for(subseg in curseg.lines) {
-                  map.addPolyline(curseg.lines[subseg]);
+              for(var subseg in curseg.lines) {
+                  $scope.map.addPolyline(curseg.lines[subseg]);
               }
           }
-
-          if(is_anim) { draw_uniview(); }
         }
       },
     }
