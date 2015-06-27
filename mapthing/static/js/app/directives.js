@@ -284,6 +284,8 @@ angular.module('mapApp.directives', [])
         controller: function($scope) {
           $scope.update = function(smoothzoom) {
             $scope.draw();
+            // Don't rezoom the map if we have no lines
+            if($scope.map.polylines.length == 0) { return; }
 
             if(smoothzoom) {
               //Do fancy shit
