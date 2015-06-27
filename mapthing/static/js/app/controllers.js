@@ -77,15 +77,16 @@ angular.module('mapApp.controllers', [])
                   scope.data.map.points[prev_tick] = [lat, lon];
 
                   var diff = cur_tick - prev_tick;
-                  if(diff == 1) {
+                  if(diff <= 1) {
                       //No interpolation necessary
                       //Carry on
                   } else if(diff <= scope.uni.interp) {
                       //Just do some linear interpolation
                       for(var t = 1; t < diff; t++) {
+                          var prev = scope.data.map.points[prev_tick];
                           scope.data.map.points[prev_tick + t] = [
-                              (curpoint.lat - scope.data.map.points[prev_tick][0])*(t/diff),
-                              (curpoint.lon - scope.data.map.points[prev_tick][1])*(t/diff)
+                              prev[0] + (lat - prev[0])*(t/diff),
+                              prev[1] + (lon - prev[1])*(t/diff)
                           ];
                       }
                       scope.data.map.spans.interp.push([prev_tick + 1, cur_tick - 1]);
