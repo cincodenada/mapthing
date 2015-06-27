@@ -253,7 +253,7 @@ angular.module('mapApp.directives', [])
         scope: {
           bounds: '=',
           pointRange: '=',
-          pointData: '=',
+          segments: '=',
         },
         link: function(scope, elm, attrs) {
           scope.map = new mxn.Mapstraction(attrs.id, 'leaflet')
@@ -325,17 +325,9 @@ angular.module('mapApp.directives', [])
               maxtime = $scope.pointRange[1];
           }
           $scope.map.removeAllPolylines();
-          for(segnum in seglist) {
-              curseg = seglist[segnum];
-              if(curseg.points.length) {
-                  var newline = new mxn.Polyline(curseg.points);
-                  newline.setColor(curseg.last_color);
-                  newline.setWidth('4');
-                  curseg.lines.push(newline);
-                  curseg.points = [];
-              }
-              for(var subseg in curseg.lines) {
-                  $scope.map.addPolyline(curseg.lines[subseg]);
+          for(var segnum in $scope.segments) {
+              for(var idx in $scope.segments[segnum].lines) {
+                  $scope.map.addPolyline($scope.segments[segnum].lines[idx]);
               }
           }
         }
