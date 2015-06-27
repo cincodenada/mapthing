@@ -253,7 +253,7 @@ angular.module('mapApp.directives', [])
       return {
         scope: {
           data: '=',
-          segments: '=',
+          range: '=',
         },
         link: function(scope, elm, attrs) {
           scope.map = new mxn.Mapstraction(attrs.id, 'leaflet')
@@ -264,7 +264,7 @@ angular.module('mapApp.directives', [])
               map_type:true,
           });
 
-          scope.$watch('bounds', function(cur, prev, scope) {
+          scope.$watch('data.bounds', function(cur, prev, scope) {
             if(scope.map && cur) { scope.map.setBounds(cur); }
           });
 
@@ -274,7 +274,7 @@ angular.module('mapApp.directives', [])
         },
         controller: function($scope) {
           $scope.update = function(smoothzoom) {
-            $scope.draw(smoothzoom);
+            $scope.draw();
 
             if(smoothzoom) {
               //Do fancy shit
@@ -308,18 +308,33 @@ angular.module('mapApp.directives', [])
             var cur_seg = $scope.data.segs[idx];
 
             // Check limits and either skip or drop out
-            if(cur_seg.end < scope.range[0]) continue;
-            if(cur_seg.start > scope.range[1]) break;
+            if(cur_seg.end < $scope.range[0]) continue;
+            if(cur_seg.start > $scope.range[1]) break;
 
-            var newline = new mxn.Polyline(
-              scope.data.points.slice(
-                Math.max(cur_seg.start, scope.range[0]),
-                Math.min(cur_seg.end, scope.range[1])
-              )
-            );
-            newline.setColor(cur_seg.color);
-            newline.setWidth('4');
-            $scope.map.addPolyline(newline);
+            var points = [];
+            var start = Math.max(cur_seg.start, $scope.range[0]);
+            var end = Math.min(cur_seg.end, $scope.range[1]);
+            
+            var addline = function(points, color) {
+              var newline = new mxn.Polyline(points);
+              newline.setColor(color);
+              newline.setWidth('4');
+              $scope.map.addPolyline(newline);
+            };
+            
+            for(var i = start; i <= end; i++) {
+              // Create new lines at every discontinuity
+              if(!$scope.data.points[i]) {
+                if(points.length) { addline(points, cur_seg.color); }
+                points = [];
+              } else {
+                points.push(new mxn.LatLonPoint(
+                    $scope.data.points[i][0],
+                    $scope.data.points[i][1]
+                ));
+              }
+            }
+            if(points.length) { addline(points, cur_seg.color); }
           }
         }
       },

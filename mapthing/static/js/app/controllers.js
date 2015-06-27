@@ -5,7 +5,10 @@ angular.module('mapApp.controllers', [])
     .controller('mapController', function($scope) {
       $scope.params = $scope.params || {};
       $scope.data = $scope.data || {};
-      $scope.uni = $scope.uni || {};
+      $scope.uni = $scope.uni || {
+        interval: 5,
+        interp: 10,
+      };
       $scope.params.start = params.start;
       $scope.params.end = params.end;
 
@@ -16,6 +19,7 @@ angular.module('mapApp.controllers', [])
       // Process the points when we get them in
       $scope.$watch('data.view_points', function(point_data, prev, scope) {
         if(point_data) {
+          // Reset map data
           scope.data.map.segs = [];
           scope.data.map.points = [];
           scope.data.map.spans = {
@@ -24,47 +28,52 @@ angular.module('mapApp.controllers', [])
           };
           scope.data.map.bounds = new mxn.BoundingBox();
 
-          var mintime = false, maxtime = false;
-          if(scope.view_range) {
-              mintime = scope.view_range[0];
-              maxtime = scope.view_range[1];
+          // Reset view range
+          scope.params.view_range = [];
+
+          var min_time = false, max_time = false;
+          if(scope.params.track_range) {
+              min_time = scope.params.track_range[0];
+              max_time = scope.params.track_range[1];
           }
-          var cur_tick_points = [];
-          var cur_seg;
+          var prev_tick_points = [];
 
           var prev_point = null;
           var prev_tick = null;
           var prev_color = null;
-          var prev_seg_start = Math.round(mintime/scope.uni.interval);
+          var prev_seg_start = Math.round(min_time/scope.uni.interval);
 
           for(var idx = 0; idx < point_data.timepoints.length; idx++) {
-              var curpoint = point_data.timepoints[idx];
-              var curtime = curpoint.time/1000;
-              if((mintime && (curtime < mintime))
-                  || (maxtime && (curtime > maxtime))
+              var cur_point = point_data.timepoints[idx];
+              var cur_time = cur_point.time/1000;
+              if((min_time && (cur_time < min_time))
+                  || (max_time && (cur_time > max_time))
               ) { continue; }
 
               //Curpoint has lat/lon properties, so we're great
-              scope.data.map.bounds.extend(curpoint);
+              scope.data.map.bounds.extend(cur_point);
 
-              var cur_tick = Math.round(curtime/scope.uni.interval);
+              var cur_tick = Math.round(cur_time/scope.uni.interval);
               if(prev_tick && (prev_tick != cur_tick)) {
                   //We're in a new point, average the previous point
                   var lat, lon;
-                  if(cur_tick_points.length > 1) {
+                  if(prev_tick_points.length > 1) {
                       lat = lon = 0;
-                      for(i=0;i<cur_tick_points.length;i++) {
-                          lat += cur_tick_points[i].lat;
-                          lon += cur_tick_points[i].lon;
+                      for(var i=0;i<prev_tick_points.length;i++) {
+                          lat += prev_tick_points[i].lat;
+                          lon += prev_tick_points[i].lon;
                       }
-                      lat = lat/cur_tick_points.length;
-                      lon = lon/cur_tick_points.length;
-                  } else if(cur_tick_points.length == 1) {
-                      lat = cur_tick_points[0].lat;
-                      lon = cur_tick_points[0].lon;
+                      lat = lat/prev_tick_points.length;
+                      lon = lon/prev_tick_points.length;
+                  } else if(prev_tick_points.length == 1) {
+                      lat = prev_tick_points[0].lat;
+                      lon = prev_tick_points[0].lon;
+                  } else {
+                      console.log("Error! Invalid prev_tick_points state!");
+                      break;
                   }
                   
-                  cur_tick_points = [];
+                  prev_tick_points = [];
                   scope.data.map.points[prev_tick] = [lat, lon];
 
                   var diff = cur_tick - prev_tick;
@@ -85,39 +94,34 @@ angular.module('mapApp.controllers', [])
                       scope.data.map.spans.missing.push([prev_tick + 1, cur_tick - 1]);
                   }
               }
-              //In any case, throw the point on the average list
-              cur_tick_points.push(curpoint);
-              prev_tick = cur_tick;
 
-              if(prev_color && curpoint.color != prev_color) {
+              //In any case, throw the point on the average list
+              prev_tick_points.push(cur_point);
+
+              if(prev_color && cur_point.color != prev_color) {
                 //If we're changing colors, close the last seg out
-                scope.segs.push({
+                scope.data.map.segs.push({
                   start: prev_seg_start,
                   end: cur_tick,
                   color: prev_color,
                 });
-                var newline = new mxn.Polyline(cur_seg.points);
-                newline.setColor(cur_seg.prev_color);
-                newline.setWidth('4');
-                cur_seg.lines.push(newline);
-                cur_seg.points = [];
+                prev_seg_start = cur_tick;
               }
-              cur_seg.prev_color = curpoint.color;
-              cur_seg.points.push(new mxn.LatLonPoint(curpoint.lat, curpoint.lon))
+
+              prev_tick = cur_tick;
+              prev_color = cur_point.color;
           }
 
-          // Catch any straggler points
-          if(cur_seg.points.length) {
-              var newline = new mxn.Polyline(cur_seg.points);
-              newline.setColor(cur_seg.prev_color);
-              newline.setWidth('4');
-              cur_seg.lines.push(newline);
-              cur_seg.points = [];
-          }
+          // Catch the straggler points
+          scope.data.map.segs.push({
+            start: prev_seg_start,
+            end: cur_tick,
+            color: prev_color,
+          });
         }
       });
 
-      $scope.watchGroup(['params.view_range', 'uni.interval']), function(cur, prev, scope) {
+      $scope.$watchGroup(['params.view_range', 'uni.interval'], function(cur, prev, scope) {
         scope.params.tick_range = [
           Math.round(scope.params.view_range[0]/scope.uni.interval),
           Math.round(scope.params.view_range[1]/scope.uni.interval)
