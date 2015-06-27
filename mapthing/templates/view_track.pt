@@ -74,7 +74,7 @@
         -
         {{params.track_range[1]*1000|date:'MMM d, yyyy H:mm'}}
     </h1>
-    <h2 id="sel_timerange"></h2>
+    <h2 id="sel_timerange" ng-show="params.view_range.length">{{params.view_range|humanize}}</h2>
     <div id="details">
         <div id="uni_controls">
             <label for="uni_interval">Interval</label>
@@ -164,5 +164,6 @@
     <script src="${request.static_url('mapthing:static/js/app/controllers.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/directives.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/services.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/js/app/filters.js')}" type="text/javascript"></script>
 </body>
 </html>

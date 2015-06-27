@@ -274,19 +274,6 @@ angular.module('mapApp.directives', [])
         },
         controller: function($scope) {
           $scope.update = function(smoothzoom) {
-            var starttime = moment($scope.pointRange[0],'X');
-            var endtime = moment($scope.pointRange[1],'X');
-            var length = moment.duration(starttime.diff(endtime));
-
-            //TODO: Angular templatize this
-            $('#sel_timerange').text(
-                length.humanize()
-                + ' starting on ' +
-                starttime.format('ddd MMM D, YYYY')
-                + ' at ' +
-                starttime.format('H:mm')
-            );
-
             $scope.draw(smoothzoom);
 
             if(smoothzoom) {
