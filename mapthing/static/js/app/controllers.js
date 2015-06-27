@@ -16,7 +16,7 @@ angular.module('mapApp.controllers', [])
       // Process the points when we get them in
       $scope.$watch('data.view_points', function(point_data, prev, scope) {
         if(point_data) {
-          scope.data.map.segs = {};
+          scope.data.map.segs = [];
           scope.data.map.points = [];
           scope.data.map.spans = {
             missing: [],
@@ -32,8 +32,11 @@ angular.module('mapApp.controllers', [])
           var cur_tick_points = [];
           var cur_seg;
 
-          var lastpoint = null;
-          var lasttick = null;
+          var prev_point = null;
+          var prev_tick = null;
+          var prev_color = null;
+          var prev_seg_start = Math.round(mintime/scope.uni.interval);
+
           for(var idx = 0; idx < point_data.timepoints.length; idx++) {
               var curpoint = point_data.timepoints[idx];
               var curtime = curpoint.time/1000;
@@ -44,8 +47,8 @@ angular.module('mapApp.controllers', [])
               //Curpoint has lat/lon properties, so we're great
               scope.data.map.bounds.extend(curpoint);
 
-              var curtick = Math.round(curtime/scope.uni.interval);
-              if(lasttick && (lasttick != curtick)) {
+              var cur_tick = Math.round(curtime/scope.uni.interval);
+              if(prev_tick && (prev_tick != cur_tick)) {
                   //We're in a new point, average the previous point
                   var lat, lon;
                   if(cur_tick_points.length > 1) {
@@ -62,61 +65,62 @@ angular.module('mapApp.controllers', [])
                   }
                   
                   cur_tick_points = [];
-                  scope.data.map.points[lasttick] = [lat, lon];
+                  scope.data.map.points[prev_tick] = [lat, lon];
 
-                  var diff = curtick - lasttick;
+                  var diff = cur_tick - prev_tick;
                   if(diff == 1) {
                       //No interpolation necessary
                       //Carry on
                   } else if(diff <= scope.uni.interp) {
                       //Just do some linear interpolation
                       for(var t = 1; t < diff; t++) {
-                          scope.data.map.points[lasttick + t] = [
-                              (curpoint.lat - scope.data.map.points[lasttick][0])*(t/diff),
-                              (curpoint.lon - scope.data.map.points[lasttick][1])*(t/diff)
+                          scope.data.map.points[prev_tick + t] = [
+                              (curpoint.lat - scope.data.map.points[prev_tick][0])*(t/diff),
+                              (curpoint.lon - scope.data.map.points[prev_tick][1])*(t/diff)
                           ];
                       }
-                      scope.data.map.spans.interp.push([lasttick + 1, curtick - 1]);
+                      scope.data.map.spans.interp.push([prev_tick + 1, cur_tick - 1]);
                   } else {
                       //Too much missing, add it to the missing list
-                      scope.data.map.spans.missing.push([lasttick + 1, curtick - 1]);
+                      scope.data.map.spans.missing.push([prev_tick + 1, cur_tick - 1]);
                   }
               }
               //In any case, throw the point on the average list
               cur_tick_points.push(curpoint);
-              lasttick = curtick;
+              prev_tick = cur_tick;
 
-              if(!scope.data.map.segs[curpoint.segid]) {
-                  scope.data.map.segs[curpoint.segid] = {
-                      lines: [],
-                      lastcolor: false,
-                      points: [],
-                  };
-              }
-              cur_seg = scope.data.map.segs[curpoint.segid];
-
-              if(cur_seg.last_color && curpoint.color != cur_seg.last_color) {
+              if(prev_color && curpoint.color != prev_color) {
                 //If we're changing colors, close the last seg out
-                //Add the current point so they're connected
-                cur_seg.points.push(new mxn.LatLonPoint(curpoint.lat, curpoint.lon))
+                scope.segs.push({
+                  start: prev_seg_start,
+                  end: cur_tick,
+                  color: prev_color,
+                });
                 var newline = new mxn.Polyline(cur_seg.points);
-                newline.setColor(cur_seg.last_color);
+                newline.setColor(cur_seg.prev_color);
                 newline.setWidth('4');
                 cur_seg.lines.push(newline);
                 cur_seg.points = [];
               }
-              cur_seg.last_color = curpoint.color;
+              cur_seg.prev_color = curpoint.color;
               cur_seg.points.push(new mxn.LatLonPoint(curpoint.lat, curpoint.lon))
           }
 
           // Catch any straggler points
           if(cur_seg.points.length) {
               var newline = new mxn.Polyline(cur_seg.points);
-              newline.setColor(cur_seg.last_color);
+              newline.setColor(cur_seg.prev_color);
               newline.setWidth('4');
               cur_seg.lines.push(newline);
               cur_seg.points = [];
           }
         }
+      });
+
+      $scope.watchGroup(['params.view_range', 'uni.interval']), function(cur, prev, scope) {
+        scope.params.tick_range = [
+          Math.round(scope.params.view_range[0]/scope.uni.interval),
+          Math.round(scope.params.view_range[1]/scope.uni.interval)
+        ];
       });
     })

@@ -252,8 +252,7 @@ angular.module('mapApp.directives', [])
     .directive('pathMap', function() {
       return {
         scope: {
-          bounds: '=',
-          pointRange: '=',
+          data: '=',
           segments: '=',
         },
         link: function(scope, elm, attrs) {
@@ -279,22 +278,22 @@ angular.module('mapApp.directives', [])
 
             if(smoothzoom) {
               //Do fancy shit
-              if($scope.pointbounds && !$scope.pointbounds.isEmpty()) {
+              if($scope.data.bounds && !$scope.data.bounds.isEmpty()) {
                 var min_area = 3e-6;
                 var max_unused = 5;
-                var cur_area = $scope.pointbounds.getArea();
-                if($scope.bounds.contains($scope.pointbounds)) {
+                var cur_area = $scope.data.bounds.getArea();
+                if($scope.bounds.contains($scope.data.bounds)) {
                   //If we're over the threshhold of unused space, shrink things down
                   if($scope.bounds.getArea() > cur_area*max_unused) {
                     if(cur_area < min_area) {
-                      $scope.pointbounds.zoom(Math.sqrt(min_area/cur_area));
+                      $scope.data.bounds.zoom(Math.sqrt(min_area/cur_area));
                     }
-                    $scope.bounds = $scope.pointbounds;
-                    $scope.map.setBounds($scope.pointbounds);
+                    $scope.bounds = $scope.data.bounds;
+                    $scope.map.setBounds($scope.data.bounds);
                   }
                 } else {
-                  $scope.bounds.extend($scope.pointbounds.ne);
-                  $scope.bounds.extend($scope.pointbounds.sw);
+                  $scope.bounds.extend($scope.data.bounds.ne);
+                  $scope.bounds.extend($scope.data.bounds.sw);
                   $scope.map.setBounds($scope.bounds);
                 }
               }
@@ -304,19 +303,23 @@ angular.module('mapApp.directives', [])
         }
 
         $scope.draw = function() {
-          var points = Array();
-          var curseg;
-
-          var mintime = false, maxtime = false;
-          if($scope.pointRange) {
-              mintime = $scope.pointRange[0];
-              maxtime = $scope.pointRange[1];
-          }
           $scope.map.removeAllPolylines();
-          for(var segnum in $scope.segments) {
-              for(var idx in $scope.segments[segnum].lines) {
-                  $scope.map.addPolyline($scope.segments[segnum].lines[idx]);
-              }
+          for(var idx in $scope.data.segs) {
+            var cur_seg = $scope.data.segs[idx];
+
+            // Check limits and either skip or drop out
+            if(cur_seg.end < scope.range[0]) continue;
+            if(cur_seg.start > scope.range[1]) break;
+
+            var newline = new mxn.Polyline(
+              scope.data.points.slice(
+                Math.max(cur_seg.start, scope.range[0]),
+                Math.min(cur_seg.end, scope.range[1])
+              )
+            );
+            newline.setColor(cur_seg.color);
+            newline.setWidth('4');
+            $scope.map.addPolyline(newline);
           }
         }
       },

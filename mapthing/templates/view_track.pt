@@ -96,14 +96,13 @@
         <div id="trips">
             <ul id="triplist">
                 <li ng-repeat="trip in data.view_points.trips" data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
-                    <a href="#">Trip {{$index}} ({{(trip.end-trip.start)/1000/60|number:1}} min</a>
+                    <a href="#" ng-mouseover="params.active_trip = $index" ng-mouseout="params.active_trip = null">Trip {{$index}} ({{(trip.end-trip.start)/1000/60|number:1}} min)</a>
                 </li>
             </ul>
         </div>
         <path-map id="map"
-            bounds="data.map.bounds"
-            point-range="params.view_range"
-            segments="data.map.segs">
+            data="data.map"
+            range="params.tick_range">
         ></path-map>
     </div>
    	<div id="timeline"></div>
