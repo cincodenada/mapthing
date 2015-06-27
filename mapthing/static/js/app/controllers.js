@@ -6,7 +6,7 @@ angular.module('mapApp.controllers', [])
       $scope.params = $scope.params || {};
       $scope.data = $scope.data || {};
       $scope.uni = $scope.uni || {
-        interval: 5,
+        preinterval: 5,
         interp: 10,
       };
       $scope.params.start = params.start;
@@ -16,8 +16,21 @@ angular.module('mapApp.controllers', [])
       $scope.params.view_range = [];
       $scope.data.map = {};
 
+      $scope.$watch('params.track_range', function(cur, prev, scope) {
+        if(cur) {
+          // Reset view range
+          scope.params.view_range = [];
+        }
+      });
+
+      // Ensure we don't have 0 for interval
+      $scope.$watch('uni.preinterval', function(cur, prev, scope) {
+        scope.uni.interval = scope.uni.preinterval || 1;
+      });
+
       // Process the points when we get them in
-      $scope.$watch('data.view_points', function(point_data, prev, scope) {
+      $scope.$watchGroup(['data.view_points','uni.interp','uni.interval'], function(cur, prev, scope) {
+        point_data = cur[0];
         if(point_data) {
           // Reset map data
           scope.data.map.segs = [];
@@ -27,9 +40,6 @@ angular.module('mapApp.controllers', [])
             interp: [],
           };
           scope.data.map.bounds = new mxn.BoundingBox();
-
-          // Reset view range
-          scope.params.view_range = [];
 
           var min_time = false, max_time = false;
           if(scope.params.track_range) {

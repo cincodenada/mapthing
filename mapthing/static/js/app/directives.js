@@ -268,7 +268,7 @@ angular.module('mapApp.directives', [])
             if(scope.map && cur) { scope.map.setBounds(cur); }
           });
 
-          scope.$watch('range', function(cur, prev, scope) {
+          scope.$watchGroup(['range','data.spans'], function(cur, prev, scope) {
             scope.update();
           });
         },

@@ -78,7 +78,7 @@
     <div id="details">
         <div id="uni_controls">
             <label for="uni_interval">Interval</label>
-            <input id="uni_interval" type="text" ng-model="uni.interval" value="5"/> seconds
+            <input id="uni_interval" type="text" ng-model="uni.preinterval" value="5"/> seconds
             <label for="uni_interp">Interpolation Threshhold</label>
             <input id="uni_interp" type="text" ng-model="uni.interp" value="10"/> seconds
         </div>
