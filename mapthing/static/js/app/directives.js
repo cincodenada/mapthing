@@ -153,6 +153,8 @@ angular.module('mapApp.directives', [])
           range: '=',
           selrange: '=',
           pointData: '=',
+          uniParams: '=',
+          uniData: '=',
         },
         link: function(scope, elm, attrs) {
           scope.view = {}
@@ -223,22 +225,21 @@ angular.module('mapApp.directives', [])
           }
 
           $scope.draw_uni = function() {
-            var start, end;
-            for(var i in uni_list) { start = i; break; }
-            end = uni_list.length;
+            var start = Math.round(scope.range[0]/scope.uniParams.interval)
+            var end = Math.round(scope.range[1]/scope.uniParams.interval)
 
             var scalefact = $scope.view.canvas.attr('width')/(end-start);
             $scope.view.dc.fillStyle = "rgb(255,0,0)";
-            for(var r in uni_missing) {
-                var range = uni_missing[r];
+            for(var r in scope.uniData.missing) {
+                var range = scope.uniData.missing[r];
                 $scope.view.dc.fillRect(
                     (range[0]-start)*scalefact,0,
                     (range[1]-start+1)*scalefact,1
                 );
             }
             $scope.view.dc.fillStyle = "rgb(255,255,0)";
-            for(var r in uni_interp) {
-                var range = uni_interp[r];
+            for(var r in scope.uniData.interp) {
+                var range = scope.uniData.interp[r];
                 $scope.view.dc.fillRect(
                     (range[0]-start+1)*scalefact,0,
                     (range[1]-start-1)*scalefact,1
@@ -268,7 +269,7 @@ angular.module('mapApp.directives', [])
             if(scope.map && cur) { scope.map.setBounds(cur); }
           });
 
-          scope.$watch('pointData', function(cur, prev, scope) {
+          scope.$watch('range', function(cur, prev, scope) {
             scope.update();
           });
         },
