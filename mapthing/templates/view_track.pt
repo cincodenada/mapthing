@@ -117,6 +117,7 @@
         selrange="params.view_range"
         uni-params="uni"
         uni-data="data.map.spans"
+        point-bounds="data.view_bounds"
         point-data="data.view_points">
     </point-sel>
     <anim-control></anim-control>

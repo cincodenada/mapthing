@@ -23,6 +23,15 @@ angular.module('mapApp.controllers', [])
         }
       });
 
+      $scope.$watch('params.track_bounds', function(cur, prev, scope) {
+        if(cur && !cur.isEmpty()) { scope.data.map.bounds = cur; }
+      });
+
+      $scope.$watch('data.view_bounds', function(cur, prev, scope) {
+        console.log(scope.data.map);
+        if(cur && !cur.isEmpty()) { scope.data.map.bounds = cur; }
+      });
+
       // Ensure we don't have 0 for interval
       $scope.$watch('uni.preinterval', function(cur, prev, scope) {
         scope.uni.interval = scope.uni.preinterval || 1;
@@ -39,7 +48,6 @@ angular.module('mapApp.controllers', [])
             missing: [],
             interp: [],
           };
-          scope.data.map.bounds = new mxn.BoundingBox();
 
           var min_time = false, max_time = false;
           if(scope.params.track_range) {
@@ -59,9 +67,6 @@ angular.module('mapApp.controllers', [])
               if((min_time && (cur_time < min_time))
                   || (max_time && (cur_time > max_time))
               ) { continue; }
-
-              //Curpoint has lat/lon properties, so we're great
-              scope.data.map.bounds.extend(cur_point);
 
               var cur_tick = Math.round(cur_time/scope.uni.interval);
               if(prev_tick && (prev_tick != cur_tick)) {

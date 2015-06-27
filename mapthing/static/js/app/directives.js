@@ -153,6 +153,7 @@ angular.module('mapApp.directives', [])
           range: '=',
           selrange: '=',
           pointData: '=',
+          pointBounds: '=',
           uniParams: '=',
           uniData: '=',
         },
@@ -213,15 +214,23 @@ angular.module('mapApp.directives', [])
             $scope.timerange.dc.fillStyle = "rgba(0,0,0,0.2)";
             $scope.timerange.dc.clearRect(0,0,$scope.timerange.canvas.attr('width'),$scope.timerange.canvas.attr('height'));
 
+            var bounds = new mxn.BoundingBox();
+
             for(var idx in $scope.pointData.timepoints) {
-                var curtime = $scope.pointData.timepoints[idx].time/1000;
+                var curpoint = $scope.pointData.timepoints[idx];
+                var curtime = curpoint.time/1000;
                 if((mintime && (curtime < mintime))
                     || (maxtime && (curtime > maxtime))
                 ) { continue; }
 
+                //Curpoint has lat/lon properties, so we're great
+                bounds.extend(curpoint);
+
                 var xpos = (curtime-mintime)/(maxtime-mintime)*$scope.timerange.canvas.attr('width');
                 $scope.timerange.dc.fillRect(xpos,0,1,$scope.timerange.canvas.attr('height'));
             }
+
+            $scope.pointBounds = bounds;
           }
 
           $scope.draw_uni = function() {
