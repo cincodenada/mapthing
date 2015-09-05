@@ -126,7 +126,8 @@ $.widget('cincodenada.timerange',$.ui.slider,{
     },
     _prepareEvents: function() {
         var slider = this;
-        var min = this.options.min, max = this.options.max;
+        var min = this.options.min ? moment.unix(this.options.min) : null,
+            max = this.options.max ? moment.unix(this.options.max) : null;
 
         this.events = this.element.find('li');
         this.events.addClass('ui-timerange-event ui-widget-header');

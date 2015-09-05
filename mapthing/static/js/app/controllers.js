@@ -9,8 +9,7 @@ angular.module('mapApp.controllers', [])
         preinterval: 5,
         interp: 10,
       };
-      $scope.params.start = params.start;
-      $scope.params.end = params.end;
+      $scope.daterange = moment().range(params.start, params.end);
 
       $scope.params.track_range = [];
       $scope.params.view_range = [];

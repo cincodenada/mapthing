@@ -20,6 +20,7 @@
     <link rel="shortcut icon" href="${request.static_url('mapthing:static/favicon.ico')}" />
     <link rel="stylesheet" href="${request.static_url('mapthing:static/pylons.css')}" type="text/css" media="screen" charset="utf-8" />
     <link rel="stylesheet" href="${request.static_url('mapthing:static/css/jquery.ui.timerange.css')}" type="text/css" charset="utf-8" />
+    <link rel="stylesheet" href="${request.static_url('mapthing:static/bower_components/angular-date-range-picker/build/angular-date-range-picker.css')}"></link>
     <!--[if lte IE 6]>
     <link rel="stylesheet" href="${request.static_url('mapthing:static/ie6.css')}" type="text/css" media="screen" charset="utf-8" />
     <![endif]-->
@@ -66,9 +67,21 @@
         #details {
             float: right;
         }
+
+        #datepicker {
+            float: right;
+        }
+
+        .angular-date-range-picker__picker {
+            right: -1px;
+            left: auto;
+        }
     </style>
 </head>
 <body ng-controller="mapController" ng-app="mapApp">
+   	<div id="datepicker">
+        <input type="text" date-range-picker ranged="true" ng-model="daterange"/>
+    </div>
     <h1 id="full_timerange" ng-show="params.track_range">
         {{params.track_range[0]*1000|date:'MMM d, yyyy H:mm'}}
         -
@@ -91,7 +104,6 @@
         <button id="getarea">Get All in Map</button>
     </div>
     <div style="clear: both;"></div>
-   	<div id="datepicker"></div>
     <div>
         <div id="trips">
             <ul id="triplist">
@@ -108,8 +120,8 @@
     </div>
    	<div id="timeline"></div>
     <track-sel
-        start="params.start"
-        end="params.end"
+        start="daterange.start"
+        end="daterange.end"
         selrange="params.track_range"
         bounds="params.track_bounds">
     </track-sel>
@@ -163,6 +175,9 @@
     </script>
     <script src="${request.static_url('mapthing:static/bower_components/angular/angular.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/bower_components/angular-resource/angular-resource.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/bower_components/moment-range/lib/moment-range.min.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/bower_components/angular-bindonce/bindonce.min.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/bower_components/angular-date-range-picker/build/angular-date-range-picker.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/app.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/controllers.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/directives.js')}" type="text/javascript"></script>

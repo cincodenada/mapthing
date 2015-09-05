@@ -124,7 +124,7 @@ angular.module('mapApp.directives', [])
 
           scope.$watchGroup(['start','end'], function(cur, prev, scope) {
             if(cur) {
-              scope.tracks = Track.query({start: cur[0], end: cur[1]}, function() {
+              scope.tracks = Track.query({start: cur[0].format('YYYY-MM-DD'), end: cur[1].format('YYYY-MM-DD')}, function() {
                 scope.bounds = new mxn.BoundingBox();
 
                 for(var idx in scope.tracks) {

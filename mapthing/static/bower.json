@@ -7,7 +7,8 @@
     "angular": "1.3",
     "angular-route": "1.3",
     "angular-resource": "1.3",
-    "highcharts-ng": "*"
+    "highcharts-ng": "*",
+    "angular-date-range-picker": "*"
   },
   "devDependencies": {
     "angular-mocks": "1.3"

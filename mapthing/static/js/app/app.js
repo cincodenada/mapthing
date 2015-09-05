@@ -3,4 +3,5 @@ var mapApp = angular.module('mapApp',[
     'mapApp.directives',
     'mapApp.services',
     'mapApp.filters',
+    'dateRangePicker',
 ]);
