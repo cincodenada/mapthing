@@ -104,6 +104,12 @@
         <button id="getarea">Get All in Map</button>
     </div>
     <div style="clear: both;"></div>
+    <track-sel
+        start="daterange.start"
+        end="daterange.end"
+        selrange="params.track_range"
+        bounds="params.track_bounds">
+    </track-sel>
     <div>
         <div id="trips">
             <ul id="triplist">
@@ -122,14 +128,9 @@
             selrange="params.sel_range"
             range="params.tick_range">
         ></path-map>
+        <div style="clear: both;"></div>
     </div>
-   	<div id="timeline"></div>
-    <track-sel
-        start="daterange.start"
-        end="daterange.end"
-        selrange="params.track_range"
-        bounds="params.track_bounds">
-    </track-sel>
+    <div id="timeline"></div>
     <point-sel
         range="params.track_range"
         selrange="params.view_range"
