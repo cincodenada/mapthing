@@ -27,21 +27,13 @@ for t in hist.trips:
     if shp:
         break
 
-tree = ET.parse('mapstyle.xml')
-root = tree.getroot()
-shplayer = ET.SubElement(root, 'Layer', {
-    'name': 'trip',
-    'status': 'on',
-    'srs': '+proj=latlong +datum=WGS84',
-})
-ET.SubElement(shplayer, 'StyleName').text = 'trip'
-ds = ET.SubElement(shplayer, 'DataSource')
-ET.SubElement(ds, 'Parameter', {'name': 'type'}).text = 'shape'
-ET.SubElement(ds, 'Parameter', {'name': 'file'}).text = '/tmp/mapthing'
-
-print ET.tostring(root)
-
 m = mapnik.Map(10*256,10*256)
-mapnik.load_map_from_string(m, ET.tostring(root))
+mapnik.load_map(m, 'mapstyle.xml')
+
+custom_layer = mapnik.Layer('trip')
+custom_layer.styles.append('trip')
+custom_layer.datasource = mapnik.Datasource(type='shape', file='/tmp/mapthing')
+m.layers.append(custom_layer)
+
 m.zoom_all()
 mapnik.render_to_file(m, 'test.png')
