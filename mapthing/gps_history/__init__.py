@@ -49,10 +49,10 @@ class Trip:
 
     def get_type(self, force):
         pass
-    
+
 class History:
     trip_gap = 3*60*1000
-     
+
     def __init__(self):
         self.trips = []
         self.points = []
@@ -84,6 +84,3 @@ class History:
                 })
 
         return trips
-
-             
-
