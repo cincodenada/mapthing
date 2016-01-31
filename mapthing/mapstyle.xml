@@ -26,4 +26,14 @@
             <Parameter name="file">/store/data/geo/osm/Portland.osm</Parameter>
 		</Datasource>
 	</Layer>
+	<Style name="trip">
+		<Rule>
+			<LineSymbolizer>
+				<CssParameter name="stroke">#FF0000</CssParameter>
+				<CssParameter name="stroke-width">10</CssParameter>
+				<CssParameter name="stroke-linejoin">round</CssParameter>
+				<CssParameter name="stroke-linecap">round</CssParameter>
+			</LineSymbolizer>
+		</Rule>
+	</Style>
 </Map>

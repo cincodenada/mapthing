@@ -1,3 +1,6 @@
+import shapefile
+from StringIO import StringIO
+
 class Track:
     pass
 
@@ -49,6 +52,18 @@ class Trip:
 
     def get_type(self, force):
         pass
+
+    def get_shapefile(self, path):
+        if(len(self.points) <= 10):
+            return None
+
+        shp = StringIO()
+        poly = [[p.longitude, p.latitude] for p in self.points]
+        w = shapefile.Writer(3)
+        w.poly(shapeType=3, parts=[poly])
+        print poly
+        w.save(path)
+        return w
 
 class History:
     trip_gap = 3*60*1000
