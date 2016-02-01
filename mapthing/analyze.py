@@ -22,10 +22,30 @@ for p, s, t in models.Point.getByDate(startdate, enddate):
     print ".",
     hist.add_point(p)
 
+locations = []
+num_long_trips = 0
 for t in hist.trips:
-    shp = t.get_shapefile('/tmp/mapthing')
-    if shp:
-        break
+    if len(t.points) > 10:
+        matched_start = False
+        matched_end = False
+        for l in locations:
+            if not matched_start and l.add_point(t.start):
+                matched_start = True
+            if not matched_end and l.add_point(t.end):
+                matched_end = True
+
+        if not matched_start:
+            locations.append(gps.Location(t.start))
+        if not matched_end:
+            locations.append(gps.Location(t.end))
+        #shp = t.get_shapefile('/tmp/mapthing')
+
+print num_long_trips
+print len(locations)
+
+for l in locations:
+    if l.num_points > 1:
+        print l.center()
 
 m = mapnik.Map(10*256,10*256)
 mapnik.load_map(m, 'mapstyle.xml')

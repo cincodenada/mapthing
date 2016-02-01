@@ -1,5 +1,6 @@
 import shapefile
 from StringIO import StringIO
+from LatLon import LatLon
 
 class Track:
     pass
@@ -9,28 +10,58 @@ class Location:
     stdev_fence = 2
     stdev_include = 1
 
-    def __init__(self, p):
-        self.lats = []
-        self.lons = []
+    def __init__(self, p = None):
+        self.points = []
+        self.lat_sum = 0
+        self.lon_sum = 0
 
         self.num_points = 0
 
-    def add_point(self, p):
-        if(self.num_points == 0):
-            self.lats.append(p.latitude)
-            self.lons.append(p.longitude)
+        self.radius = 1 # Convert m to km
 
-            self.center = (p.latitude, p.longitude)
+        if p:
+            self.add_point(p)
+
+    def center(self):
+        return LatLon(self.lat_sum/self.num_points, self.lon_sum/self.num_points)
+
+    def bb(self):
+        return [LatLon(self.minlat, self.minlon), LatLon(self.maxlat, self.maxlon)]
+
+    def add_point(self, p):
+        if not isinstance(p, LatLon):
+            if hasattr(p, 'latitude'):
+                p = LatLon(p.latitude, p.longitude)
+            elif hasattr(p, 'lat'):
+                p = LatLon(p.lat, p.lon)
+
+        if(self.num_points == 0):
+            self.minlat = self.maxlat = p.lat
+            self.minlon = self.maxlat = p.lat
             self.stdev = (0,0)
         else:
-            if(
-                (self.center[0] - p.latitude) < stdev_lat*stdev_fence and
-                (self.center[1] - p.longitude) < stdev_lon*stdev_fence
-            ):
-                self.lats.append(p.latitude)
-                self.lons.append(p.longitude)
+            center = self.center()
+#           if not (
+#               (center[0] - p.latitude) < stdev_lat*stdev_fence and
+#               (center[1] - p.longitude) < stdev_lon*stdev_fence
+#           ):
+            if center.distance(p) > self.radius:
+                print center.distance(p)
+                return False
+
+        self.points.append(p)
+
+        self.lat_sum += float(p.lat)
+        self.lon_sum += float(p.lon)
+
+        self.minlat = min(p.lat, self.minlat)
+        self.maxlat = max(p.lat, self.minlat)
+
+        self.minlon = min(p.lon, self.minlon)
+        self.maxlon = max(p.lon, self.minlon)
 
         self.num_points += 1
+
         return True
 
 
