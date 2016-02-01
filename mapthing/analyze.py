@@ -7,6 +7,9 @@ import shapefile
 import xml.etree.ElementTree as ET
 
 import mapnik
+import Tkinter
+from PIL import Image, ImageTk
+from StringIO import StringIO
 
 startdate = datetime.strptime('2015-12-01','%Y-%m-%d')
 enddate = datetime.strptime('2015-12-31','%Y-%m-%d')
@@ -47,7 +50,7 @@ for l in locations:
     if l.num_points > 1:
         print l.center()
 
-m = mapnik.Map(10*256,10*256)
+m = mapnik.Map(256,256)
 mapnik.load_map(m, 'mapstyle.xml')
 
 custom_layer = mapnik.Layer('trip')
@@ -55,5 +58,26 @@ custom_layer.styles.append('trip')
 custom_layer.datasource = mapnik.Datasource(type='shape', file='/tmp/mapthing')
 m.layers.append(custom_layer)
 
-m.zoom_all()
-mapnik.render_to_file(m, 'test.png')
+ims = []
+
+def button_click_exit_mainloop (event):
+    event.widget.quit() # this will cause mainloop to unblock.
+
+root = Tkinter.Tk()
+root.bind("<Button>", button_click_exit_mainloop)
+root.geometry('+%d+%d' % (100,100))
+lnum = 0
+for l in locations:
+    im = mapnik.Image(m.width, m.height)
+    m.zoom_to_box(mapnik.Box2d(l.minlat, l.minlon, l.maxlat, l.maxlon))
+    m.zoom_all()
+    mapnik.render(m, im)
+    imdata = StringIO(im.tostring('png'))
+    img = Image.open(imdata)
+    img.show()
+
+    root.geometry('%dx%d' % (img.size[0],img.size[1]))
+    tkpi = ImageTk.PhotoImage(img)
+    root.title("Location %d" % (lnum))
+    lnum+=1
+    root.mainloop() # wait until user clicks the window

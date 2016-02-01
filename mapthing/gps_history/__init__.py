@@ -36,8 +36,8 @@ class Location:
                 p = LatLon(p.lat, p.lon)
 
         if(self.num_points == 0):
-            self.minlat = self.maxlat = p.lat
-            self.minlon = self.maxlat = p.lat
+            self.minlat = self.maxlat = float(p.lat)
+            self.minlon = self.maxlon = float(p.lon)
             self.stdev = (0,0)
         else:
             center = self.center()
@@ -54,11 +54,11 @@ class Location:
         self.lat_sum += float(p.lat)
         self.lon_sum += float(p.lon)
 
-        self.minlat = min(p.lat, self.minlat)
-        self.maxlat = max(p.lat, self.minlat)
+        self.minlat = min(float(p.lat), self.minlat)
+        self.maxlat = max(float(p.lat), self.minlat)
 
-        self.minlon = min(p.lon, self.minlon)
-        self.maxlon = max(p.lon, self.minlon)
+        self.minlon = min(float(p.lon), self.minlon)
+        self.maxlon = max(float(p.lon), self.minlon)
 
         self.num_points += 1
 
