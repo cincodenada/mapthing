@@ -2,15 +2,21 @@
 'use strict';
 
 angular.module('mapApp.directives', [])
+    // {{{ animControl
     .directive('animControl', function() {
       return {
+        scope: {
+           outrange: '=',
+           range: '=',
+        },
         templateUrl: 'anim_controls.html',
         link: function(scope, elm, attrs) {
           // Set up slider UI
           scope.scrubber = elm.find('.anim_playpos').slider({
             slide: function(evt, ui) {
-              scope.state.curtime = ui.value;
-              scope.tick();
+              scope.$apply(function(scope) {
+                scope.state.curtime = ui.value;
+              });
             }
           });
 
@@ -21,6 +27,54 @@ angular.module('mapApp.directives', [])
           });
         },
         controller: function($scope) {
+          $scope.params = $scope.params || {
+            fps: 2,
+            speedup: 60,
+            traillen: 300,
+          };
+
+          $scope.state = $scope.state || {
+            direction: 1,
+            stopped: true,
+            curtime: null,
+            timeout: null,
+          };
+
+          $scope.$watch('state.curtime', function(cur, prev, scope) {
+            if(scope.state.curtime > scope.range[1]) {
+              scope.state.curtime = scope.range[0];
+            } else if(scope.state.curtime < scope.range[0]) {
+              scope.state.curtime = scope.range[1];
+            }
+            var trailpoint = scope.state.curtime - scope.params.traillen*scope.state.direction;
+
+            scope.outrange = (scope.state.direction < 0)
+              ? [scope.state.curtime, trailpoint]
+              : [trailpoint, scope.state.curtime]
+
+            scope.scrubber.slider('option','value',cur);
+          });
+
+          $scope.$watch('range', function() {
+            $scope.reset();
+          });
+
+          $scope.$watch('state.stopped', function(cur, prev, scope) {
+            if(cur !== prev) {
+              // If we're newly stopped, kill things
+              if(cur) {
+                var to;
+                while(to = $scope.state.timeout) {
+                  clearTimeout(to);
+                  scope.state.timeout = null;
+                }
+              // Otherwise, we're just starting, kick it off!
+              } else {
+                scope.tick();
+              }
+            }
+          });
+
           $scope.setAnim = function(action, value) {
             if(action == "pausestop") {
                 action = $scope.state.timeout ? 'pause' : 'stop';
@@ -28,55 +82,40 @@ angular.module('mapApp.directives', [])
             switch(action) {
                 case "rewind":
                 case "play":
-                    $scope.state.direction = (action == 'rewind' ? -1 : 1)
-                    if($scope.state.stopped) {
-                        start_anim();
-                    } else {
-                        //If we're not actively playing, kick it off again
-                        if(!$scope.state.timeout) { $scope.tick(); }
-                    }
+                    $scope.state.direction = (action == 'rewind' ? -1 : 1);
+                    $scope.state.stopped = false;
                     break;
                 case "stop":
-                    $scope.state.stopped = true;
+                    $scope.reset();
                 case "pause":
-                    while(to = $scope.state.timeout) {
-                        clearTimeout(to);
-                        $scope.state.timeout = null;
-                    }
+                    $scope.state.stopped = true;
                     break;
                 case "step":
+                    $scope.state.direction = value;
+                    $scope.state.stopped = true;
+                    $scope.tick();
                     break;
             }
           }
 
           $scope.tick = function() {
             $scope.state.curtime += $scope.params.real_spf*$scope.state.direction;
-          }
-
-          $scope.update = function() {
-            if($scope.state.curtime > $scope.state.end) {
-              $scope.state.curtime = $scope.state.start;
-            } else if($scope.state.curtime < $scope.state.start) {
-              $scope.state.curtime = $scope.state.end;
+            if(!$scope.state.stopped) {
+              $scope.state.timeout = setTimeout($scope.tick, $scope.params.spf*1000);
             }
-            trailpoint = $scope.state.curtime - $scope.params.traillen*$scope.state.direction;
-
-            timeframe = ($scope.state.direction < 0)
-              ? [$scope.state.curtime, trailpoint] 
-              : [trailpoint, $scope.state.curtime]
-
-            update_mapview(timeframe, true);
           }
 
-          /*
-          if(!scrubtime) {
-            play_scrubber.slider('option','value',$scope.state.curtime);
-            $scope.state.timeout = setTimeout(update_anim, $scope.params.spf*1000);
+          $scope.reset = function() {
+            // Reset the view to the original bit
+            $scope.outrange = angular.copy($scope.range);
           }
-          */
+
+          $scope.reset();
         }
       }
     })
+    // }}}
+    // {{{ trackSel
     .directive('trackSel', function(Track) {
       return {
         scope: {
@@ -118,7 +157,7 @@ angular.module('mapApp.directives', [])
             change: function(evt, ui) {
               scope.$apply(function(scope) {
                 scope.selrange = ui.values;
-              })
+              });
             }
           });
 
@@ -144,6 +183,8 @@ angular.module('mapApp.directives', [])
         },
       }
     })
+    // }}}
+    // {{{ pointSel
     .directive('pointSel', function(PointList) {
       return {
         template: 
@@ -151,7 +192,7 @@ angular.module('mapApp.directives', [])
           '<div class="uni_view"><canvas></canvas></div>',
         scope: {
           range: '=',
-          selrange: '=',
+          selRange: '=',
           pointData: '=',
           pointBounds: '=',
           uniParams: '=',
@@ -175,7 +216,7 @@ angular.module('mapApp.directives', [])
           scope.timerange.elm.timerange({
             change: function(evt, ui) {
               scope.$apply(function(scope) {
-                scope.selrange = ui.values;
+                scope.selRange = ui.values;
               });
             }
           });
@@ -194,7 +235,7 @@ angular.module('mapApp.directives', [])
             }
           });
 
-          scope.$watch('selrange', function(cur, prev, scope) {
+          scope.$watch('selRange', function(cur, prev, scope) {
             if(cur) {
               console.log("TODO: Update uniview");
               //scope.draw_uni();
@@ -258,6 +299,8 @@ angular.module('mapApp.directives', [])
         }
       }
     })
+    // }}}
+    // {{{ pathMap
     .directive('pathMap', function() {
       return {
         scope: {
@@ -266,7 +309,7 @@ angular.module('mapApp.directives', [])
           selrange: '=',
         },
         link: function(scope, elm, attrs) {
-          scope.map = new mxn.Mapstraction(attrs.id, 'leaflet')
+          scope.map = new mxn.Mapstraction(attrs.id, 'googlev3')
 
           scope.map.enableScrollWheelZoom();
           scope.map.addControls({
@@ -405,6 +448,8 @@ angular.module('mapApp.directives', [])
         }
 
         $scope.draw = function() {
+          console.log('New selrange');
+          console.log($scope.range);
           $scope.map.removeAllPolylines();
           for(var idx in $scope.data.segs) {
             var cur_seg = $scope.data.segs[idx];
@@ -423,6 +468,8 @@ angular.module('mapApp.directives', [])
       },
     }
   })
+  // }}}
+  // {{{ notifyLast
   .directive('notifyLast', function() {
     return function(scope, elm, attr) {
       if(scope.$last) setTimeout(function() {
