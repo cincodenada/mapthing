@@ -10,6 +10,7 @@ import mapnik
 import Tkinter
 from PIL import Image, ImageTk
 from StringIO import StringIO
+from subprocess import call
 
 startdate = datetime.strptime('2015-12-01','%Y-%m-%d')
 enddate = datetime.strptime('2015-12-31','%Y-%m-%d')
@@ -68,9 +69,13 @@ root.bind("<Button>", button_click_exit_mainloop)
 root.geometry('+%d+%d' % (100,100))
 lnum = 0
 for l in locations:
+    m.zoom_to_box(mapnik.Box2d(l.minlon, l.minlat, l.maxlon, l.maxlat))
+    m.zoom(-2)
+
+    mapnik.render_to_file(m, 'test.png')
+    call(['feh', '--zoom', 'fill', 'test.png'])
+
     im = mapnik.Image(m.width, m.height)
-    m.zoom_to_box(mapnik.Box2d(l.minlat, l.minlon, l.maxlat, l.maxlon))
-    m.zoom_all()
     mapnik.render(m, im)
     imdata = StringIO(im.tostring('png'))
     img = Image.open(imdata)
