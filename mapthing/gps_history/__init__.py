@@ -46,7 +46,6 @@ class Location:
 #               (center[1] - p.longitude) < stdev_lon*stdev_fence
 #           ):
             if center.distance(p) > self.radius:
-                print center.distance(p)
                 return False
 
         self.points.append(p)
@@ -55,10 +54,10 @@ class Location:
         self.lon_sum += float(p.lon)
 
         self.minlat = min(float(p.lat), self.minlat)
-        self.maxlat = max(float(p.lat), self.minlat)
+        self.maxlat = max(float(p.lat), self.maxlat)
 
         self.minlon = min(float(p.lon), self.minlon)
-        self.maxlon = max(float(p.lon), self.minlon)
+        self.maxlon = max(float(p.lon), self.maxlon)
 
         self.num_points += 1
 
