@@ -72,17 +72,15 @@ for l in locations:
     m.zoom_to_box(mapnik.Box2d(l.minlon, l.minlat, l.maxlon, l.maxlat))
     m.zoom(-2)
 
-    mapnik.render_to_file(m, 'test.png')
-    call(['feh', '--zoom', 'fill', 'test.png'])
-
     im = mapnik.Image(m.width, m.height)
     mapnik.render(m, im)
     imdata = StringIO(im.tostring('png'))
     img = Image.open(imdata)
-    img.show()
 
     root.geometry('%dx%d' % (img.size[0],img.size[1]))
     tkpi = ImageTk.PhotoImage(img)
+    label_image = Tkinter.Label(root, image=tkpi)
+    label_image.place(x=0,y=0,width=img.size[0],height=img.size[1])
     root.title("Location %d" % (lnum))
     lnum+=1
     root.mainloop() # wait until user clicks the window
