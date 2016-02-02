@@ -69,6 +69,11 @@ root.bind("<Button>", button_click_exit_mainloop)
 root.geometry('+%d+%d' % (100,100))
 lnum = 0
 for l in locations:
+    if len(l.points) < 3:
+        continue
+
+    l.get_shapefile('/tmp/mapthing')
+
     m.zoom_to_box(mapnik.Box2d(l.minlon, l.minlat, l.maxlon, l.maxlat))
     m.zoom(-2)
 

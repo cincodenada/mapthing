@@ -17,7 +17,7 @@ class Location:
 
         self.num_points = 0
 
-        self.radius = 1 # Convert m to km
+        self.radius = 50.0/1000.0 # Convert m to km
 
         if p:
             self.add_point(p)
@@ -63,6 +63,12 @@ class Location:
 
         return True
 
+    def get_shapefile(self, path):
+        pts = [[float(p.lon), float(p.lat)] for p in self.points]
+        w = shapefile.Writer(shapeType=shapefile.MULTIPOINT)
+        w.poly(shapeType=shapefile.MULTIPOINT, parts=[pts])
+        w.save(path)
+        return w
 
 class Trip:
     def __init__(self):

@@ -34,6 +34,14 @@
 				<CssParameter name="stroke-linejoin">round</CssParameter>
 				<CssParameter name="stroke-linecap">round</CssParameter>
 			</LineSymbolizer>
+            <PointSymbolizer file="/home/joel/Projects/MapThing/env/MapThing/mapthing/point.png"/>
 		</Rule>
 	</Style>
+	<Layer name="location_points" status="on" srs="+proj=latlong +datum=WGS84">
+		<StyleName>trip</StyleName>
+		<Datasource>
+			<Parameter name="type">shape</Parameter>
+            <Parameter name="file">/tmp/mapthing</Parameter>
+		</Datasource>
+	</Layer>
 </Map>
