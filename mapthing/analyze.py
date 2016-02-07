@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 import gps_history as gps
 import models
 from datetime import datetime
@@ -42,7 +43,7 @@ for t in hist.trips:
             locations.append(gps.Location(t.start))
         if not matched_end:
             locations.append(gps.Location(t.end))
-        #shp = t.get_shapefile('/tmp/mapthing')
+        shp = t.get_shapefile('/tmp/mapthing')
 
 print num_long_trips
 print len(locations)
@@ -74,6 +75,7 @@ for l in locations:
 
     l.get_shapefile('/tmp/mapthing')
 
+    mapnik.load_map(m, 'mapstyle.xml')
     m.zoom_to_box(mapnik.Box2d(l.minlon, l.minlat, l.maxlon, l.maxlat))
     m.zoom(-2)
 

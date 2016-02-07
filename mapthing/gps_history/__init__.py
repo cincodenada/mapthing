@@ -1,4 +1,5 @@
 import shapefile
+import math
 from StringIO import StringIO
 from LatLon import LatLon
 
@@ -64,9 +65,13 @@ class Location:
         return True
 
     def get_shapefile(self, path):
-        pts = [[float(p.lon), float(p.lat)] for p in self.points]
-        w = shapefile.Writer(shapeType=shapefile.MULTIPOINT)
-        w.poly(shapeType=shapefile.MULTIPOINT, parts=[pts])
+        center = self.center()
+        w = shapefile.Writer(shapefile.POINT)
+        for p in self.points:
+            w.point(float(p.lon), float(p.lat))
+        for a in range(0,360,5):
+            pt = center.offset(a, self.radius)
+            w.point(float(pt.lon), float(pt.lat))
         w.save(path)
         return w
 
