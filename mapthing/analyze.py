@@ -16,7 +16,7 @@ from subprocess import call
 # Guard to keep Pylons from trying to run the damn thing
 if(__name__ == '__main__'):
     startdate = datetime.strptime('2015-12-01','%Y-%m-%d')
-    enddate = datetime.strptime('2015-12-31','%Y-%m-%d')
+    enddate = datetime.strptime('2016-01-30','%Y-%m-%d')
 
     engine = engine_from_config({
         'sqlalchemy.url': 'sqlite:///../MapThing.sqlite'
@@ -57,10 +57,10 @@ if(__name__ == '__main__'):
     m = mapnik.Map(256,256)
     mapnik.load_map(m, 'mapstyle.xml')
 
-    custom_layer = mapnik.Layer('trip')
-    custom_layer.styles.append('trip')
-    custom_layer.datasource = mapnik.Datasource(type='shape', file='/tmp/mapthing')
-    m.layers.append(custom_layer)
+    #custom_layer = mapnik.Layer('trip')
+    #custom_layer.styles.append('trip')
+    #custom_layer.datasource = mapnik.Datasource(type='shape', file='/tmp/mapthing')
+    #m.layers.append(custom_layer)
 
     ims = []
 
