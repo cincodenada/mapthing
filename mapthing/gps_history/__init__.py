@@ -1,4 +1,4 @@
-import shapefile
+#import shapefile
 import math
 from StringIO import StringIO
 from LatLon import LatLon
@@ -11,14 +11,14 @@ class Location:
     stdev_fence = 2
     stdev_include = 1
 
-    def __init__(self, p = None):
+    def __init__(self, p = None, radius = 50):
         self.points = []
         self.lat_sum = 0
         self.lon_sum = 0
 
         self.num_points = 0
 
-        self.radius = 50.0/1000.0 # Convert m to km
+        self.radius = float(radius)/1000.0 # Convert m to km
 
         if p:
             self.add_point(p)
@@ -64,16 +64,16 @@ class Location:
 
         return True
 
-    def get_shapefile(self, path):
-        center = self.center()
-        w = shapefile.Writer(shapefile.POINT)
-        for p in self.points:
-            w.point(float(p.lon), float(p.lat))
-        for a in range(0,360,5):
-            pt = center.offset(a, self.radius)
-            w.point(float(pt.lon), float(pt.lat))
-        w.save(path)
-        return w
+    #def get_shapefile(self, path):
+    #    center = self.center()
+    #    w = shapefile.Writer(shapefile.POINT)
+    #    for p in self.points:
+    #        w.point(float(p.lon), float(p.lat))
+    #    for a in range(0,360,5):
+    #        pt = center.offset(a, self.radius)
+    #        w.point(float(pt.lon), float(pt.lat))
+    #    w.save(path)
+    #    return w
 
 class Trip:
     def __init__(self):
@@ -102,18 +102,16 @@ class Trip:
         poly = [[p.longitude, p.latitude] for p in self.points]
         w = shapefile.Writer(3)
         w.poly(shapeType=3, parts=[poly])
-        print poly
         w.save(path)
         return w
 
 class History:
-    trip_gap = 3*60*1000
-
-    def __init__(self):
+    def __init__(self, trip_gap=3*60):
         self.trips = []
         self.points = []
         self.last_time = None
         self.cur_trip = Trip()
+        self.trip_gap = trip_gap*1000 # Convert to ms
 
     def add_point(self, p):
         self.points.append(p)
