@@ -9,6 +9,7 @@ from operator import itemgetter, attrgetter
 import tempfile
 import sqlite3
 import gps_history
+from datetime import date, timedelta
 
 from .models import (
     DBSession,
@@ -44,11 +45,19 @@ def get_tracks(request):
 
 @view_config(route_name='ajax_track', renderer='templates/view_track.pt')
 def ajax_track(request):
-    startdate = date_parse(request.params['start'])
-    enddate = date_parse(request.params['end'])
+    if('start' in request.params):
+        startdate = date_parse(request.params['start'])
+    else:
+        startdate = date.today() - timedelta(days=7)
+
+    if('end' in request.params):
+        enddate = date_parse(request.params['end'])
+    else:
+        enddate = date.today()
+
     params = {
-        'start': request.params['start'],
-        'end': request.params['end'],
+        'start': startdate.strftime('%Y-%m-%d'),
+        'end': enddate.strftime('%Y-%m-%d'),
     }
     return { 'json_params': json.dumps(params) }
 
