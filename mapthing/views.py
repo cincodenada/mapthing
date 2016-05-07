@@ -172,13 +172,16 @@ def date_track(request):
             }
         if not s.id in tracks[t.id]['segments']:
             tracks[t.id]['segments'].append(s.id)
-     
+
+    locations = hist.get_locations(50,10) # Fill in location data
+
     return {'json_data': json.dumps({
         'tracks': tracks, 
         'segments': segments, 
         'points': pointlist,
         'timepoints': timepoints,
         'trips': hist.get_trips(),
+        'locations': locations.get_serializable(),
     })}
 
 @view_config(route_name='upload_data', renderer='templates/json.pt')

@@ -25,11 +25,28 @@ class LocationPool:
 
         for i, p in enumerate(points):
             if i not in matches:
-                self.locations.append(Location(p, self.radius))
+                newloc = Location(p, self.radius)
+                newloc.id = len(self.locations)
+                self.locations.append(newloc)
+                matches[i] = newloc
 
         self.num_points += len(points)
 
         return matches
+
+    def get_serializable(self):
+        outarr = []
+        for l in self.locations:
+            c = l.center()
+            outarr.append({
+                'lat': float(c.lat),
+                'lon': float(c.lon),
+                'radius': l.radius,
+                'num_points': l.num_points
+            })
+
+        return outarr
+
 
 class Location:
     stdev_fence = 2
@@ -103,6 +120,7 @@ class Trip:
     def __init__(self):
         self.points = []
         self.start = self.end = None
+        self.startloc = self.endloc = None
         pass
 
     def add_point(self, p):
@@ -157,8 +175,8 @@ class History:
                 trips.append({
                     'start': t.start.time,
                     'end': t.end.time,
-                    'start_loc': (t.start.latitude, t.start.longitude),
-                    'end_loc': (t.end.latitude, t.end.longitude),
+                    'start_loc': t.startloc,
+                    'end_loc': t.endloc,
                 })
 
         return trips
@@ -168,6 +186,9 @@ class History:
 
         for t in self.trips:
             if len(t.points) > min_trip_len:
-                locations.add_points([t.start, t.end])
+                triploc = locations.add_points([t.start, t.end])
+
+                t.startloc = triploc[0].id
+                t.endloc = triploc[1].id
 
         return locations
