@@ -10,6 +10,7 @@ class LocationPool:
     def __init__(self, radius):
         self.locations = []
         self.radius = radius
+        self.num_points = 0
 
     def add_point(self, point):
         return add_points([point])[0]
@@ -25,6 +26,8 @@ class LocationPool:
         for i, p in enumerate(points):
             if i not in matches:
                 self.locations.append(Location(p, self.radius))
+
+        self.num_points += len(points)
 
         return matches
 
@@ -159,3 +162,12 @@ class History:
                 })
 
         return trips
+
+    def get_locations(self, radius, min_trip_len = 0):
+        locations = LocationPool(radius)
+
+        for t in self.trips:
+            if len(t.points) > min_trip_len:
+                locations.add_points([t.start, t.end])
+
+        return locations

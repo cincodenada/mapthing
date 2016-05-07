@@ -29,15 +29,10 @@ if(__name__ == '__main__'):
         print ".",
         hist.add_point(p)
 
-    locations = gps.LocationPool(args.radius)
     num_long_trips = 0
-    for t in hist.trips:
-        if len(t.points) > args.trip_len:
-            locations.add_points([t.start, t.end])
+    locations = hist.get_locations(args.radius, args.trip_len)
 
-            num_long_trips+=1
-
-    print "Found {} long trips and {} locations:".format(num_long_trips, len(locations.locations))
+    print "Found {} long trips and {} locations:".format(locations.num_points/2, len(locations.locations))
 
     for l in locations.locations:
         if l.num_points > 1:
