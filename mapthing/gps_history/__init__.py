@@ -6,7 +6,28 @@ from LatLon import LatLon
 class Track:
     pass
 
-#TODO: All of this
+class LocationPool:
+    def __init__(self, radius):
+        self.locations = []
+        self.radius = radius
+
+    def add_point(self, point):
+        return add_points([point])[0]
+
+    def add_points(self, points):
+        matches = {}
+        for l in self.locations:
+            for i, p in enumerate(points):
+                if i not in matches:
+                    if l.add_point(p):
+                        matches[i] = l
+
+        for i, p in enumerate(points):
+            if i not in matches:
+                self.locations.append(Location(p, self.radius))
+
+        return matches
+
 class Location:
     stdev_fence = 2
     stdev_include = 1
