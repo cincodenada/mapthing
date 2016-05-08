@@ -114,18 +114,31 @@
         <div id="trips">
             <ul id="triplist">
                 <li ng-repeat="trip in data.view_points.trips" data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
+                    <div ng-if="trip.start_loc != trip.prev_end">
+                        <div class="trip_segment trip_segment_unknown">???</div>
+                        <a href="#" class="trip_stop" ng-mouseover="params.sel_loc = trip.start_loc" ng-mouseout="params.sel_loc = null">
+                            Location {{trip.start_loc}}
+                        </a>
+                    <div>
+                    <span class="stop_time">{{trip.start|date:'yyyy/MM/dd h:mm'}}</span>
+                    <div class="trip_segment">{{Math.floor(trip.len/60)}}</div>
+                    <a href="#" class="trip_stop" ng-mouseover="params.sel_loc = trip.end_loc" ng-mouseout="params.sel_loc = null">Location {{trip.end_loc}}</a>
+                    <span class="stop_time">{{trip.end|date:'yyyy/MM/dd h:mm'}}</span>
+                    <!--
                     <a href="#" 
                         ng-mouseover="params.sel_range = [trip.start/1000/uni.interval, trip.end/1000/uni.interval]"
                         ng-mouseout="params.sel_range = null"
                         title="{{trip.start|date:'yyyy/MM/dd h:mm'}} - {{trip.end|date:'yyyy/MM/dd h:mm'}}">
                         Trip {{$index}} ({{(trip.end-trip.start)/1000/60|number:1}} min)
                     </a>
+                    -->
                 </li>
             </ul>
         </div>
         <path-map id="map"
             data="data.map"
             selrange="params.sel_range"
+            selpoint="params.sel_loc"
             range="params.tick_range">
         ></path-map>
         <div style="clear: both;"></div>

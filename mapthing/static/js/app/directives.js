@@ -264,6 +264,7 @@ angular.module('mapApp.directives', [])
           data: '=',
           range: '=',
           selrange: '=',
+          selpoint: '=',
         },
         link: function(scope, elm, attrs) {
           scope.map = new mxn.Mapstraction(attrs.id, 'leaflet')
@@ -325,6 +326,14 @@ angular.module('mapApp.directives', [])
                 }
               }
 
+              scope.update();
+            }
+          });
+
+          scope.$watch('selpoint', function(cur, prev, scope) {
+            if(cur !== null) {
+              var loc = scope.data.locations[cur]
+              scope.data.point = [loc.lat, loc.lon, loc.radius]
               scope.update();
             }
           });
@@ -418,6 +427,18 @@ angular.module('mapApp.directives', [])
             }
 
             $scope.buildLines(cur_seg, $scope.range);
+          }
+
+          $scope.map.removeAllMarkers();
+          if($scope.data.point) {
+            var center = new mxn.LatLonPoint(
+              $scope.data.point[0],
+              $scope.data.point[1]
+            );
+            var marker = new mxn.Marker(center);
+            $scope.map.addMarker(marker);
+            var radius = new mxn.Radius(center, 20);
+            $scope.map.addPolyline(radius.getPolyline($scope.data.point[2], 'red'));
           }
         }
       },

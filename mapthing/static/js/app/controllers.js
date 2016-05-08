@@ -13,6 +13,7 @@ angular.module('mapApp.controllers', [])
 
       $scope.params.track_range = [];
       $scope.params.view_range = [];
+      $scope.params.sel_loc = null;
       $scope.data.map = {};
 
       $scope.$watch('params.track_range', function(cur, prev, scope) {
@@ -47,6 +48,7 @@ angular.module('mapApp.controllers', [])
             missing: [],
             interp: [],
           };
+          scope.data.map.locations = point_data.locations;
 
           var min_time = false, max_time = false;
           if(scope.params.track_range) {
@@ -125,6 +127,11 @@ angular.module('mapApp.controllers', [])
 
               prev_tick = cur_tick;
               prev_color = cur_point.color;
+          }
+
+          for(i=1; i < point_data.trips.length; i++) {
+            point_data.trips[i].prev_end = point_data.trips[i-1].end_loc;
+            point_data.trips[i].len = (point_data.trips[i].end - point_data.trips[i].start)/1000.0;
           }
 
           // Catch the straggler points
