@@ -80,9 +80,11 @@
                         </a>
                     </div>
                     <span class="stop_time">{{trip.start|date:'yyyy/MM/dd h:mm'}}</span>
-                    <div class="trip_segment">
+                    <a href="#" class="trip_segment"
+                        ng-mouseover="params.sel_range = [trip.start/1000/uni.interval, trip.end/1000/uni.interval]"
+                        ng-mouseout="params.sel_range = null">
                         {{trip.len/60.0|number:0}} min
-                    </div>
+                    </a>
                     <span class="stop_time">{{trip.end|date:'yyyy/MM/dd h:mm'}}</span>
                     <a href="#" class="trip_stop" ng-mouseover="params.sel_loc = trip.end_loc" ng-mouseout="params.sel_loc = null">Location {{trip.end_loc}}</a>
                     <!--

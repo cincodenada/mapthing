@@ -380,19 +380,60 @@ angular.module('mapApp.directives', [])
                 start <= $scope.selrange[1] &&
                 end >= $scope.selrange[0]
               );
-          
-              var newline = new mxn.Polyline(points);
+              
+              var start_slice = null;
+              var end_slice = null;
+              var mid_slice = points;
+              var mid_range = [start, end];
+              if(is_highlighted) {
+                console.log("Checking highlighted range...");
+                // Split up range if we have a partial selection
+                if(start < $scope.selrange[0]) {
+                  start_slice = points.slice(0, $scope.selrange[0] - seg.start);
+                  mid_slice = points.slice($scope.selrange[0] - seg.start);
+                  mid_range[0] = $scope.selrange[0];
+                }
+                if(end > $scope.selrange[1]) {
+                  var tail_len = seg.end - $scope.selrange[1];
+                  mid_slice = mid_slice.slice(0, mid_slice.len - tail_len);
+                  end_slice = points.slice(-tail_len);
+                  mid_range[1] = $scope.selrange[1];
+                }
+              }
+
+              if(start_slice) {
+                var newline = new mxn.Polyline(start_slice);
+                newline.setColor(seg.color);
+                newline.setWidth('4');
+                $scope.map.addPolyline(newline);
+                seg.lines.push({
+                    line: newline,
+                    start: start,
+                    end: $scope.selrange[0],
+                });
+              }
+
+              var newline = new mxn.Polyline(mid_slice);
               newline.setColor(is_highlighted ? '#0000FF' : seg.color);
               newline.setWidth(is_highlighted ? '6' : '4');
               $scope.map.addPolyline(newline);
-
               seg.lines.push({
                   line: newline,
-                  start: start,
-                  end: end,
+                  start: mid_range[0],
+                  end: mid_range[1],
               });
 
-              return newline;
+              if(end_slice) {
+                var newline = new mxn.Polyline(end_slice);
+                newline.setColor(seg.color);
+                newline.setWidth('4');
+                $scope.map.addPolyline(newline);
+                seg.lines.push({
+                    line: newline,
+                    start: $scope.selrange[1],
+                    end: end,
+                });
+              }
             };
             
             var linestart = null;
