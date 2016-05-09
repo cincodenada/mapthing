@@ -1,5 +1,6 @@
 #import shapefile
 import math
+import json
 from StringIO import StringIO
 from LatLon import LatLon
 
@@ -34,16 +35,10 @@ class LocationPool:
 
         return matches
 
-    def get_serializable(self):
+    def get_serializable(self, full=True):
         outarr = []
         for l in self.locations:
-            c = l.center()
-            outarr.append({
-                'lat': float(c.lat),
-                'lon': float(c.lon),
-                'radius': l.radius,
-                'num_points': l.num_points
-            })
+            outarr.append(l.get_serializable(full))
 
         return outarr
 
@@ -115,6 +110,20 @@ class Location:
     #        w.point(float(pt.lon), float(pt.lat))
     #    w.save(path)
     #    return w
+    def get_serializable(self, full=True):
+        c = self.center()
+        out = {
+            'lat': float(c.lat),
+            'lon': float(c.lon),
+            'radius': self.radius,
+            'num_points': self.num_points,
+        }
+        if(full):
+            out['points'] = []
+            for p in self.points:
+                out['points'].append([float(p.lat), float(p.lon)])
+
+        return out
 
 class Trip:
     def __init__(self):

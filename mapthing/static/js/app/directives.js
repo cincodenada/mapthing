@@ -333,7 +333,7 @@ angular.module('mapApp.directives', [])
           scope.$watch('selpoint', function(cur, prev, scope) {
             if(cur !== null) {
               var loc = scope.data.locations[cur]
-              scope.data.point = [loc.lat, loc.lon, loc.radius]
+              scope.data.point = loc
               scope.update();
             }
           });
@@ -432,13 +432,20 @@ angular.module('mapApp.directives', [])
           $scope.map.removeAllMarkers();
           if($scope.data.point) {
             var center = new mxn.LatLonPoint(
-              $scope.data.point[0],
-              $scope.data.point[1]
+              $scope.data.point.lat,
+              $scope.data.point.lon
             );
             var marker = new mxn.Marker(center);
             $scope.map.addMarker(marker);
+            if($scope.data.point.points) {
+              $scope.data.point.points.forEach(function(cp) {
+                var curm = new mxn.Marker(new mxn.LatLonPoint(cp[0], cp[1]));
+                curm.setIcon('/static/point.png')
+                $scope.map.addMarker(curm);
+              })
+            }
             var radius = new mxn.Radius(center, 20);
-            $scope.map.addPolyline(radius.getPolyline($scope.data.point[2], 'red'));
+            $scope.map.addPolyline(radius.getPolyline($scope.data.point.radius, 'red'));
           }
         }
       },
