@@ -289,23 +289,10 @@ angular.module('mapApp.directives', [])
                 var cur_seg = scope.data.segs[idx];
 
                 // Check limits and either skip or drop out
-                if(cur_seg.end < scope.selrange[0]) continue;
-                if(cur_seg.start > scope.selrange[1]) break;
+                if(cur_seg.end < cur[0]) continue;
+                if(cur_seg.start > cur[1]) break;
 
-                // Highlight the lines
-                if(cur_seg.lines.length == 0) {
-                  scope.buildLines(cur_seg, scope.selrange);
-                }
-
-                angular.forEach(cur_seg.lines, function(linedata) {
-                  if( linedata.start <= scope.selrange[1] &&
-                      linedata.end >= scope.selrange[0]) {
-                    linedata.line.setColor('#0000FF');
-                    linedata.line.setWidth('6');
-                    linedata.line.update();
-                  }
-                });
-                cur_seg.highlighted = true;
+                scope.data.segs[idx].highlighted = true;
               }
             } else {
               var found_hl = false;
@@ -313,21 +300,17 @@ angular.module('mapApp.directives', [])
                 var cur_seg = scope.data.segs[idx];
 
                 if(cur_seg.highlighted) {
-                  if(scope.selrange && (cur_seg.start > scope.selrange[1] || cur_seg.end < scope.selrange[0])) {
-                    // Remove the lines if they're
-                    // outside the selected range
-                    cur_seg.lines = [];
-                  }
-                  cur_seg.highlighted = false;
+                  found_hl = true;
+                  scope.data.segs[idx].highlighted = false;
                 } else {
                   // If we're at the end of the highlighted section,
                   // no need to keep going
                   if(found_hl) { break; }
                 }
               }
-
-              scope.update();
             }
+
+            scope.update();
           });
 
           scope.$watch('selpoint', function(cur, prev, scope) {
@@ -370,72 +353,25 @@ angular.module('mapApp.directives', [])
             }
         }
 
-        $scope.buildLines = function(seg, range) {
+        $scope.buildLines = function(seg, range, is_highlighted) {
             var points = [];
+            var lines = [];
             var start = Math.max(seg.start, range[0]);
             var end = Math.min(seg.end, range[1]);
-            
+
             var addline = function(points, seg) {
-              var is_highlighted = $scope.selrange && (
-                start <= $scope.selrange[1] &&
-                end >= $scope.selrange[0]
-              );
-              
-              var start_slice = null;
-              var end_slice = null;
-              var mid_slice = points;
-              var mid_range = [start, end];
-              if(is_highlighted) {
-                console.log("Checking highlighted range...");
-                // Split up range if we have a partial selection
-                if(start < $scope.selrange[0]) {
-                  start_slice = points.slice(0, $scope.selrange[0] - seg.start);
-                  mid_slice = points.slice($scope.selrange[0] - seg.start);
-                  mid_range[0] = $scope.selrange[0];
-                }
-                if(end > $scope.selrange[1]) {
-                  var tail_len = seg.end - $scope.selrange[1];
-                  mid_slice = mid_slice.slice(0, mid_slice.len - tail_len);
-                  end_slice = points.slice(-tail_len);
-                  mid_range[1] = $scope.selrange[1];
-                }
-              }
-
-              if(start_slice) {
-                var newline = new mxn.Polyline(start_slice);
-                newline.setColor(seg.color);
-                newline.setWidth('4');
-                $scope.map.addPolyline(newline);
-                seg.lines.push({
-                    line: newline,
-                    start: start,
-                    end: $scope.selrange[0],
-                });
-              }
-
-              var newline = new mxn.Polyline(mid_slice);
+              var newline = new mxn.Polyline(points);
               newline.setColor(is_highlighted ? '#0000FF' : seg.color);
               newline.setWidth(is_highlighted ? '6' : '4');
               $scope.map.addPolyline(newline);
-              seg.lines.push({
-                  line: newline,
-                  start: mid_range[0],
-                  end: mid_range[1],
-              });
 
-              if(end_slice) {
-                var newline = new mxn.Polyline(end_slice);
-                newline.setColor(seg.color);
-                newline.setWidth('4');
-                $scope.map.addPolyline(newline);
-                seg.lines.push({
-                    line: newline,
-                    start: $scope.selrange[1],
-                    end: end,
-                });
-              }
+              lines.push({
+                  line: newline,
+                  start: start,
+                  end: end,
+              });
             };
-            
+
             var linestart = null;
             for(var cur_tick = start; cur_tick <= end; cur_tick++) {
               // Create new lines at every discontinuity
@@ -452,6 +388,8 @@ angular.module('mapApp.directives', [])
               }
             }
             if(points.length) { addline(points, seg, linestart, cur_tick - 1); }
+
+            return lines;
         }
 
         $scope.draw = function() {
@@ -467,7 +405,11 @@ angular.module('mapApp.directives', [])
               if(cur_seg.start > $scope.range[1]) break;
             }
 
-            $scope.buildLines(cur_seg, $scope.range);
+            cur_seg.lines = $scope.buildLines(cur_seg, $scope.range);
+
+            if(cur_seg.highlighted) {
+              $scope.buildLines(cur_seg, $scope.selrange, true);
+            }
           }
 
           $scope.map.removeAllMarkers();
