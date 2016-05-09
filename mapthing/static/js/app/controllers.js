@@ -129,8 +129,10 @@ angular.module('mapApp.controllers', [])
               prev_color = cur_point.color;
           }
 
-          for(i=1; i < point_data.trips.length; i++) {
-            point_data.trips[i].prev_end = point_data.trips[i-1].end_loc;
+          for(i=0; i < point_data.trips.length; i++) {
+            if(i > 0) {
+              point_data.trips[i].prev_end = point_data.trips[i-1].end_loc;
+            }
             point_data.trips[i].len = (point_data.trips[i].end - point_data.trips[i].start)/1000.0;
           }
 

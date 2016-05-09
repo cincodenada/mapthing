@@ -194,7 +194,7 @@ class History:
         locations = LocationPool(radius)
 
         for t in self.trips:
-            if len(t.points) > min_trip_len:
+            if t.num_points() >= min_trip_len:
                 triploc = locations.add_points([t.start, t.end])
 
                 t.startloc = triploc[0].id
