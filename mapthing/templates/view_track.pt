@@ -42,9 +42,9 @@
         <input type="text" date-range-picker ranged="true" ng-model="daterange"/>
     </div>
     <h1 id="full_timerange" ng-show="params.track_range">
-        {{params.track_range[0]*1000|date:'MMM d, yyyy H:mm'}}
+        {{params.track_range[0]*1000|date:'EEE MMM d, yyyy H:mm'}}
         -
-        {{params.track_range[1]*1000|date:'MMM d, yyyy H:mm'}}
+        {{params.track_range[1]*1000|date:'EEE MMM d, yyyy H:mm'}}
     </h1>
     <h2 id="sel_timerange" ng-show="params.view_range.length">{{params.view_range|humanize}}</h2>
     <div id="details">
@@ -73,24 +73,26 @@
         <div id="trips">
             <ul id="triplist">
                 <li ng-repeat="trip in data.view_points.trips" data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}" class="trip_entry">
-                    <div ng-if="trip.start_loc != trip.prev_end">
+                    <div class="stop_container" ng-if="trip.start_loc != trip.prev_end">
                         <div ng-if="trip.prev_end != null" class="trip_segment trip_segment_unknown">???</div>
                         <a href="#" class="trip_stop" ng-mouseover="params.sel_loc = trip.start_loc" ng-mouseout="params.sel_loc = null">
                             Location {{trip.start_loc}}
                         </a>
+                        <span class="stop_latlon">{{data.map.locations[trip.start_loc].lat|number:3}}, {{data.map.locations[trip.start_loc].lon|number:3}}</span>
                     </div>
-                    <span class="stop_time">{{trip.start|date:'yyyy/MM/dd h:mm'}}</span>
+                    <span class="stop_time">{{trip.start|date:'yyyy/MM/dd H:mm'}}</span>
                     <a href="#" class="trip_segment"
                         ng-mouseover="params.sel_range = [trip.start/1000/uni.interval, trip.end/1000/uni.interval]"
                         ng-mouseout="params.sel_range = null">
                         {{trip.len/60.0|number:0}} min
                     </a>
-                    <span class="stop_time">{{trip.end|date:'yyyy/MM/dd h:mm'}}</span>
-                    <a href="#" class="trip_stop" ng-mouseover="params.sel_loc = trip.end_loc" ng-mouseout="params.sel_loc = null">Location {{trip.end_loc}}</a>
+                    <span class="stop_time">{{trip.end|date:'yyyy/MM/dd H:mm'}}</span>
+                    <div class="stop_container">
+                        <a href="#" class="trip_stop" ng-mouseover="params.sel_loc = trip.end_loc" ng-mouseout="params.sel_loc = null">Location {{trip.end_loc}}</a>
+                        <span class="stop_latlon">{{data.map.locations[trip.end_loc].lat|number:3}}, {{data.map.locations[trip.end_loc].lon|number:3}}</span>
+                    </div>
                     <!--
                     <a href="#" 
-                        ng-mouseover="params.sel_range = [trip.start/1000/uni.interval, trip.end/1000/uni.interval]"
-                        ng-mouseout="params.sel_range = null"
                         title="{{trip.start|date:'yyyy/MM/dd h:mm'}} - {{trip.end|date:'yyyy/MM/dd h:mm'}}">
                         Trip {{$index}} ({{(trip.end-trip.start)/1000/60|number:1}} min)
                     </a>
