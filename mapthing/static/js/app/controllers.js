@@ -16,6 +16,8 @@ angular.module('mapApp.controllers', [])
       $scope.params.sel_loc = null;
       $scope.data.map = {};
 
+      $scope.data.locnames = JSON.parse(localStorage.getItem('locnames')) || {};
+
       $scope.$watch('params.track_range', function(cur, prev, scope) {
         if(cur) {
           // Reset view range
@@ -151,4 +153,12 @@ angular.module('mapApp.controllers', [])
           Math.round(scope.params.view_range[1]/scope.uni.interval)
         ];
       });
+
+      $scope.editName = function(locnum) {
+        var newname = prompt('New location name?');
+        if(newname) {
+          $scope.data.locnames[locnum] = newname;
+          localStorage.setItem('locnames', JSON.stringify($scope.data.locnames))
+        }
+      }
     })

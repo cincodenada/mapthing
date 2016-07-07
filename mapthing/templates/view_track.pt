@@ -75,8 +75,8 @@
                 <li ng-repeat="trip in data.view_points.trips" data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}" class="trip_entry">
                     <div class="stop_container" ng-if="trip.start_loc != trip.prev_end">
                         <div ng-if="trip.prev_end != null" class="trip_segment trip_segment_unknown">???</div>
-                        <a href="#" class="trip_stop" ng-mouseover="params.sel_loc = trip.start_loc" ng-mouseout="params.sel_loc = null">
-                            Location {{trip.start_loc}}
+                        <a href="#" class="trip_stop" ng-click="editName(trip.start_loc)" ng-mouseover="params.sel_loc = trip.start_loc" ng-mouseout="params.sel_loc = null">
+                            {{data.locnames[trip.start_loc]|orthis:'Location ' + trip.start_loc}}
                         </a>
                         <span class="stop_latlon">{{data.map.locations[trip.start_loc].lat|number:3}}, {{data.map.locations[trip.start_loc].lon|number:3}}</span>
                     </div>
@@ -88,7 +88,9 @@
                     </a>
                     <span class="stop_time">{{trip.end|date:'yyyy/MM/dd H:mm'}}</span>
                     <div class="stop_container">
-                        <a href="#" class="trip_stop" ng-mouseover="params.sel_loc = trip.end_loc" ng-mouseout="params.sel_loc = null">Location {{trip.end_loc}}</a>
+                        <a href="#" class="trip_stop" ng-click="editName(trip.end_loc)" ng-mouseover="params.sel_loc = trip.end_loc" ng-mouseout="params.sel_loc = null">
+                            {{data.locnames[trip.end_loc]|orthis:'Location ' + trip.end_loc}}
+                        </a>
                         <span class="stop_latlon">{{data.map.locations[trip.end_loc].lat|number:3}}, {{data.map.locations[trip.end_loc].lon|number:3}}</span>
                     </div>
                     <!--

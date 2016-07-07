@@ -15,4 +15,14 @@ angular.module('mapApp.filters', [])
           + ' at ' +
           starttime.format('H:mm')
     }
+  })
+  .filter('orthis', function() {
+    return function(val, rep, strict) {
+        if(typeof rep == 'undefined') { rep = ''; }
+        if(strict) {
+            return (val == null || typeof val == 'undefined' || isNaN(val)) ? rep : val;
+        } else {
+            return val ? val : rep;
+        }
+    };
   });
