@@ -7,8 +7,9 @@ import json
 from dateutil.parser import parse as date_parse
 from operator import itemgetter, attrgetter
 import tempfile
-import sqlite3
 import gps_history
+
+from . import uploader
 
 from .models import (
     DBSession,
@@ -184,88 +185,14 @@ def date_track(request):
 @view_config(route_name='upload_data', renderer='templates/json.pt')
 def upload_data(request):
     myfile = request.params['data']
-    dest = tempfile.NamedTemporaryFile(delete=False)
-    myfile.file.seek(0)
-    while True:
-        data = myfile.file.read(2<<16)
-        if not data:
-            break
-        dest.write(data)
-    dest.close()
+    (basename, ext) = myfile.filename.rsplit('.', 1)
 
-    conn = sqlite3.connect(dest.name)
-    c = conn.cursor()
-    tables = {
-        'segments': {
-            '_tablename_': 'segments',
-            'id': '_id',
-            'track_id': 'track',
-        },
-        'tracks': {
-            '_tablename_': 'tracks',
-            'id': '_id',
-            'name': 'name',
-            'created': 'creationtime',
-        },
-        'points': {
-            '_tablename_': 'waypoints',
-            'id': '_id',
-            'latitude': 'latitude',
-            'longitude': 'longitude',
-            'time': 'time',
-            'speed': 'speed',
-            'segment_id': 'tracksegment',
-            'accuracy': 'accuracy',
-            'altitude': 'altitude',
-            'bearing': 'bearing',
-        },
-    }
-    querylist = []
-    col_list = []
-    for t, tmap in tables.iteritems():
-        curmap = tmap.copy()
-        curtable = curmap.pop('_tablename_',t)
-        for new, orig in curmap.iteritems():
-            col_list.append('`%s`.`%s` as %s_%s' % (curtable, orig, curtable, orig))
-        
-    fromquery = 'SELECT %(fields)s FROM %(point)s ' + \
-    'LEFT JOIN %(seg)s ON %(seg)s.%(sid)s = %(point)s.%(sid_field)s ' + \
-    'LEFT JOIN %(track)s ON %(track)s.%(tid)s = %(seg)s.%(tid_field)s'
-    fromquery = fromquery % {
-        'fields': ','.join(col_list), 
-        'point': tables['points']['_tablename_'],
-        'seg': tables['segments']['_tablename_'], 
-        'track': tables['tracks']['_tablename_'],
-        'sid': tables['segments']['id'],
-        'tid': tables['tracks']['id'],
-        'sid_field': tables['points']['segment_id'],
-        'tid_field': tables['segments']['track_id'],
-    }
-    querylist.append(fromquery)
-    c.row_factory = sqlite3.Row
-    idmap = {k:{} for k in tables.keys()}
-    #new shit starts at 138 btw in case everything goes to hell
-    for row in c.execute(fromquery):
-        #Find or create the track
-        if(row['tracks__id'] in idmap['tracks']):
-            t = idmap['tracks'][row['tracks__id']]
-        else:
-            t = Track()
-            add_row_data(row, tables, 'tracks', t)
-            DBSession.add(t)
-            idmap['tracks'][row['tracks__id']] = t
-        #And the segment
-        if(row['segments__id'] in idmap['segments']):
-            s = idmap['segments'][row['segments__id']]
-        else:
-            s = Segment()
-            add_row_data(row, tables, 'segments', s)
-            t.segments.append(s)
-            idmap['segments'][row['segments__id']] = s
-        #Now point!
-        p = Point()
-        add_row_data(row, tables, 'points', p)
-        s.points.append(p)
+    if(ext == 'gpx'):
+        imp = uploader.ImportGpx(myfile)
+        querylist = imp.load()
+    else:
+        imp = uploader.ImportSqlite(myfile)
+        querylist = imp.load()
 
 #   upload_directory = os.path.join(os.getcwd(), '/myapp/static/uploads/')
 #   tempfile = os.path.join(upload_directory, myfile)
@@ -277,11 +204,6 @@ def upload_data(request):
 #   }
     return { 'json_data': json.dumps(querylist) }
 
-def add_row_data(row, tableinfo, table, obj):
-    oldtable = tableinfo[table]['_tablename_']
-    for new, old in tableinfo[table].iteritems():
-        if(not new in ['_tablename_','id','track_id','segment_id']):
-            setattr(obj, new, row[oldtable + '_' + old])
 
 
 conn_err_msg = """\
