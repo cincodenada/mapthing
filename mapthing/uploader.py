@@ -1,5 +1,6 @@
 import sqlite3
 import tempfile
+import datetime
 
 from .models import (
     DBSession,
@@ -26,11 +27,12 @@ class ImportGpx(FileImporter):
     def load(self):
         counts = Counter()
         gpx = gpxpy.parse(open(self.infile.name, 'r'))
+        epoch = datetime.datetime.utcfromtimestamp(0)
         for track in gpx.tracks:
             counts['tracks']+=1
             t = Track()
             t.name = track.name
-            t.created = gpx.time
+            t.created = (gpx.time - epoch).total_seconds()*1000
             DBSession.add(t)
             for seg in track.segments:
                 counts['segments']+=1
@@ -41,7 +43,7 @@ class ImportGpx(FileImporter):
                     p = Point()
                     p.latitude = point.latitude
                     p.longitude = point.longitude
-                    p.time = point.time
+                    p.time = (point.time - epoch).total_seconds()*1000
                     p.speed = point.speed
                     p.altitude = point.elevation
                     p.bearing = point.course
