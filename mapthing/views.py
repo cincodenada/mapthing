@@ -6,6 +6,7 @@ from sqlalchemy.exc import DBAPIError
 
 import json
 from datetime import datetime, timedelta
+import pytz
 from dateutil.parser import parse as date_parse
 from operator import itemgetter, attrgetter
 import tempfile
@@ -18,6 +19,13 @@ from .models import (
     Segment,
     Point,
     )
+
+class DatetimeEncoder(json.JSONEncoder):
+    epoch = datetime.fromtimestamp(0, pytz.utc)
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return (obj - self.epoch).total_seconds()*1000
+        return json.JSONEncoder.default(self, obj)
 
 @notfound_view_config(append_slash=True)
 def notfound(request):
@@ -46,7 +54,7 @@ def get_tracks(request):
         if(curtrack is None):
             break;
         trackdata.append(dict(zip(('id','start','end','minlat','maxlat','minlon','maxlon'),curtrack)))
-    return { 'json_data': json.dumps(trackdata) }
+    return { 'json_data': json.dumps(trackdata, cls=DatetimeEncoder) }
 
 @view_config(route_name='ajax_track', renderer='templates/view_track.pt')
 def ajax_track(request):
@@ -196,7 +204,7 @@ def date_track(request):
         'timepoints': timepoints,
         'trips': hist.get_trips(),
         'locations': locations.get_serializable(),
-    })}
+    }, cls=DatetimeEncoder)}
 
 @view_config(route_name='upload_data', renderer='templates/json.pt')
 def upload_data(request):
