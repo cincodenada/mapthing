@@ -154,11 +154,11 @@
         </ul>
     </script>
     <script src="${request.static_url('mapthing:static/js/moment.min.js')}" type="text/javascript"></script>
-    <script src="${request.static_url('mapthing:static/bower_components/angular/angular.js')}" type="text/javascript"></script>
-    <script src="${request.static_url('mapthing:static/bower_components/angular-resource/angular-resource.js')}" type="text/javascript"></script>
-    <script src="${request.static_url('mapthing:static/bower_components/moment-range/lib/moment-range.min.js')}" type="text/javascript"></script>
-    <script src="${request.static_url('mapthing:static/bower_components/angular-bindonce/bindonce.min.js')}" type="text/javascript"></script>
-    <script src="${request.static_url('mapthing:static/bower_components/angular-date-range-picker/build/angular-date-range-picker.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/node_modules/angular/angular.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/node_modules/angular-resource/angular-resource.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/node_modules/moment-range/dist/moment-range.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/node_modules/angular-bindonce/bindonce.min.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/node_modules/angular-daterangepicker/js/angular-date-range-picker.min.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/app.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/controllers.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/directives.js')}" type="text/javascript"></script>

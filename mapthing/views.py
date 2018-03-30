@@ -1,13 +1,14 @@
+from pyramid.httpexceptions import HTTPNotFound
 from pyramid.response import Response
-from pyramid.view import view_config
+from pyramid.view import view_config, notfound_view_config
 
 from sqlalchemy.exc import DBAPIError
 
 import json
+from datetime import datetime, timedelta
 from dateutil.parser import parse as date_parse
 from operator import itemgetter, attrgetter
 import tempfile
-import sqlite3
 import gps_history
 from datetime import date, timedelta
 
@@ -17,6 +18,10 @@ from .models import (
     Segment,
     Point,
     )
+
+@notfound_view_config(append_slash=True)
+def notfound(request):
+        return HTTPNotFound()
 
 @view_config(route_name='view_track', renderer='templates/view_track.pt')
 def view_track(request):
@@ -45,19 +50,19 @@ def get_tracks(request):
 
 @view_config(route_name='ajax_track', renderer='templates/view_track.pt')
 def ajax_track(request):
-    if('start' in request.params):
-        startdate = date_parse(request.params['start'])
-    else:
-        startdate = date.today() - timedelta(days=7)
-
-    if('end' in request.params):
+    if 'end' in request.params:
         enddate = date_parse(request.params['end'])
     else:
-        enddate = date.today()
+        enddate = datetime.now().replace(microsecond=0)
+
+    if 'start' in request.params:
+        startdate = date_parse(request.params['start'])
+    else:
+        startdate = enddate - timedelta(days=7)
 
     params = {
-        'start': startdate.strftime('%Y-%m-%d'),
-        'end': enddate.strftime('%Y-%m-%d'),
+        'start': startdate.isoformat(' '),
+        'end': enddate.isoformat(' '),
     }
     return { 'json_params': json.dumps(params) }
 
