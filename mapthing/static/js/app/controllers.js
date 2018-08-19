@@ -13,6 +13,8 @@ angular.module('mapApp.controllers', [])
 
       $scope.params.track_range = [];
       $scope.params.view_range = [];
+      $scope.params.anim_range = [];
+      $scope.params.sel_range = [];
       $scope.params.sel_loc = null;
       $scope.data.map = {};
 
@@ -147,11 +149,15 @@ angular.module('mapApp.controllers', [])
         }
       });
 
-      $scope.$watchGroup(['params.view_range', 'uni.interval'], function(cur, prev, scope) {
-        scope.params.tick_range = [
-          Math.round(scope.params.view_range[0]/scope.uni.interval),
-          Math.round(scope.params.view_range[1]/scope.uni.interval)
-        ];
+      $scope.$watchGroup(['params.anim_range', 'uni.interval'], function(cur, prev, scope) {
+        if(cur && cur[0] && cur[1]) {
+          var range = cur[0];
+          var interval = cur[1];
+          scope.params.tick_range = [
+            Math.round(range[0]/interval),
+            Math.round(range[1]/interval)
+          ];
+        }
       });
 
       $scope.editName = function(locnum) {
