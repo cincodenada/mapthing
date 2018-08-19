@@ -310,7 +310,7 @@ angular.module('mapApp.directives', [])
           selpoint: '=',
         },
         link: function(scope, elm, attrs) {
-          scope.map = new mxn.Mapstraction(attrs.id, 'googlev3')
+          scope.map = new mxn.Mapstraction(attrs.id, 'openlayers')
 
           scope.map.enableScrollWheelZoom();
           scope.map.addControls({

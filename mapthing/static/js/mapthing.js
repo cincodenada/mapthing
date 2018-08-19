@@ -21,6 +21,7 @@ $(function() {
         datasets: [],
     });
     */
+    map = new mxn.Mapstraction('map', 'openlayers')
 
     //show_points();
     /*
