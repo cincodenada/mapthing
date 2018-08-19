@@ -153,46 +153,21 @@ angular.module('mapApp.directives', [])
               */
           });
 
-          scope.timerange = scope.elm.timerange({
-            change: function(evt, ui) {
-              scope.$apply(function(scope) {
-                scope.selrange = ui.values;
-              });
-            }
-          });
-
-          scope.$watchGroup(['start','end'], function(cur, prev, scope) {
-            if(cur) {
-              scope.tracks = Track.query({start: cur[0].format('YYYY-MM-DD'), end: cur[1].format('YYYY-MM-DD')}, function() {
-                scope.bounds = new mxn.BoundingBox();
-
-                for(var idx in scope.tracks) {
-                    var trackdata = scope.tracks[idx];
-
-                    //Extend bounds
-                    scope.bounds.extend({lat: trackdata.minlat, lon: trackdata.minlon});
-                    scope.bounds.extend({lat: trackdata.maxlat, lon: trackdata.maxlon});
-                }
-              })
-            }
-          });
-
-          scope.$on('lastItemDone', function() {
-            scope.timerange.timerange("refresh");
-          });
         },
       }
     })
     // }}}
     // {{{ pointSel
-    .directive('pointSel', function(PointList) {
+    .directive('pointSel', function(Track, PointList) {
       return {
         template: 
           '<div class="sel_view"><canvas></canvas></div>' +
           '<div class="uni_view"><canvas></canvas></div>',
         scope: {
-          range: '=',
+          start: '=',
+          end: '=',
           selRange: '=',
+          animRange: '=',
           pointData: '=',
           pointBounds: '=',
           uniParams: '=',
@@ -212,17 +187,21 @@ angular.module('mapApp.directives', [])
           scope.timerange.canvas.attr('width', scope.timerange.canvas.innerWidth());
           scope.timerange.canvas.attr('height', scope.timerange.canvas.innerHeight());
           scope.timerange.dc = scope.timerange.canvas[0].getContext('2d');
-          
+
+          // Set up UI callback for selected timerange
           scope.timerange.elm.timerange({
             change: function(evt, ui) {
               scope.$apply(function(scope) {
                 scope.selRange = ui.values;
+                scope.animRange = ui.values;
               });
             }
           });
 
-          scope.$watch('range', function(cur, prev, scope) {
+          // This kicks off the track queries
+          scope.$watchGroup(['start','end'], function(cur, prev, scope) {
             if(cur) {
+              // Go fetch our points
               var starttime = moment(cur[0],'X');
               var endtime = moment(cur[1],'X');
               scope.timerange.elm.timerange('option','min',cur[0]);
@@ -232,6 +211,37 @@ angular.module('mapApp.directives', [])
                 scope.pointData = p;
                 scope.draw();
               });
+
+              // And our tracks
+              scope.tracks = Track.query({start: cur[0].format('YYYY-MM-DD'), end: cur[1].format('YYYY-MM-DD')}, function() {
+                scope.bounds = new mxn.BoundingBox();
+
+                // Get canvas for drawing
+                var c = scope.view.dc;
+                c.clearRect(0, 0, c.canvas.width, c.canvas.height);
+                var pxpersec = c.canvas.width/(cur[1] - cur[0]);
+
+                for(var idx in scope.tracks) {
+                    var trackdata = scope.tracks[idx];
+
+                    // Extend bounds
+                    scope.bounds.extend({lat: trackdata.minlat, lon: trackdata.minlon});
+                    scope.bounds.extend({lat: trackdata.maxlat, lon: trackdata.maxlon});
+
+                    var relstart = trackdata.start - cur[0];
+                    var len = trackdata.end - trackdata.start;
+                    // Draw tracks
+                    c.fillRect(
+                      pxpersec*relstart,0,
+                      pxpersec*len,1
+                    );
+                }
+              })
+            }
+          });
+
+          scope.$watch('range', function(cur, prev, scope) {
+            if(cur) {
             }
           });
 
@@ -244,13 +254,9 @@ angular.module('mapApp.directives', [])
         },
         controller: function($scope) {
           $scope.draw = function() {
-            var mintime, maxtime;
-            if($scope.range) {
-                mintime = $scope.range[0];
-                maxtime = $scope.range[1];
-            } else {
-                return false;
-            }
+            var mintime = $scope.start.unix();
+            var maxtime = $scope.end.unix();
+            if(!mintime || !maxtime) { return false; }
 
             $scope.timerange.dc.fillStyle = "rgba(0,0,0,0.2)";
             $scope.timerange.dc.clearRect(0,0,$scope.timerange.canvas.attr('width'),$scope.timerange.canvas.attr('height'));

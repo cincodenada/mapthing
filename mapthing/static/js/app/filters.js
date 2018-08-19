@@ -4,8 +4,8 @@
 angular.module('mapApp.filters', [])
   .filter('humanize', function() {
     return function(range) {
-      var starttime = moment(range[0],'X');
-      var endtime = moment(range[1],'X');
+      var starttime = moment(range[0]/1000,'X');
+      var endtime = moment(range[1]/1000,'X');
       var length = moment.duration(starttime.diff(endtime));
 
       //TODO: Angular templatize this

@@ -11,7 +11,6 @@ angular.module('mapApp.controllers', [])
       };
       $scope.daterange = moment().range(params.start, params.end);
 
-      $scope.params.track_range = [];
       $scope.params.view_range = [];
       $scope.params.anim_range = [];
       $scope.params.sel_range = [];
@@ -19,13 +18,6 @@ angular.module('mapApp.controllers', [])
       $scope.data.map = {};
 
       $scope.data.locnames = JSON.parse(localStorage.getItem('locnames')) || {};
-
-      $scope.$watch('params.track_range', function(cur, prev, scope) {
-        if(cur) {
-          // Reset view range
-          scope.params.view_range = [];
-        }
-      });
 
       $scope.$watch('params.track_bounds', function(cur, prev, scope) {
         if(cur && !cur.isEmpty()) { scope.data.map.bounds = cur; }
@@ -55,9 +47,9 @@ angular.module('mapApp.controllers', [])
           scope.data.map.locations = point_data.locations;
 
           var min_time = false, max_time = false;
-          if(scope.params.track_range) {
-              min_time = scope.params.track_range[0];
-              max_time = scope.params.track_range[1];
+          if(scope.params.daterange) {
+            min_time = scope.params.daterange.start.unix();
+            max_time = scope.params.daterange.end.unix();
           }
           var prev_tick_points = [];
 
@@ -154,8 +146,8 @@ angular.module('mapApp.controllers', [])
           var range = cur[0];
           var interval = cur[1];
           scope.params.tick_range = [
-            Math.round(range[0]/interval),
-            Math.round(range[1]/interval)
+            Math.round(range[0]/1000/interval),
+            Math.round(range[1]/1000/interval)
           ];
         }
       });

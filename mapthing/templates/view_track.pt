@@ -38,10 +38,10 @@
    	<div id="datepicker">
         <input type="text" date-range-picker ranged="true" ng-model="daterange"/>
     </div>
-    <h1 id="full_timerange" ng-show="params.track_range">
-        {{params.track_range[0]*1000|date:'EEE MMM d, yyyy H:mm'}}
+    <h1 id="full_timerange" ng-show="params.view_range">
+        {{params.view_range[0]|date:'EEE MMM d, yyyy H:mm'}}
         -
-        {{params.track_range[1]*1000|date:'EEE MMM d, yyyy H:mm'}}
+        {{params.view_range[1]|date:'EEE MMM d, yyyy H:mm'}}
     </h1>
     <h2 id="sel_timerange" ng-show="params.view_range.length">{{params.view_range|humanize}}</h2>
     <div id="details">
@@ -60,12 +60,6 @@
         <button id="getarea">Get All in Map</button>
     </div>
     <div style="clear: both;"></div>
-    <track-sel
-        start="daterange.start"
-        end="daterange.end"
-        selrange="params.track_range"
-        bounds="params.track_bounds">
-    </track-sel>
     <div>
         <div id="trips">
             <ul id="triplist">
@@ -109,9 +103,11 @@
     </div>
     <div id="timeline"></div>
     <point-sel
-        range="params.track_range"
+        start="daterange.start"
+        end="daterange.end"
+        bounds="params.track_bounds"
         sel-range="params.view_range"
-        extra-ranges="{anim: params.anim_range, sel: params.sel_range}"
+        anim-range="params.anim_range"
         uni-params="uni"
         uni-data="data.map.spans"
         point-bounds="data.view_bounds"
