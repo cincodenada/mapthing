@@ -203,7 +203,7 @@ $.widget('cincodenada.timerange',$.ui.slider,{
         if(min) { this.options.min = min/1000 }
         if(max) { this.options.max = max/1000 }
 
-        this.element.css('height',evtrows.length*this.options.evtheight + 'em')
+        //this.element.css('height',evtrows.length*this.options.evtheight + 'em')
         
         var $lastevt = $();
         this.events.each(function(idx) {

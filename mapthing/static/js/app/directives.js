@@ -258,10 +258,16 @@ angular.module('mapApp.directives', [])
             var maxtime = $scope.end.unix();
             if(!mintime || !maxtime) { return false; }
 
-            $scope.timerange.dc.fillStyle = "rgba(0,0,0,0.2)";
             $scope.timerange.dc.clearRect(0,0,$scope.timerange.canvas.attr('width'),$scope.timerange.canvas.attr('height'));
 
             var bounds = new mxn.BoundingBox();
+            
+            var bar_width = 5;
+            var bar_pad = 1;
+            var bar_total = bar_width + bar_pad*2;
+            var canvas_width = $scope.timerange.canvas.attr('width');
+            var point_count = {};
+            var max_count = 0;
 
             for(var idx in $scope.pointData.timepoints) {
                 var curpoint = $scope.pointData.timepoints[idx];
@@ -273,8 +279,23 @@ angular.module('mapApp.directives', [])
                 //Curpoint has lat/lon properties, so we're great
                 bounds.extend(curpoint);
 
-                var xpos = (curtime-mintime)/(maxtime-mintime)*$scope.timerange.canvas.attr('width');
-                $scope.timerange.dc.fillRect(xpos,0,1,$scope.timerange.canvas.attr('height'));
+                var barpos = Math.floor((curtime-mintime)/(maxtime-mintime)*canvas_width/bar_total);
+                if(!point_count[barpos]) { point_count[barpos] = 0 }
+                point_count[barpos] += 1;
+                if(point_count[barpos] > max_count) {
+                  max_count = point_count[barpos];
+                }
+            }
+            var height = $scope.timerange.canvas.attr('height');
+            console.log(point_count)
+            for(var bp=0; bp<canvas_width/bar_total; bp++) {
+              if(point_count[bp]) {
+                var bar_height = height*point_count[bp]/max_count
+                $scope.timerange.dc.fillRect(
+                  bp*bar_total+bar_pad, height-bar_height,
+                  bar_total-bar_pad*2,bar_height
+                );
+              }
             }
 
             $scope.pointBounds = bounds;
