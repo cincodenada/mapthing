@@ -5,22 +5,15 @@
     <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
     <meta name="keywords" content="" />
     <meta name="description" content="" />
-    <!-- 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
-    -->
-    <script src="${request.static_url('mapthing:static/bower_components/jquery/jquery.js')}"></script>
-    <script src="${request.static_url('mapthing:static/bower_components/jquery-ui/ui/jquery-ui.js')}"></script>
-    
     <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
-    <!-- 
     <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/ui-lightness/jquery-ui.css" />
-    -->
-    <link rel="stylesheet" href="${request.static_url('mapthing:static/bower_components/jquery-ui/themes/ui-lightness/jquery-ui.css')}" type="text/css" charset="utf-8" />
     <link rel="shortcut icon" href="${request.static_url('mapthing:static/favicon.ico')}" />
     <link rel="stylesheet" href="${request.static_url('mapthing:static/pylons.css')}" type="text/css" media="screen" charset="utf-8" />
     <link rel="stylesheet" href="${request.static_url('mapthing:static/css/jquery.ui.timerange.css')}" type="text/css" charset="utf-8" />
-    <link rel="stylesheet" href="${request.static_url('mapthing:static/bower_components/angular-date-range-picker/build/angular-date-range-picker.css')}"></link>
+    <link rel="stylesheet" href="${request.static_url('mapthing:static/node_modules/bootstrap/dist/css/bootstrap.css')}"></link>
+    <link rel="stylesheet" href="${request.static_url('mapthing:static/node_modules/bootstrap-daterangepicker/daterangepicker.css')}"></link>
     <link rel="stylesheet" href="${request.static_url('mapthing:static/css/view_track.css')}"></link>
     <!--[if lte IE 6]>
     <link rel="stylesheet" href="${request.static_url('mapthing:static/ie6.css')}" type="text/css" media="screen" charset="utf-8" />
@@ -103,8 +96,8 @@
     </div>
     <div id="timeline"></div>
     <point-sel
-        start="daterange.start"
-        end="daterange.end"
+        start="daterange.startDate"
+        end="daterange.endDate"
         bounds="params.track_bounds"
         sel-range="params.view_range"
         anim-range="params.anim_range"
@@ -153,12 +146,13 @@
             </li>
         </ul>
     </script>
-    <script src="${request.static_url('mapthing:static/js/moment.min.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/node_modules/angular/angular.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/node_modules/angular-resource/angular-resource.js')}" type="text/javascript"></script>
-    <script src="${request.static_url('mapthing:static/node_modules/moment-range/dist/moment-range.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/node_modules/angular-bindonce/bindonce.min.js')}" type="text/javascript"></script>
-    <script src="${request.static_url('mapthing:static/node_modules/angular-daterangepicker/js/angular-date-range-picker.min.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/node_modules/moment/min/moment.min.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/node_modules/moment-range/dist/moment-range.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/node_modules/bootstrap-daterangepicker/daterangepicker.js')}" type="text/javascript"></script>
+    <script src="${request.static_url('mapthing:static/node_modules/angular-daterangepicker/js/angular-daterangepicker.min.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/app.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/controllers.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/js/app/directives.js')}" type="text/javascript"></script>

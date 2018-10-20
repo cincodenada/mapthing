@@ -213,13 +213,13 @@ angular.module('mapApp.directives', [])
               });
 
               // And our tracks
-              scope.tracks = Track.query({start: cur[0].format('YYYY-MM-DD'), end: cur[1].format('YYYY-MM-DD')}, function() {
+              scope.tracks = Track.query({start: starttime.format('YYYY-MM-DD'), end: endtime.format('YYYY-MM-DD')}, function() {
                 scope.bounds = new mxn.BoundingBox();
 
                 // Get canvas for drawing
                 var c = scope.view.dc;
                 c.clearRect(0, 0, c.canvas.width, c.canvas.height);
-                var pxpersec = c.canvas.width/(cur[1] - cur[0]);
+                var pxpersec = c.canvas.width/(endtime - starttime);
 
                 for(var idx in scope.tracks) {
                     var trackdata = scope.tracks[idx];
@@ -228,7 +228,7 @@ angular.module('mapApp.directives', [])
                     scope.bounds.extend({lat: trackdata.minlat, lon: trackdata.minlon});
                     scope.bounds.extend({lat: trackdata.maxlat, lon: trackdata.maxlon});
 
-                    var relstart = trackdata.start - cur[0];
+                    var relstart = trackdata.start - starttime;
                     var len = trackdata.end - trackdata.start;
                     // Draw tracks
                     c.fillRect(
