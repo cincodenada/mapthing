@@ -3,6 +3,7 @@ import math
 import json
 from StringIO import StringIO
 from LatLon import LatLon
+import datetime
 
 class Track:
     pass
@@ -162,7 +163,7 @@ class History:
         self.points = []
         self.last_time = None
         self.cur_trip = Trip()
-        self.trip_gap = trip_gap*1000 # Convert to ms
+        self.trip_gap = datetime.timedelta(seconds=trip_gap) # Convert to ms
 
     def add_point(self, p):
         self.points.append(p)

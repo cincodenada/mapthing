@@ -40,11 +40,12 @@ class Point(Base):
 
     @staticmethod
     def getByDate(start, end):
+        # Shouldn't have to do isoformat() here but...
         query = DBSession.query(Point,Segment,Track)\
                 .join(Segment)\
                 .join(Track)\
-                .filter(Point.time >= start)\
-                .filter(Point.time <= end)\
+                .filter(Point.time >= start.isoformat())\
+                .filter(Point.time <= end.isoformat())\
                 .order_by(Point.time)
         return query
 
@@ -101,8 +102,8 @@ class Track(Base):
                 )\
                 .join(Track.segments)\
                 .join(Segment.points)\
-                .filter(Point.time >= start)\
-                .filter(Point.time <= end)\
+                .filter(Point.time >= start.isoformat())\
+                .filter(Point.time <= end.isoformat())\
                 .group_by(Track.id)\
                 .order_by(func.min(Point.time))
 
