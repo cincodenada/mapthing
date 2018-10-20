@@ -9,7 +9,7 @@ angular.module('mapApp.controllers', [])
         preinterval: 5,
         interp: 10,
       };
-      $scope.daterange = moment().range(params.start, params.end);
+      $scope.daterange = {startDate: moment(params.start), endDate: moment(params.end)};
 
       $scope.params.view_range = [];
       $scope.params.anim_range = [];

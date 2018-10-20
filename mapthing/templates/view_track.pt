@@ -96,8 +96,8 @@
     </div>
     <div id="timeline"></div>
     <point-sel
-        start="daterange.start"
-        end="daterange.end"
+        start="daterange.startDate"
+        end="daterange.endDate"
         bounds="params.track_bounds"
         sel-range="params.view_range"
         anim-range="params.anim_range"
