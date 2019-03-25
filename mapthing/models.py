@@ -102,8 +102,8 @@ class Track(Base):
                 )\
                 .join(Track.segments)\
                 .join(Segment.points)\
-                .filter(Point.time >= start.isoformat())\
-                .filter(Point.time <= end.isoformat())\
+                .filter(Point.time >= start)\
+                .filter(Point.time <= end)\
                 .group_by(Track.id)\
                 .order_by(func.min(Point.time))
 

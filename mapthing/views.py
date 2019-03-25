@@ -138,8 +138,9 @@ def date_track(request):
     for p, s, t in points:
         hist.add_point(p)
 
-        rollingavg.insert(0,p.speed)
-        rollingavg.pop()
+        if(p.speed):
+            rollingavg.insert(0,p.speed)
+            rollingavg.pop()
         avg = sum(rollingavg)/avg_len
         diff = [(mode, abs(1-(avg/speedpoints[mode]['midpoint']))) for mode in speedpoints]
         diff.sort(key=itemgetter(1))
