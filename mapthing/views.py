@@ -1,13 +1,17 @@
+from pyramid.httpexceptions import HTTPNotFound
 from pyramid.response import Response
-from pyramid.view import view_config
+from pyramid.view import view_config, notfound_view_config
 
 from sqlalchemy.exc import DBAPIError
 
 import json
+from datetime import datetime, timedelta
+import pytz
 from dateutil.parser import parse as date_parse
 from operator import itemgetter, attrgetter
 import tempfile
 import gps_history
+from datetime import date, timedelta
 
 from . import uploader
 
@@ -17,6 +21,17 @@ from .models import (
     Segment,
     Point,
     )
+
+class DatetimeEncoder(json.JSONEncoder):
+    epoch = datetime.fromtimestamp(0, pytz.utc)
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return (obj - self.epoch).total_seconds()*1000
+        return json.JSONEncoder.default(self, obj)
+
+@notfound_view_config(append_slash=True)
+def notfound(request):
+        return HTTPNotFound()
 
 @view_config(route_name='view_track', renderer='templates/view_track.pt')
 def view_track(request):
@@ -41,15 +56,23 @@ def get_tracks(request):
         if(curtrack is None):
             break;
         trackdata.append(dict(zip(('id','start','end','minlat','maxlat','minlon','maxlon'),curtrack)))
-    return { 'json_data': json.dumps(trackdata) }
+    return { 'json_data': json.dumps(trackdata, cls=DatetimeEncoder) }
 
 @view_config(route_name='ajax_track', renderer='templates/view_track.pt')
 def ajax_track(request):
-    startdate = date_parse(request.params['start'])
-    enddate = date_parse(request.params['end'])
+    if 'end' in request.params:
+        enddate = date_parse(request.params['end'])
+    else:
+        enddate = datetime.now().replace(microsecond=0)
+
+    if 'start' in request.params:
+        startdate = date_parse(request.params['start'])
+    else:
+        startdate = enddate - timedelta(days=7)
+
     params = {
-        'start': request.params['start'],
-        'end': request.params['end'],
+        'start': startdate.isoformat(' '),
+        'end': enddate.isoformat(' '),
     }
     return { 'json_params': json.dumps(params) }
 
@@ -117,8 +140,9 @@ def date_track(request):
     for p, s, t in points:
         hist.add_point(p)
 
-        rollingavg.insert(0,p.speed)
-        rollingavg.pop()
+        if(p.speed):
+            rollingavg.insert(0,p.speed)
+            rollingavg.pop()
         avg = sum(rollingavg)/avg_len
         diff = [(mode, abs(1-(avg/speedpoints[mode]['midpoint']))) for mode in speedpoints]
         diff.sort(key=itemgetter(1))
@@ -173,14 +197,17 @@ def date_track(request):
             }
         if not s.id in tracks[t.id]['segments']:
             tracks[t.id]['segments'].append(s.id)
-     
+
+    locations = hist.get_locations(50,3) # Fill in location data
+
     return {'json_data': json.dumps({
         'tracks': tracks, 
         'segments': segments, 
         'points': pointlist,
         'timepoints': timepoints,
         'trips': hist.get_trips(),
-    })}
+        'locations': locations.get_serializable(),
+    }, cls=DatetimeEncoder)}
 
 @view_config(route_name='upload_data', renderer='templates/json.pt')
 def upload_data(request):

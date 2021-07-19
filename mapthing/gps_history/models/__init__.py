@@ -4,7 +4,7 @@ from sqlalchemy import (
     Integer,
     Text,
     Float,
-    TIMESTAMP,
+    DateTime,
     String,
     ForeignKey,
     func,
@@ -31,7 +31,7 @@ class Point(Base):
     id = Column(Integer, primary_key=True)
     latitude = Column(Float)
     longitude = Column(Float)
-    time = Column(TIMESTAMP)
+    time = Column(Integer)
     speed = Column(Float)
     accuracy = Column(Float)
     altitude = Column(Float)
@@ -40,12 +40,11 @@ class Point(Base):
 
     @staticmethod
     def getByDate(start, end):
-        # Shouldn't have to do isoformat() here but...
         query = DBSession.query(Point,Segment,Track)\
                 .join(Segment)\
                 .join(Track)\
-                .filter(Point.time >= start.isoformat())\
-                .filter(Point.time <= end.isoformat())\
+                .filter(Point.time >= int(start.strftime('%s'))*1000)\
+                .filter(Point.time <= int(end.strftime('%s'))*1000)\
                 .order_by(Point.time)
         return query
 
@@ -63,8 +62,7 @@ class Point(Base):
 
     @staticmethod
     def getTimes(ne, sw):
-        #timestr = r"strftime('%w %H:%M',points.time/1000,'unixepoch','localtime')"
-        timestr = r"to_date('D HH:MI',points.time)"
+        timestr = r"strftime('%w %H:%M',points.time/1000,'unixepoch','localtime')"
         query = DBSession.query(func.count(),Point.time)\
                 .filter(Point.latitude >= sw[0])\
                 .filter(Point.latitude <= ne[0])\
@@ -78,7 +76,7 @@ class Segment(Base):
     __tablename__ = 'segments'
     id = Column(Integer, primary_key=True)
     track_id = Column(Integer, ForeignKey('tracks.id'))
-    
+
     points = relationship(Point)
 
 class Track(Base):
@@ -86,7 +84,7 @@ class Track(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     created = Column(Integer)
-    
+
     segments = relationship(Segment)
 
     @staticmethod
@@ -102,10 +100,10 @@ class Track(Base):
                 )\
                 .join(Track.segments)\
                 .join(Segment.points)\
-                .filter(Point.time >= start)\
-                .filter(Point.time <= end)\
+                .filter(Point.time >= int(start.strftime('%s'))*1000)\
+                .filter(Point.time <= int(end.strftime('%s'))*1000)\
                 .group_by(Track.id)\
-                .order_by(func.min(Point.time))
+                .order_by(Point.time)
 
     @staticmethod
     def getPoints(id, bb = None):

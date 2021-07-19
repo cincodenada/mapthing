@@ -1,0 +1,21 @@
+{
+  "name": "mapthing",
+  "version": "0.1.0",
+  "main": "index.js",
+  "author": "Joel Bradshaw <cincodenada@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "angular": "^1.6.9",
+    "angular-bindonce": "^0.3.1",
+    "angular-daterangepicker": "^0.2.3-alpha1",
+    "angular-resource": "^1.6.9",
+    "angular-route": "^1.6.9",
+    "highcharts-ng": "^1.2.0",
+    "jquery": "^1.12.4",
+    "jquery-ui": "^1.12.1",
+    "moment-range": "^4.0.1"
+  },
+  "devDependencies": {
+    "angular-mocks": "^1.6.9"
+  }
+}
