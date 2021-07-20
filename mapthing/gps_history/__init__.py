@@ -1,14 +1,19 @@
+from __future__ import division
 #import shapefile
+from future import standard_library
+standard_library.install_aliases()
+from past.utils import old_div
+from builtins import object
 import math
 import json
-from StringIO import StringIO
+from io import StringIO
 from LatLon import LatLon
 import datetime
 
-class Track:
+class Track(object):
     pass
 
-class LocationPool:
+class LocationPool(object):
     def __init__(self, radius):
         self.locations = []
         self.radius = radius
@@ -44,7 +49,7 @@ class LocationPool:
         return outarr
 
 
-class Location:
+class Location(object):
     stdev_fence = 2
     stdev_include = 1
 
@@ -55,13 +60,13 @@ class Location:
 
         self.num_points = 0
 
-        self.radius = float(radius)/1000.0 # Convert m to km
+        self.radius = old_div(float(radius),1000.0) # Convert m to km
 
         if p:
             self.add_point(p)
 
     def center(self):
-        return LatLon(self.lat_sum/self.num_points, self.lon_sum/self.num_points)
+        return LatLon(old_div(self.lat_sum,self.num_points), old_div(self.lon_sum,self.num_points))
 
     def bb(self):
         return [LatLon(self.minlat, self.minlon), LatLon(self.maxlat, self.maxlon)]
@@ -126,7 +131,7 @@ class Location:
 
         return out
 
-class Trip:
+class Trip(object):
     def __init__(self):
         self.points = []
         self.start = self.end = None
@@ -157,7 +162,7 @@ class Trip:
         w.save(path)
         return w
 
-class History:
+class History(object):
     def __init__(self, trip_gap=3*60):
         self.trips = []
         self.points = []

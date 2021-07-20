@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import absolute_import
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.response import Response
 from pyramid.view import view_config, notfound_view_config
@@ -10,7 +15,7 @@ import pytz
 from dateutil.parser import parse as date_parse
 from operator import itemgetter, attrgetter
 import tempfile
-import gps_history
+from . import gps_history
 from datetime import date, timedelta
 
 from . import uploader
@@ -55,7 +60,7 @@ def get_tracks(request):
         curtrack = data.fetchone()
         if(curtrack is None):
             break;
-        trackdata.append(dict(zip(('id','start','end','minlat','maxlat','minlon','maxlon'),curtrack)))
+        trackdata.append(dict(list(zip(('id','start','end','minlat','maxlat','minlon','maxlon'),curtrack))))
     return { 'json_data': json.dumps(trackdata, cls=DatetimeEncoder) }
 
 @view_config(route_name='ajax_track', renderer='templates/view_track.pt')
@@ -143,8 +148,8 @@ def date_track(request):
         if(p.speed):
             rollingavg.insert(0,p.speed)
             rollingavg.pop()
-        avg = sum(rollingavg)/avg_len
-        diff = [(mode, abs(1-(avg/speedpoints[mode]['midpoint']))) for mode in speedpoints]
+        avg = old_div(sum(rollingavg),avg_len)
+        diff = [(mode, abs(1-(old_div(avg,speedpoints[mode]['midpoint'])))) for mode in speedpoints]
         diff.sort(key=itemgetter(1))
         rollingcat.insert(0,diff[0][0])
         rollingcat.pop()

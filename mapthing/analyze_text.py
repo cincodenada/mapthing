@@ -1,9 +1,15 @@
 #!/usr/bin/python2
-import gps_history as gps
-import models
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from past.utils import old_div
+from . import gps_history as gps
+from . import models
 from datetime import datetime
 from sqlalchemy import engine_from_config
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 import argparse
 
@@ -26,14 +32,14 @@ if(__name__ == '__main__'):
 
     hist = gps.History(trip_gap=args.trip_split)
     for p, s, t in models.Point.getByDate(startdate, enddate):
-        print ".",
+        print(".", end=' ')
         hist.add_point(p)
 
     num_long_trips = 0
     locations = hist.get_locations(args.radius, args.trip_len)
 
-    print "Found {} long trips and {} locations:".format(locations.num_points/2, len(locations.locations))
+    print("Found {} long trips and {} locations:".format(old_div(locations.num_points,2), len(locations.locations)))
 
     for l in locations.locations:
         if l.num_points > 1:
-            print l.center()
+            print(l.center())

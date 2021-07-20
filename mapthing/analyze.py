@@ -1,16 +1,20 @@
 #!/usr/bin/python2
-import gps_history as gps
-import models
+from __future__ import print_function
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from . import gps_history as gps
+from . import models
 from datetime import datetime
 from sqlalchemy import engine_from_config
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 import shapefile
 import xml.etree.ElementTree as ET
 
 import mapnik
-import Tkinter
+import tkinter
 from PIL import Image, ImageTk
-from StringIO import StringIO
+from io import StringIO
 from subprocess import call
 
 # Guard to keep Pylons from trying to run the damn thing
@@ -26,7 +30,7 @@ if(__name__ == '__main__'):
 
     hist = gps.History()
     for p, s, t in models.Point.getByDate(startdate, enddate):
-        print ".",
+        print(".", end=' ')
         hist.add_point(p)
 
     locations = []
@@ -47,12 +51,12 @@ if(__name__ == '__main__'):
                 locations.append(gps.Location(t.end))
             shp = t.get_shapefile('/tmp/mapthing')
 
-    print num_long_trips
-    print len(locations)
+    print(num_long_trips)
+    print(len(locations))
 
     for l in locations:
         if l.num_points > 1:
-            print l.center()
+            print(l.center())
 
     m = mapnik.Map(256,256)
     mapnik.load_map(m, 'mapstyle.xml')
@@ -67,7 +71,7 @@ if(__name__ == '__main__'):
     def button_click_exit_mainloop (event):
         event.widget.quit() # this will cause mainloop to unblock.
 
-    root = Tkinter.Tk()
+    root = tkinter.Tk()
     root.bind("<Button>", button_click_exit_mainloop)
     root.geometry('+%d+%d' % (100,100))
     lnum = 0
@@ -88,7 +92,7 @@ if(__name__ == '__main__'):
 
         root.geometry('%dx%d' % (img.size[0],img.size[1]))
         tkpi = ImageTk.PhotoImage(img)
-        label_image = Tkinter.Label(root, image=tkpi)
+        label_image = tkinter.Label(root, image=tkpi)
         label_image.place(x=0,y=0,width=img.size[0],height=img.size[1])
         root.title("Location %d" % (lnum))
         lnum+=1

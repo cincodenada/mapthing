@@ -1,3 +1,4 @@
+from builtins import object
 import sqlite3
 import tempfile
 import datetime
@@ -12,7 +13,7 @@ from .models import (
 import gpxpy
 from collections import Counter
 
-class FileImporter:
+class FileImporter(object):
     def __init__(self, uploaded_file):
         self.infile = tempfile.NamedTemporaryFile(delete=False)
         uploaded_file.file.seek(0)
@@ -85,10 +86,10 @@ class ImportSqlite(FileImporter):
         c = conn.cursor()
         querylist = []
         col_list = []
-        for t, tmap in self.tables.iteritems():
+        for t, tmap in list(self.tables.items()):
             curmap = tmap.copy()
             curtable = curmap.pop('_tablename_',t)
-            for new, orig in curmap.iteritems():
+            for new, orig in list(curmap.items()):
                 col_list.append('`%s`.`%s` as %s_%s' % (curtable, orig, curtable, orig))
             
         fromquery = 'SELECT %(fields)s FROM %(point)s ' + \
@@ -106,7 +107,7 @@ class ImportSqlite(FileImporter):
         }
         querylist.append(fromquery)
         c.row_factory = sqlite3.Row
-        idmap = {k:{} for k in self.tables.keys()}
+        idmap = {k:{} for k in list(self.tables.keys())}
         #new shit starts at 138 btw in case everything goes to hell
         for row in c.execute(fromquery):
             #Find or create the track
@@ -134,7 +135,7 @@ class ImportSqlite(FileImporter):
 
     def add_row_data(row, table, obj):
         oldtable = self.tables[table]['_tablename_']
-        for new, old in self.tables[table].iteritems():
+        for new, old in list(self.tables[table].items()):
             if(not new in ['_tablename_','id','track_id','segment_id']):
                 setattr(obj, new, row[oldtable + '_' + old])
 
