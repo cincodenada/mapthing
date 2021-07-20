@@ -2,3 +2,5 @@
 *.db
 *.sqlite
 *.backup
+
+Mapthing.egg-info
