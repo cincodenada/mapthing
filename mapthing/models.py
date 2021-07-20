@@ -85,7 +85,7 @@ class Track(Base):
     __tablename__ = 'tracks'
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    created = Column(Integer)
+    created = Column(TIMESTAMP)
     
     segments = relationship(Segment)
 

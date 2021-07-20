@@ -33,7 +33,7 @@ class ImportGpx(FileImporter):
             counts['tracks']+=1
             t = Track()
             t.name = track.name
-            t.created = (gpx.time - epoch).total_seconds()*1000
+            t.created = gpx.time
             DBSession.add(t)
             for seg in track.segments:
                 counts['segments']+=1
@@ -44,7 +44,7 @@ class ImportGpx(FileImporter):
                     p = Point()
                     p.latitude = point.latitude
                     p.longitude = point.longitude
-                    p.time = (point.time - epoch).total_seconds()*1000
+                    p.time = point.time
                     p.speed = point.speed
                     p.altitude = point.elevation
                     p.bearing = point.course
