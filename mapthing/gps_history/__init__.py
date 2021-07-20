@@ -7,7 +7,7 @@ from builtins import object
 import math
 import json
 from io import StringIO
-from LatLon import LatLon
+from LatLon23 import LatLon
 import datetime
 
 class Track(object):

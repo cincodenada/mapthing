@@ -11,7 +11,7 @@ from configparser import ConfigParser
 import shapefile
 import xml.etree.ElementTree as ET
 
-import mapnik
+#import mapnik
 import tkinter
 from PIL import Image, ImageTk
 from io import StringIO
@@ -58,8 +58,8 @@ if(__name__ == '__main__'):
         if l.num_points > 1:
             print(l.center())
 
-    m = mapnik.Map(256,256)
-    mapnik.load_map(m, 'mapstyle.xml')
+    #m = mapnik.Map(256,256)
+    #mapnik.load_map(m, 'mapstyle.xml')
 
     #custom_layer = mapnik.Layer('trip')
     #custom_layer.styles.append('trip')
@@ -81,14 +81,14 @@ if(__name__ == '__main__'):
 
         l.get_shapefile('/tmp/mapthing')
 
-        mapnik.load_map(m, 'mapstyle.xml')
-        m.zoom_to_box(mapnik.Box2d(l.minlon, l.minlat, l.maxlon, l.maxlat))
-        m.zoom(-2)
+        #mapnik.load_map(m, 'mapstyle.xml')
+        #m.zoom_to_box(mapnik.Box2d(l.minlon, l.minlat, l.maxlon, l.maxlat))
+        #m.zoom(-2)
 
-        im = mapnik.Image(m.width, m.height)
-        mapnik.render(m, im)
-        imdata = StringIO(im.tostring('png'))
-        img = Image.open(imdata)
+        #im = mapnik.Image(m.width, m.height)
+        #mapnik.render(m, im)
+        #imdata = StringIO(im.tostring('png'))
+        #img = Image.open(imdata)
 
         root.geometry('%dx%d' % (img.size[0],img.size[1]))
         tkpi = ImageTk.PhotoImage(img)
