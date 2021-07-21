@@ -4,7 +4,7 @@ from sqlalchemy import (
     Integer,
     Text,
     Float,
-    TIMESTAMP,
+    DateTime,
     String,
     ForeignKey,
     func,
@@ -25,13 +25,12 @@ from zope.sqlalchemy import ZopeTransactionExtension
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
-
 class Point(Base):
     __tablename__ = 'points'
     id = Column(Integer, primary_key=True)
     latitude = Column(Float)
     longitude = Column(Float)
-    time = Column(TIMESTAMP)
+    time = Column(DateTime(timezone=True))
     speed = Column(Float)
     accuracy = Column(Float)
     altitude = Column(Float)
@@ -85,7 +84,7 @@ class Track(Base):
     __tablename__ = 'tracks'
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    created = Column(TIMESTAMP)
+    created = Column(DateTime(timezone=True))
     
     segments = relationship(Segment)
 
