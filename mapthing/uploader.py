@@ -41,7 +41,7 @@ def import_file(filename, ignore_invalid=False):
             raise RuntimeError(f"No importer found for {filename}")
 
     importer = extmap[ext]
-    print(f"Importing {filename} with {type(importer).__name__}")
+    print(f"Importing {filename} with {importer.__name__}")
     with open(filename, 'r') as infile:
         print(importer(infile).load())
 

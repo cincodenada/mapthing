@@ -3,7 +3,8 @@ import argparse
 from . import uploader
 
 parser = argparse.ArgumentParser(description='Import GPS data')
-parser.add_argument('file', type=str, help="File to import")
+parser.add_argument('files', type=str, nargs="+", help="Files to import")
 args = parser.parse_args()
 
-uploader.import_file(args.file)
+for f in args.files:
+    uploader.import_file(f)
