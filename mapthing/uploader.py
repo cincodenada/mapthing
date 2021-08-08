@@ -3,6 +3,8 @@ import sqlite3
 import tempfile
 import datetime
 import os
+import glob
+import zipfile
 
 from .models import (
     DBSession,
@@ -14,7 +16,7 @@ from .models import (
 import gpxpy
 from collections import Counter
 
-def import_file(filename):
+def import_file(filename, ignore_invalid=False):
     extmap = {
         '.gpx': ImportGpx,
         '.sqlite': ImportSqlite,
@@ -23,10 +25,23 @@ def import_file(filename):
     }
 
     (root, ext) = os.path.splitext(filename)
-    if ext not in extmap:
-        raise RuntimeError(f"No importer found for {filename}")
+    if ext == '.zip':
+        with tempfile.TemporaryDirectory() as zipdir:
+            print(f"Extracting {filename} to {zipdir}")
+            with zipfile.ZipFile(filename, 'r') as zipf:
+                zipf.extractall(zipdir)
+            for extracted_file in glob.glob(zipdir + '/*'):
+                import_file(extracted_file, True)
+            return
+    elif ext not in extmap:
+        if ignore_invalid:
+            print(f"Ignoring invalid file {filename}")
+            return
+        else:
+            raise RuntimeError(f"No importer found for {filename}")
 
     importer = extmap[ext]
+    print(f"Importing {filename} with {type(importer).__name__}")
     with open(filename, 'r') as infile:
         print(importer(infile).load())
 
