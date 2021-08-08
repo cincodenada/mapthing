@@ -220,10 +220,10 @@ def upload_data(request):
     (basename, ext) = myfile.filename.rsplit('.', 1)
 
     if(ext == 'gpx'):
-        imp = uploader.ImportGpx(myfile)
+        imp = uploader.ImportGpx.from_upload(myfile)
         querylist = imp.load()
     else:
-        imp = uploader.ImportSqlite(myfile)
+        imp = uploader.ImportSqlite.from_upload(myfile)
         querylist = imp.load()
 
 #   upload_directory = os.path.join(os.getcwd(), '/myapp/static/uploads/')

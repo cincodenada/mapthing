@@ -2,6 +2,7 @@ from builtins import object
 import sqlite3
 import tempfile
 import datetime
+import os
 
 from .models import (
     DBSession,
@@ -13,16 +14,38 @@ from .models import (
 import gpxpy
 from collections import Counter
 
+def import_file(filename):
+    extmap = {
+        '.gpx': ImportGpx,
+        '.sqlite': ImportSqlite,
+        '.sqlite3': ImportSqlite,
+        '.db': ImportSqlite
+    }
+
+    (root, ext) = os.path.splitext(filename)
+    if ext not in extmap:
+        raise RuntimeError(f"No importer found for {filename}")
+
+    importer = extmap[ext]
+    with open(filename, 'r') as infile:
+        print(importer(infile).load())
+
 class FileImporter(object):
-    def __init__(self, uploaded_file):
-        self.infile = tempfile.NamedTemporaryFile(delete=False)
+    def __init__(self, infile):
+        self.infile = infile
+
+    @classmethod
+    def from_upload(cls, uploaded_file):
+        infile = tempfile.NamedTemporaryFile(delete=False)
         uploaded_file.file.seek(0)
         while True:
             data = uploaded_file.file.read(2<<16)
             if not data:
                 break
-            self.infile.write(data)
-        self.infile.close()
+            infile.write(data)
+        infile.close()
+
+        return cls(infile)
 
 class ImportGpx(FileImporter):
     def load(self):
@@ -138,4 +161,3 @@ class ImportSqlite(FileImporter):
         for new, old in list(self.tables[table].items()):
             if(not new in ['_tablename_','id','track_id','segment_id']):
                 setattr(obj, new, row[oldtable + '_' + old])
-
