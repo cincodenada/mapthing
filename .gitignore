@@ -4,3 +4,10 @@
 *.backup
 
 Mapthing.egg-info
+
+.env
+.venv
+*.sqlite3
+*.bak
+node_modules
+package-lock.json
