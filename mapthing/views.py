@@ -3,6 +3,7 @@ from pyramid.response import Response
 from pyramid.view import view_config, notfound_view_config
 
 from sqlalchemy.exc import DBAPIError
+from sqlalchemy.sql import func
 
 import json
 from datetime import datetime, timedelta
@@ -302,6 +303,16 @@ def upload_data(request):
 #       'end': request.params['end'],
 #   }
     return { 'json_data': json.dumps(querylist) }
+
+@view_config(route_name='', renderer='templates/json.pt')
+def summarize(request):
+    return DBSession.query(Point)
+      .select([
+          func.count().label('total_points')
+          func.max(Point.time).label('min_datetime')
+          func.min(Point.time).label('max_datetime')
+      ])
+      .group_by()
 
 def add_row_data(row, tableinfo, table, obj):
     oldtable = tableinfo[table]['_tablename_']
