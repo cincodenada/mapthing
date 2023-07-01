@@ -30,8 +30,8 @@ class Point(BaseModel):
     def getByDate(cls, start, end):
         # Shouldn't have to do isoformat() here but...
         return cls.query(Point,Segment,Track)\
-                .join(Segment)\
-                .join(Track)\
+                .join(Track.segments)\
+                .join(Segment.points)\
                 .filter(Point.time >= start.isoformat())\
                 .filter(Point.time <= end.isoformat())\
                 .order_by(Point.time)
@@ -39,8 +39,8 @@ class Point(BaseModel):
     @classmethod
     def getByLatLon(cls, ne, sw):
         return cls.query(Point,Segment,Track)\
-                .join(Segment)\
-                .join(Track)\
+                .join(Track.segments)\
+                .join(Segment.points)\
                 .filter(Point.latitude >= sw[0])\
                 .filter(Point.latitude <= ne[0])\
                 .filter(Point.longitude >= sw[1])\

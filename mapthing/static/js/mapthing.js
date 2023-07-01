@@ -48,7 +48,7 @@ $(function() {
 
     $('#getarea').on('click',function() {
         bounds = map.getBounds();
-        $.get('/points.json/', {
+        $.get('/points.json', {
             'ne': [bounds.ne.lat,bounds.ne.lon].join(','),
             'sw': [bounds.sw.lat,bounds.sw.lon].join(','),
         }, function(data) {
