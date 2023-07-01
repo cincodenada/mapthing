@@ -1,8 +1,5 @@
-from __future__ import division
 #import shapefile
-from future import standard_library
-standard_library.install_aliases()
-from past.utils import old_div
+from operator import truediv as old_div
 from builtins import object
 import math
 import json

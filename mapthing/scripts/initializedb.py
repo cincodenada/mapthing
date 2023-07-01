@@ -17,7 +17,7 @@ from ..models import (
     Point,
     Segment,
     Track,
-    Base,
+    BaseModel,
     )
 
 
@@ -37,7 +37,7 @@ def main(argv=sys.argv):
     settings = get_appsettings(config_uri, options=options)
     engine = engine_from_config(settings, 'sqlalchemy.')
     DBSession.configure(bind=engine)
-    Base.metadata.create_all(engine)
+    BaseModel.metadata.create_all(engine)
     with transaction.manager:
         track = Track(name='Test Track')
         segment = Segment(track_id=track.id)

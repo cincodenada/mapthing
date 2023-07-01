@@ -1,10 +1,4 @@
-#!/usr/bin/python2
-from __future__ import division
-from __future__ import print_function
-from __future__ import absolute_import
-from future import standard_library
-standard_library.install_aliases()
-from past.utils import old_div
+from operator import truediv as old_div
 from . import gps_history as gps
 from . import models
 from datetime import datetime

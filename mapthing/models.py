@@ -20,9 +20,7 @@ from sqlalchemy.orm import (
     backref,
     )
 
-from zope.sqlalchemy import ZopeTransactionExtension
-
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+DBSession = scoped_session(sessionmaker())
 Base = declarative_base()
 
 class Point(Base):

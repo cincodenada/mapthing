@@ -1,8 +1,6 @@
-from __future__ import division
-from __future__ import absolute_import
 from builtins import zip
 from builtins import range
-from past.utils import old_div
+from operator import truediv as old_div
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.response import Response
 from pyramid.view import view_config, notfound_view_config
