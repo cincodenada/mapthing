@@ -6,14 +6,15 @@ from configparser import ConfigParser
 import shapefile
 import xml.etree.ElementTree as ET
 
-#import mapnik
-import tkinter
-from PIL import Image, ImageTk
 from io import StringIO
 from subprocess import call
 
 # Guard to keep Pylons from trying to run the damn thing
 if(__name__ == '__main__'):
+    #import mapnik
+    import tkinter
+    from PIL import Image, ImageTk
+
     startdate = datetime.strptime('2015-12-01','%Y-%m-%d')
     enddate = datetime.strptime('2016-01-30','%Y-%m-%d')
 
