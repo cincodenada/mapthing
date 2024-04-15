@@ -50,7 +50,7 @@
                 <input type="submit" value="Upload"/>
             </form>
         </div>
-        <button id="getarea">Get All in Map</button>
+        <button id="getarea" ng-click="getInMap()">Get All in Map</button>
     </div>
     <div style="clear: both;"></div>
     <div>

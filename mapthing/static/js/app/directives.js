@@ -345,6 +345,19 @@ angular.module('mapApp.directives', [])
               map_type:true,
           });
 
+          const parent = scope.$parent;
+
+          parent.getInMap = function() {
+            const bounds = scope.map.getBounds();
+            PointList.get({
+              ne: [bounds.ne.lat,bounds.ne.lon].join(','),
+              sw: [bounds.sw.lat,bounds.sw.lon].join(','),
+            }, function(p) {
+              parent.data.view_points = p;
+              scope.draw();
+            });
+          }
+	  
           scope.$watch('data.bounds', function(cur, prev, scope) {
             if(scope.map && cur) { scope.map.setBounds(cur); }
           });
