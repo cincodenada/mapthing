@@ -167,7 +167,6 @@ angular.module('mapApp.directives', [])
           start: '=',
           end: '=',
           selRange: '=',
-          animRange: '=',
           pointData: '=',
           pointBounds: '=',
           uniParams: '=',
@@ -193,7 +192,6 @@ angular.module('mapApp.directives', [])
             change: function(evt, ui) {
               scope.$apply(function(scope) {
                 scope.selRange = ui.values;
-                scope.animRange = ui.values;
               });
             }
           });
@@ -520,6 +518,72 @@ angular.module('mapApp.directives', [])
     }
   })
   // }}}
+  .directive('tripList', function() {
+    return {
+      scope: {
+        locations: '<',
+        trips: '<',
+        locNames: '=',
+        selRange: '=',
+        selLoc: '=',
+        uniParams: '<',
+      },
+      templateUrl: 'trip_list.html',
+      link: function(scope, elm, attrs) {
+        scope.$watch('locations', function(cur, prev, scope) {
+          console.log('Locations', cur)
+        });
+        scope.$watch('trips', function(cur, prev, scope) {
+          console.log('Trips', cur)
+        });
+        scope.elm = elm.find('ul');
+        scope.elm.on('mouseover','li a.trip_segment',function() {
+          const trip = $(this).scope().trip
+          console.log(trip)
+          const interval = scope.uniParams.interval
+          scope.$apply(function(scope) {
+            scope.selRange = [
+              trip.start/1000/interval,
+              trip.end/1000/interval
+            ]
+          })
+        });
+        scope.elm.on('mouseout','li a.trip_segment',function() {
+          scope.$apply(function(scope) {
+            scope.selRange = null
+          })
+        });
+        scope.elm.on('click','li a.trip_stop',function() {
+          const trip = $(this).scope().trip
+          const which = $(this).data('type')
+          scope.$apply(function(scope) {
+            scope.editName(trip[`${which}_loc`])
+          })
+        });
+        scope.elm.on('mouseover','li a.trip_stop',function() {
+          const trip = $(this).scope().trip
+          const which = $(this).data('type')
+          scope.$apply(function(scope) {
+            scope.selLoc = trip[`${which}_loc`]
+          })
+        });
+        scope.elm.on('mouseout','li a.trip_stop',function() {
+          scope.$apply(function(scope) {
+            scope.selLoc = null
+          })
+        });
+      },
+      controller: function($scope) {
+        $scope.editName = function(locnum) {
+          var newname = prompt('New location name?');
+          if(newname) {
+            $scope.locNames[locnum] = newname;
+            localStorage.setItem('locnames', JSON.stringify($scope.locNames))
+          }
+        }
+      }
+    }
+  })
   // {{{ notifyLast
   .directive('notifyLast', function() {
     return function(scope, elm, attr) {

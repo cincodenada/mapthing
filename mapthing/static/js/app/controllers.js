@@ -151,12 +151,4 @@ angular.module('mapApp.controllers', [])
           ];
         }
       });
-
-      $scope.editName = function(locnum) {
-        var newname = prompt('New location name?');
-        if(newname) {
-          $scope.data.locnames[locnum] = newname;
-          localStorage.setItem('locnames', JSON.stringify($scope.data.locnames))
-        }
-      }
     })
