@@ -21,7 +21,7 @@ $(function() {
         datasets: [],
     });
     */
-    map = new mxn.Mapstraction('map', 'openlayers')
+    //map = new mxn.Mapstraction('map', 'openlayers')
 
     //show_points();
     /*
@@ -45,6 +45,7 @@ $(function() {
     }, 'json')
     //map.polylineCenterAndZoom();
     */
+	/*
 
     $('#getarea').on('click',function() {
         bounds = map.getBounds();
@@ -57,6 +58,7 @@ $(function() {
         }, 'json');
 
     });
+    */
 
     $('#triplist').on('mouseover', 'li', function(evt) {
         elm = $(this);
