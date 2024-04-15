@@ -65,6 +65,10 @@ class Location(object):
     def center(self):
         return LatLon(old_div(self.lat_sum,self.num_points), old_div(self.lon_sum,self.num_points))
 
+    def count_outside(self, points):
+        center = self.center()
+        return len([p for p in points if center.distance(LatLon(p.latitude, p.longitude)) > self.radius])
+
     def bb(self):
         return [LatLon(self.minlat, self.minlon), LatLon(self.maxlat, self.maxlon)]
 
@@ -181,9 +185,21 @@ class History(object):
         if(self.cur_trip.num_points() > 0):
             self.trips.append(self.cur_trip)
 
+        pool = self.get_locations(50, 3)
+
         trips = []
+        last_trip = None
         for t in self.trips:
+            if last_trip and t.startloc is not None and t.startloc == t.endloc and t.startloc == last_trip.endloc:
+                outside = pool.locations[t.startloc].count_outside(t.points)
+                if outside < 5:
+                    trips[-1]['end'] = t.end.time
+                    continue
+                else:
+                    print(f"Leaving weird trip: {outside}")
+
             if(t.num_points() >= min_length):
+                last_trip = t
                 trips.append({
                     'start': t.start.time,
                     'end': t.end.time,
@@ -191,9 +207,10 @@ class History(object):
                     'end_loc': t.endloc,
                 })
 
+
         return trips
 
-    def get_locations(self, radius, min_trip_len = 0):
+    def get_locations(self, radius, min_trip_len = 5):
         locations = LocationPool(radius)
 
         for t in self.trips:
