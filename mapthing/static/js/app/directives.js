@@ -328,7 +328,7 @@ angular.module('mapApp.directives', [])
     })
     // }}}
     // {{{ pathMap
-    .directive('pathMap', function() {
+    .directive('pathMap', function(PointList) {
       return {
         scope: {
           data: '=',
