@@ -398,7 +398,7 @@ angular.module('mapApp.directives', [])
             if(cur !== null) {
               var loc = scope.data.locations[cur]
               scope.data.point = loc
-              scope.update();
+              scope.drawPoints(true);
             }
           });
         },
@@ -474,8 +474,10 @@ angular.module('mapApp.directives', [])
         }
 
         $scope.draw = function() {
-          console.log('New selrange');
-          console.log($scope.range);
+          $scope.drawLines();
+          $scope.drawPoints();
+        }
+        $scope.drawLines = function() {
           $scope.map.removeAllPolylines();
           for(var idx in $scope.data.segs) {
             var cur_seg = $scope.data.segs[idx];
@@ -494,21 +496,29 @@ angular.module('mapApp.directives', [])
               $scope.buildLines(cur_seg, $scope.selrange, true);
             }
           }
-
+        }
+        $scope.drawPoints = function(zoom=false) {
           $scope.map.removeAllMarkers();
           if($scope.data.point) {
             var center = new mxn.LatLonPoint(
               $scope.data.point.lat,
               $scope.data.point.lon
             );
+            const zoomPoints = [center]
             var marker = new mxn.Marker(center);
+            marker.setIcon('/static/point.png')
             $scope.map.addMarker(marker);
             if($scope.data.point.points) {
               $scope.data.point.points.forEach(function(cp) {
-                var curm = new mxn.Marker(new mxn.LatLonPoint(cp[0], cp[1]));
+                const llp = new mxn.LatLonPoint(cp[0], cp[1])
+                var curm = new mxn.Marker(llp);
+                zoomPoints.push(llp);
                 curm.setIcon('/static/point.png')
                 $scope.map.addMarker(curm);
               })
+            }
+            if(zoom) {
+              $scope.map.centerAndZoomOnPoints(zoomPoints);
             }
             var radius = new mxn.Radius(center, 20);
             $scope.map.addPolyline(radius.getPolyline($scope.data.point.radius, 'red'));
