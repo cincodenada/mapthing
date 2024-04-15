@@ -6,12 +6,17 @@ import os
 import glob
 import zipfile
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 from .models import (
-    DBSession,
     Track,
     Segment,
     Point,
     )
+
+engine = create_engine("sqlite:///%(here)s/../MapThing.sqlite")
+Session = sessionmaker(engine)
+DBSession = Session()
 
 import gpxpy
 from collections import Counter
@@ -89,6 +94,7 @@ class ImportGpx(FileImporter):
                     if(point.extensions and 'ogt10:accuracy' in point.extensions):
                         p.accuracy = point.extensions['ogt10:accuracy']
                     s.points.append(p)
+            DBSession.commit()
 
         return counts
 

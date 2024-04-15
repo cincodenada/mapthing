@@ -26,7 +26,7 @@ from .models import (
     )
 
 class DatetimeEncoder(json.JSONEncoder):
-    epoch = datetime.fromtimestamp(0, pytz.utc)
+    epoch = datetime.utcfromtimestamp(0)
     def default(self, obj):
         if isinstance(obj, datetime):
             return (obj - self.epoch).total_seconds()*1000
