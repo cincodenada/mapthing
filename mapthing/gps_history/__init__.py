@@ -258,19 +258,25 @@ class Stop:
     def add_point(self, p):
         self.points.append(p)
 
+    def start():
+        return self.points[0]
+
+    def end():
+        return self.points[-1]
+
     def finish(self, location_pool, outing, prev_trip, min_secs=120):
-        trip_duration = self.points[-1].time - self.points[0].time
-        if(trip_duration < timedelta(seconds=min_secs)):
+        stay_duration = self.points[-1].time - self.points[0].time
+        if(stay_duration < timedelta(seconds=min_secs)):
             return None
 
         lats, lons = splitLatsAndLons(self.points)
         avg_point = LatLon(mean(lats), mean(lons))
-        loc = location_pool.add_point(avg_point, 50)
+        self.loc = location_pool.add_point(avg_point, 50)
         #print('\n'.join([str(p.time) for p in self.points]))
-        new_trip = Trip(end=self.points[-1], end_loc=loc)
-        if prev_trip:
-            new_trip.start = prev_trip.end
-            new_trip.start_loc = prev_trip.end_loc
+        new_trip = Trip(end=self.start(), end_loc=self.loc)
+        if prev_stop:
+            new_trip.start = prev_stop.end()
+            new_trip.start_loc = prev_stop.loc
         else:
             new_trip.start = outing.start
             new_trip.start_loc = outing.start_loc
