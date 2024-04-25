@@ -189,13 +189,13 @@ class Trip(object):
 
     def split(self, location_pool):
         # TODO: Other stuff treats start/end of logs as significant...do we want to??
-        self.start_loc = location_pool.add_point(self.start.getLatLon(), 50)
-        self.end_loc = location_pool.add_point(self.end.getLatLon(), 50)
+        prev_stop = Stop()
+        prev_stop.add_point(self.start)
+        prev_stop.finish(location_pool, outing, force=True)
 
         trips = []
         rolling_loc = deque(maxlen=10)
         cur_stop = None
-        prev_trip = None
         for p in self.points:
             # TODO: We could do this much more efficiently by using the mechanics in Location already
             rolling_loc.append(p)
@@ -209,13 +209,12 @@ class Trip(object):
                 cur_stop.add_point(p)
             else:
                 if cur_stop and cur_stop.finish(location_pool, self):
-                    new_trip = Trip(end=cur_stop.start(), end_loc=cur_stop.loc)
-                    if prev_stop:
-                        new_trip.start = prev_stop.end()
-                        new_trip.start_loc = prev_stop.loc
-                    else:
-                        new_trip.start = outing.start
-                        new_trip.start_loc = outing.start_loc
+                    new_trip = Trip(
+                        start = prev_stop.end(),
+                        start_lo = prev_stop.loc,
+                        end = cur_stop.start(),
+                        end_loc=cur_stop.loc
+                    )
                     trips.append(new_trip)
                     prev_stop = cur_stop
 
@@ -268,7 +267,7 @@ class Stop:
     def end():
         return self.points[-1]
 
-    def finish(self, location_pool, outing, min_secs=120):
+    def finish(self, location_pool, outing, min_secs=120, force=True):
         stay_duration = self.points[-1].time - self.points[0].time
         if(stay_duration < timedelta(seconds=min_secs)):
             return None
