@@ -62,7 +62,7 @@ class LocationPool(object):
         #print('\n'.join([str(p.time) for p in stop.points]))
         return self.add_point(avg_point, 50)
 
-    def split(self, track, window_size=10, min_move_m=50):
+    def split(self, track, window_size=100, min_move_m=50):
         # TODO: Other stuff treats start/end of logs as significant...do we want to??
         cur_stop = Stop()
         cur_stop.add_point(track.start)
@@ -86,22 +86,26 @@ class LocationPool(object):
                 continue
 
             if is_moving(rolling_loc):
-                if prev_trip:
-                    prev_trip.end = cur_stop.start()
-                    prev_trip.end_loc = cur_stop.loc
-                    trips.append(prev_trip)
-                    prev_trip = None
                 if not cur_trip:
                     cur_stop.loc = self.locate(cur_stop)
                     if cur_stop.loc:
-                        prev_trip = cur_trip
                         prev_stop = cur_stop
                         cur_trip = Trip(start=cur_stop.end(), start_loc=cur_stop.loc)
+                    else:
+                        cur_trip = prev_trip
+                        prev_trip = None
                     cur_stop = None
+                if prev_trip:
+                    prev_trip.end = prev_stop.start()
+                    prev_trip.end_loc = prev_stop.loc
+                    trips.append(prev_trip)
+                    prev_trip = None
                 cur_trip.add_point(leading_point)
             else:
                 if not cur_stop:
                     cur_stop = Stop()
+                    prev_trip = cur_trip
+                    cur_trip = None
                 cur_stop.add_point(leading_point)
 
         final_trip = None
@@ -111,7 +115,7 @@ class LocationPool(object):
         else:
             cur_stop = Stop()
             cur_stop.add_point(track.end)
-            cur_stop.loc = self.locate(cur_stop, force=True)
+        cur_stop.loc = self.locate(cur_stop, force=True)
 
         if prev_trip:
             prev_trip.end = cur_stop.start()
@@ -268,8 +272,8 @@ class Trip(object):
         return {
             "start": self.start.time,
             "end": self.end.time,
-            "start_loc": self.start_loc.id,
-            "end_loc": self.end_loc.id
+            "start_loc": getattr(self.start_loc, "id", None),
+            "end_loc": getattr(self.end_loc, "id", None)
         }
 
 class Stop:
