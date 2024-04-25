@@ -537,6 +537,7 @@ angular.module('mapApp.directives', [])
       scope: {
         locations: '<',
         trips: '<',
+        viewRange: '=',
         selRange: '=',
         selLoc: '=',
         uniParams: '<',
@@ -550,6 +551,16 @@ angular.module('mapApp.directives', [])
           console.log('Trips', cur)
         });
         scope.elm = elm.find('ul');
+        scope.elm.on('click','li a.trip_segment',function() {
+          const trip = $(this).scope().trip
+          const interval = scope.uniParams.interval
+          scope.$apply(function(scope) {
+            scope.viewRange = [
+              trip.start/1000/interval,
+              trip.end/1000/interval
+            ]
+          })
+        });
         scope.elm.on('mouseover','li a.trip_segment',function() {
           const trip = $(this).scope().trip
           console.log('Highlighting trip', trip)

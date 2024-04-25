@@ -13,6 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from mapthing.models import BaseModel
+from LatLon23 import LatLon
 
 class Point(BaseModel):
     __tablename__ = 'points'
@@ -58,6 +59,9 @@ class Point(BaseModel):
                 .filter(Point.longitude <= ne[1])\
                 .group_by(timestr)\
                 .order_by(Point.time)
+
+    def getLatLon(self):
+        return LatLon(self.latitude, self.longitude)
 
 class Segment(BaseModel):
     __tablename__ = 'segments'

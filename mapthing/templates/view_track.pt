@@ -58,6 +58,7 @@
           locations="data.map.locations"
           trips="data.view_points.trips"
           loc-names="data.locnames"
+          view-range="params.view_range"
           sel-range="params.sel_range"
           sel-loc="params.sel_loc"
           uni-params="uni"
@@ -129,7 +130,7 @@
                 <div class="stop_container" ng-if="trip.start_loc != trip.prev_end">
                     <div ng-if="trip.prev_end != null" class="trip_segment trip_segment_unknown">???</div>
                     <a href="#" class="trip_stop" data-type="start">
-                        {{locactions[trip.start_loc].name|orthis:'Location ' + trip.start_loc}}
+                        {{locations[trip.start_loc].name|orthis:'Location ' + trip.start_loc}}
                     </a>
                     <span class="stop_latlon">{{locations[trip.start_loc].lat|number:3}}, {{locations[trip.start_loc].lon|number:3}}</span>
                 </div>

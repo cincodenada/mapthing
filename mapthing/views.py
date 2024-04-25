@@ -205,14 +205,14 @@ def date_track(request):
         if not s.id in tracks[t.id]['segments']:
             tracks[t.id]['segments'].append(s.id)
 
-    locations = hist.get_locations(50,3) # Fill in location data
+    trips = hist.get_trips()
 
     return {'json_data': json.dumps({
         'tracks': tracks, 
         'segments': segments, 
         'points': pointlist,
         'timepoints': timepoints,
-        'trips': hist.get_trips(),
+        'trips': [t.get_serializable() for t in trips],
         'locations': locations.get_serializable(),
     }, cls=DatetimeEncoder)}
 
