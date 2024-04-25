@@ -20,8 +20,6 @@ class LocationPool(object):
 
     def add_points(self, points, auto_radius):
         matches = {}
-        print(points)
-        print(matches)
         for l in self.locations:
             for i, p in enumerate(points):
                 if i not in matches:
@@ -139,7 +137,7 @@ class Location(object):
 
         return out
 
-class Trip(object):
+class Outing(object):
     def __init__(self):
         self.points = []
         self.start = self.end = None
@@ -171,33 +169,33 @@ class Trip(object):
         return w
 
 class History(object):
-    def __init__(self, locations = [], trip_gap=3*60):
-        self.trips = []
+    def __init__(self, locations = [], outing_gap=3*60):
+        self.outings = []
         self.points = []
         self.last_time = None
-        self.cur_trip = Trip()
-        self.trip_gap = datetime.timedelta(seconds=trip_gap) # Convert to ms
+        self.cur_outing = Outing()
+        self.outing_gap = datetime.timedelta(seconds=outing_gap) # Convert to ms
         self.locations = LocationPool(locations)
 
     def add_point(self, p):
         self.points.append(p)
 
-        if(self.last_time is not None and (p.time - self.last_time) > self.trip_gap):
-            self.trips.append(self.cur_trip)
-            self.cur_trip = Trip()
+        if(self.last_time is not None and (p.time - self.last_time) > self.outing_gap):
+            self.outings.append(self.cur_outing)
+            self.cur_outing = Outing()
 
-        self.cur_trip.add_point(p)
+        self.cur_outing.add_point(p)
         self.last_time = p.time
 
     def get_trips(self, min_length = 3):
-        if(self.cur_trip.num_points() > 0):
-            self.trips.append(self.cur_trip)
+        if(self.cur_outing.num_points() > 0):
+            self.outings.append(self.cur_outing)
 
         pool = self.get_locations(50, 3)
 
         trips = []
         last_trip = None
-        for t in self.trips:
+        for t in self.outings:
             if last_trip and t.startloc is not None and t.startloc == t.endloc and t.startloc == last_trip.endloc:
                 outside = pool.locations[t.startloc].count_outside(t.points)
                 if outside < 5:
@@ -218,12 +216,12 @@ class History(object):
 
         return trips
 
-    def get_locations(self, radius, min_trip_len = 5):
-        for t in self.trips:
-            if t.num_points() >= min_trip_len:
-                triploc = self.locations.add_points([t.start, t.end], radius)
+    def get_locations(self, radius, min_outing_len = 5):
+        for t in self.outings:
+            if t.num_points() >= min_outing_len:
+                outingloc = self.locations.add_points([t.start, t.end], radius)
 
-                t.startloc = triploc[0].id
-                t.endloc = triploc[1].id
+                t.startloc = outingloc[0].id
+                t.endloc = outingloc[1].id
 
         return self.locations
