@@ -13,6 +13,9 @@ from statistics import mean, stdev
 def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
 
+def is_moving(points, min_move_m=50):
+    dev = [stdev(l) for l in splitLatsAndLons(points)]
+    return dev[0]*1e5 >= min_move_m and dev[1]*1e5 >= min_move_m
 
 class LocationPool(object):
     def __init__(self, locations = []):
@@ -49,9 +52,9 @@ class LocationPool(object):
 
         return outmap
 
-    def locate(self, stop, outing, min_secs=120, force=True):
+    def locate(self, stop, min_secs=120, force=True):
         stay_duration = stop.points[-1].time - stop.points[0].time
-        if(stay_duration < timedelta(seconds=min_secs)):
+        if(stay_duration < timedelta(seconds=min_secs) and not force):
             return None
 
         lats, lons = splitLatsAndLons(stop.points)
@@ -59,12 +62,11 @@ class LocationPool(object):
         #print('\n'.join([str(p.time) for p in stop.points]))
         return self.add_point(avg_point, 50)
 
-
     def split(self, track, window_size=10, min_move_m=50):
         # TODO: Other stuff treats start/end of logs as significant...do we want to??
         prev_stop = Stop()
         prev_stop.add_point(track.start)
-        prev_stop.finish(self, outing, force=True)
+        prev_stop.loc = self.locate(stop, force=True)
 
         trips = []
         rolling_loc = deque(maxlen=window_size)
@@ -75,20 +77,17 @@ class LocationPool(object):
             if len(rolling_loc) < window_size:
                 continue
 
-            dev = [stdev(l) for l in splitLatsAndLons(rolling_loc)]
-            stopped = dev[0]*1e5 < min_move_m and dev[1]*1e5 < min_move_m
-
-            if stopped:
-                if not cur_stop:
-                    cur_stop = Stop()
-                cur_stop.add_point(p)
-            else:
+            if is_moving(rolling_loc):
                 if cur_stop:
                     cur_stop.loc = self.locate(cur_stop)
                     trips.append(Trip(prev_stop, cur_stop))
                     prev_stop = cur_stop
 
                 cur_stop = None
+            else:
+                if not cur_stop:
+                    cur_stop = Stop()
+                cur_stop.add_point(p)
 
         final_trip = None
         if cur_stop and cur_stop.finish(self, track)
