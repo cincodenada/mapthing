@@ -52,6 +52,51 @@ class LocationPool(object):
 
         return outmap
 
+    def split(self, track):
+        # TODO: Other stuff treats start/end of logs as significant...do we want to??
+        prev_stop = Stop()
+        prev_stop.add_point(track.start)
+        prev_stop.finish(self, outing, force=True)
+
+        trips = []
+        rolling_loc = deque(maxlen=10)
+        cur_stop = None
+        for p in track.points:
+            # TODO: We could do this much more efficiently by using the mechanics in Location already
+            rolling_loc.append(p)
+            if len(rolling_loc) < 2:
+                continue
+            dev = [stdev(l) for l in splitLatsAndLons(rolling_loc)]
+            stopped = dev[0]*1e5 < 50 and dev[1]*1e5 < 50
+            if stopped:
+                if not cur_stop:
+                    cur_stop = Stop()
+                cur_stop.add_point(p)
+            else:
+                if cur_stop and cur_stop.finish(self, track):
+                    trips.append(Trip(prev_stop, cur_stop))
+                    prev_stop = cur_stop
+
+                cur_stop = None
+
+        final_trip = None
+        if cur_stop and cur_stop.finish(self, track)
+            trips.append(final_trip)
+
+        else:
+            if prev_trip:
+                trips.append(Trip(
+                    start=prev_trip.end,
+                    start_loc=prev_trip.end_loc,
+                    end=track.end,
+                    end_loc=track.end_loc
+                ))
+            else:
+                trips.append(track)
+
+        return trips
+
+
 
 class Location(object):
     stdev_fence = 2
@@ -187,56 +232,6 @@ class Trip(object):
     def get_type(self, force):
         pass
 
-    def split(self, location_pool):
-        # TODO: Other stuff treats start/end of logs as significant...do we want to??
-        prev_stop = Stop()
-        prev_stop.add_point(self.start)
-        prev_stop.finish(location_pool, outing, force=True)
-
-        trips = []
-        rolling_loc = deque(maxlen=10)
-        cur_stop = None
-        for p in self.points:
-            # TODO: We could do this much more efficiently by using the mechanics in Location already
-            rolling_loc.append(p)
-            if len(rolling_loc) < 2:
-                continue
-            dev = [stdev(l) for l in splitLatsAndLons(rolling_loc)]
-            stopped = dev[0]*1e5 < 50 and dev[1]*1e5 < 50
-            if stopped:
-                if not cur_stop:
-                    cur_stop = Stop()
-                cur_stop.add_point(p)
-            else:
-                if cur_stop and cur_stop.finish(location_pool, self):
-                    new_trip = Trip(
-                        start = prev_stop.end(),
-                        start_lo = prev_stop.loc,
-                        end = cur_stop.start(),
-                        end_loc=cur_stop.loc
-                    )
-                    trips.append(new_trip)
-                    prev_stop = cur_stop
-
-                cur_stop = None
-
-        final_trip = None
-        if cur_stop and cur_stop.finish(location_pool, self)
-            trips.append(final_trip)
-
-        else:
-            if prev_trip:
-                trips.append(Trip(
-                    start=prev_trip.end,
-                    start_loc=prev_trip.end_loc,
-                    end=self.end,
-                    end_loc=self.end_loc
-                ))
-            else:
-                trips.append(self)
-
-        return trips
-
     def join(self, other):
         return Trip(
             start=self.start,
@@ -304,7 +299,7 @@ class History(object):
         if(self.cur_outing.num_points() > 0):
             self.outings.append(self.cur_outing)
 
-        tripsets = [o.split(self.locations) for o in self.outings]
+        tripsets = [self.locations.split(o) for o in self.outings]
         all_trips = [trip for tripset in tripsets for trip in tripset]
 
         cleaned_trips = []
