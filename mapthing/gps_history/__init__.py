@@ -60,22 +60,24 @@ class LocationPool(object):
         return self.add_point(avg_point, 50)
 
 
-    def split(self, track):
+    def split(self, track, window_size=10, min_move_m=50):
         # TODO: Other stuff treats start/end of logs as significant...do we want to??
         prev_stop = Stop()
         prev_stop.add_point(track.start)
         prev_stop.finish(self, outing, force=True)
 
         trips = []
-        rolling_loc = deque(maxlen=10)
+        rolling_loc = deque(maxlen=window_size)
         cur_stop = None
         for p in track.points:
             # TODO: We could do this much more efficiently by using the mechanics in Location already
             rolling_loc.append(p)
-            if len(rolling_loc) < 2:
+            if len(rolling_loc) < window_size:
                 continue
+
             dev = [stdev(l) for l in splitLatsAndLons(rolling_loc)]
-            stopped = dev[0]*1e5 < 50 and dev[1]*1e5 < 50
+            stopped = dev[0]*1e5 < min_move_m and dev[1]*1e5 < min_move_m
+
             if stopped:
                 if not cur_stop:
                     cur_stop = Stop()
