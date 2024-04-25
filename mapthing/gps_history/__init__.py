@@ -49,6 +49,17 @@ class LocationPool(object):
 
         return outmap
 
+    def locate(self, stop, outing, min_secs=120, force=True):
+        stay_duration = stop.points[-1].time - stop.points[0].time
+        if(stay_duration < timedelta(seconds=min_secs)):
+            return None
+
+        lats, lons = splitLatsAndLons(stop.points)
+        avg_point = LatLon(mean(lats), mean(lons))
+        #print('\n'.join([str(p.time) for p in stop.points]))
+        return self.add_point(avg_point, 50)
+
+
     def split(self, track):
         # TODO: Other stuff treats start/end of logs as significant...do we want to??
         prev_stop = Stop()
@@ -70,7 +81,8 @@ class LocationPool(object):
                     cur_stop = Stop()
                 cur_stop.add_point(p)
             else:
-                if cur_stop and cur_stop.finish(self, track):
+                if cur_stop:
+                    cur_stop.loc = self.locate(cur_stop)
                     trips.append(Trip(prev_stop, cur_stop))
                     prev_stop = cur_stop
 
@@ -261,17 +273,6 @@ class Stop:
 
     def end():
         return self.points[-1]
-
-    def finish(self, location_pool, outing, min_secs=120, force=True):
-        stay_duration = self.points[-1].time - self.points[0].time
-        if(stay_duration < timedelta(seconds=min_secs)):
-            return None
-
-        lats, lons = splitLatsAndLons(self.points)
-        avg_point = LatLon(mean(lats), mean(lons))
-        self.loc = location_pool.add_point(avg_point, 50)
-        #print('\n'.join([str(p.time) for p in self.points]))
-        return new_trip
 
 class History(object):
     def __init__(self, locations = [], outing_gap=3*60):
