@@ -616,6 +616,21 @@ angular.module('mapApp.directives', [])
       }
     }
   })
+  .directive('weekView', function(Location) {
+    return {
+      scope: {
+        start: '<',
+        end: '<',
+        locations: '<',
+        trips: '<',
+      },
+      templateUrl: 'week_view.html',
+      link: function(scope, elm, attrs) {
+      },
+      controller: function($scope) {
+      }
+    }
+  })
   // {{{ notifyLast
   .directive('notifyLast', function() {
     return function(scope, elm, attr) {

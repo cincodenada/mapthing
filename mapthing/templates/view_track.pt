@@ -55,13 +55,12 @@
     <div style="clear: both;"></div>
     <div>
         <trip-list id="trips"
-          locations="data.map.locations"
-          trips="data.view_points.trips"
-          loc-names="data.locnames"
-          view-range="params.view_range"
-          sel-range="params.sel_range"
-          sel-loc="params.sel_loc"
-          uni-params="uni"
+            locations="data.map.locations"
+            trips="data.view_points.trips"
+            view-range="params.view_range"
+            sel-range="params.sel_range"
+            sel-loc="params.sel_loc"
+            uni-params="uni"
         >
         </trip-list>
         <path-map id="map"
@@ -85,6 +84,15 @@
         point-data="data.view_points">
     </point-sel>
     <anim-control range="params.view_range" outrange="params.anim_range"></anim-control>
+
+    <week-view
+        start="daterange.startDate"
+        end="daterange.endDate"
+		locations="data.map.locations"
+		trips="data.view_points.trips"
+		>
+	</week-view>
+
 
     <script type="text/ng-template" id="anim_controls.html">
         <div class="anim_playpos"></div>
@@ -153,6 +161,8 @@
                 -->
             </li>
         </ul>
+    </script>
+    <script type="text/ng-template" id="day_view.html">
     </script>
     <script src="${request.static_url('mapthing:static/node_modules/angular/angular.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/node_modules/angular-resource/angular-resource.js')}" type="text/javascript"></script>
