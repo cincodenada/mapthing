@@ -64,48 +64,61 @@ class LocationPool(object):
 
     def split(self, track, window_size=10, min_move_m=50):
         # TODO: Other stuff treats start/end of logs as significant...do we want to??
-        prev_stop = Stop()
-        prev_stop.add_point(track.start)
-        prev_stop.loc = self.locate(stop, force=True)
+        cur_stop = Stop()
+        cur_stop.add_point(track.start)
+        cur_stop.loc = self.locate(cur_stop, force=True)
 
         trips = []
         rolling_loc = deque(maxlen=window_size)
-        cur_stop = None
+        leading_points = []
+        prev_trip = None
+        cur_trip = None
         for p in track.points:
             # TODO: We could do this much more efficiently by using the mechanics in Location already
+
+            try:
+                leading_point = rolling_loc[0]
+            except IndexError:
+                pass
+
             rolling_loc.append(p)
             if len(rolling_loc) < window_size:
                 continue
 
             if is_moving(rolling_loc):
-                if cur_stop:
+                if prev_trip:
+                    prev_trip.end = cur_stop.start()
+                    prev_trip.end_loc = cur_stop.loc
+                    trips.append(prev_trip)
+                    prev_trip = None
+                if not cur_trip:
                     cur_stop.loc = self.locate(cur_stop)
-                    trips.append(Trip(prev_stop, cur_stop))
-                    prev_stop = cur_stop
-
-                cur_stop = None
+                    if cur_stop.loc:
+                        prev_trip = cur_trip
+                        prev_stop = cur_stop
+                        cur_trip = Trip(start=cur_stop.end(), start_loc=cur_stop.loc)
+                    cur_stop = None
+                cur_trip.add_point(leading_point)
             else:
                 if not cur_stop:
                     cur_stop = Stop()
-                cur_stop.add_point(p)
+                cur_stop.add_point(leading_point)
 
         final_trip = None
-        if cur_stop and cur_stop.finish(self, track)
-            trips.append(final_trip)
-
+        if cur_stop:
+            for p in rolling_loc:
+                cur_stop.add_point(p)
         else:
-            if prev_trip:
-                trips.append(Trip(
-                    start=prev_trip.end,
-                    start_loc=prev_trip.end_loc,
-                    end=track.end,
-                    end_loc=track.end_loc
-                ))
-            else:
-                trips.append(track)
+            cur_stop = Stop()
+            cur_stop.add_point(track.end)
+            cur_stop.loc = self.locate(cur_stop, force=True)
+
+        if prev_trip:
+            prev_trip.end = cur_stop.start()
+            prev_trip.end_loc = cur_stop.loc
+            trips.append(prev_trip)
 
         return trips
-
 
 
 class Location(object):
@@ -210,8 +223,12 @@ class Location(object):
 
         return out
 
-class Track(object):
-    def __init__(self):
+class Trip(object):
+    def __init__(self, start = None, end = None, start_loc = None, end_loc = None):
+        self.start = start
+        self.end = end
+        self.start_loc = start_loc
+        self.end_loc = end_loc
         self.points = []
 
     def add_point(self, p):
@@ -234,13 +251,6 @@ class Track(object):
         w.poly(shapeType=3, parts=[poly])
         w.save(path)
         return w
-
-class Trip(object):
-    def __init__(self, start = None, end = None, start_loc = None, end_loc = None):
-        self.start = start
-        self.end = end
-        self.start_loc = start_loc
-        self.end_loc = end_loc
 
     def get_type(self, force):
         pass
@@ -265,14 +275,15 @@ class Trip(object):
 class Stop:
     def __init__(self):
         self.points = []
+        self.loc = None
 
     def add_point(self, p):
         self.points.append(p)
 
-    def start():
+    def start(self):
         return self.points[0]
 
-    def end():
+    def end(self):
         return self.points[-1]
 
 class History(object):
