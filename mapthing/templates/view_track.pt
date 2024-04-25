@@ -134,11 +134,11 @@
                     </a>
                     <span class="stop_latlon">{{locations[trip.start_loc].lat|number:3}}, {{locations[trip.start_loc].lon|number:3}}</span>
                 </div>
-                <span class="stop_time">{{trip.start|date:'yyyy/MM/dd H:mm'}}</span>
+                <span class="stop_time">{{trip.start|date:'yyyy/MM/dd HH:mm'}}</span>
                 <a href="#" class="trip_segment">
                     {{trip.len/60.0|number:0}} min
                 </a>
-                <span class="stop_time">{{trip.end|date:'yyyy/MM/dd H:mm'}}</span>
+                <span class="stop_time">{{trip.end|date:'yyyy/MM/dd HH:mm'}}</span>
                 <div class="stop_container">
                     <a href="#" class="trip_stop" data-type="end">
                         {{locations[trip.end_loc].name|orthis:'Location ' + trip.end_loc}}
