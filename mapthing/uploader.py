@@ -8,6 +8,7 @@ import zipfile
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.exc import IntegrityError
 from .models import (
     Track,
     Segment,
@@ -95,7 +96,11 @@ class ImportGpx(FileImporter):
                     if(point.extensions and 'ogt10:accuracy' in point.extensions):
                         p.accuracy = point.extensions['ogt10:accuracy']
                     s.points.append(p)
-            DBSession.commit()
+            try:
+                DBSession.commit()
+            except IntegrityError as e:
+                print("Duplicates found, rolling back...")
+                DBSession.rollback()
 
         return counts
 
