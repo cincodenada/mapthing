@@ -14,9 +14,6 @@ def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
 
 
-class Track(object):
-    pass
-
 class LocationPool(object):
     def __init__(self, locations = []):
         self.locations = {l.id: Location(**l.to_dict()) for l in locations}
@@ -200,12 +197,8 @@ class Location(object):
 
         return out
 
-class Trip(object):
-    def __init__(self, start = None, end = None, start_loc = None, end_loc = None):
-        self.start = start
-        self.end = end
-        self.start_loc = start_loc
-        self.end_loc = end_loc
+class Track(object):
+    def __init__(self):
         self.points = []
 
     def add_point(self, p):
@@ -228,6 +221,13 @@ class Trip(object):
         w.poly(shapeType=3, parts=[poly])
         w.save(path)
         return w
+
+class Trip(object):
+    def __init__(self, start = None, end = None, start_loc = None, end_loc = None):
+        self.start = start
+        self.end = end
+        self.start_loc = start_loc
+        self.end_loc = end_loc
 
     def get_type(self, force):
         pass
