@@ -208,19 +208,23 @@ class Trip(object):
                     cur_stop = Stop()
                 cur_stop.add_point(p)
             else:
-                if cur_stop:
-                    new_trip = cur_stop.finish(location_pool, self, prev_trip)
-                    if(new_trip):
-                        trips.append(new_trip)
-                        prev_trip = new_trip
-                    cur_stop = None
+                if cur_stop and cur_stop.finish(location_pool, self):
+                    new_trip = Trip(end=cur_stop.start(), end_loc=cur_stop.loc)
+                    if prev_stop:
+                        new_trip.start = prev_stop.end()
+                        new_trip.start_loc = prev_stop.loc
+                    else:
+                        new_trip.start = outing.start
+                        new_trip.start_loc = outing.start_loc
+                    trips.append(new_trip)
+                    prev_stop = cur_stop
+
+                cur_stop = None
 
         final_trip = None
-        if cur_stop:
-            final_trip = cur_stop.finish(location_pool, self, prev_trip)
-
-        if final_trip:
+        if cur_stop and cur_stop.finish(location_pool, self)
             trips.append(final_trip)
+
         else:
             if prev_trip:
                 trips.append(Trip(
@@ -264,7 +268,7 @@ class Stop:
     def end():
         return self.points[-1]
 
-    def finish(self, location_pool, outing, prev_trip, min_secs=120):
+    def finish(self, location_pool, outing, min_secs=120):
         stay_duration = self.points[-1].time - self.points[0].time
         if(stay_duration < timedelta(seconds=min_secs)):
             return None
@@ -273,14 +277,6 @@ class Stop:
         avg_point = LatLon(mean(lats), mean(lons))
         self.loc = location_pool.add_point(avg_point, 50)
         #print('\n'.join([str(p.time) for p in self.points]))
-        new_trip = Trip(end=self.start(), end_loc=self.loc)
-        if prev_stop:
-            new_trip.start = prev_stop.end()
-            new_trip.start_loc = prev_stop.loc
-        else:
-            new_trip.start = outing.start
-            new_trip.start_loc = outing.start_loc
-
         return new_trip
 
 class History(object):
