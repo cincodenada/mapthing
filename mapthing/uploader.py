@@ -91,6 +91,7 @@ class ImportGpx(FileImporter):
                     p.speed = point.speed
                     p.altitude = point.elevation
                     p.bearing = point.course
+                    # TODO: Import src
                     if(point.extensions and 'ogt10:accuracy' in point.extensions):
                         p.accuracy = point.extensions['ogt10:accuracy']
                     s.points.append(p)

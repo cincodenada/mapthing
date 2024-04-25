@@ -5,6 +5,7 @@ from pyramid.httpexceptions import HTTPNotFound
 from pyramid.response import Response
 from pyramid.view import view_config, notfound_view_config
 
+from sqlalchemy import update
 from sqlalchemy.exc import DBAPIError
 
 import json
@@ -23,6 +24,7 @@ from .models import (
     Track,
     Segment,
     Point,
+    Location,
     )
 
 class DatetimeEncoder(json.JSONEncoder):
@@ -138,7 +140,9 @@ def date_track(request):
     rollingavg = [0]*avg_len
     rollingcat = ['walking']*mode_len
 
-    hist = gps_history.History()
+    locs = Location.getAll()
+
+    hist = gps_history.History(locs)
 
     for p, s, t in points:
         hist.add_point(p)
@@ -211,6 +215,15 @@ def date_track(request):
         'trips': hist.get_trips(),
         'locations': locations.get_serializable(),
     }, cls=DatetimeEncoder)}
+
+@view_config(route_name='locations', renderer='templates/json.pt')
+def edit_place(request):
+    vals = json.loads(request.body)
+    loc = Location(**vals)
+    print(vals)
+    DBSession.add(loc)
+    DBSession.commit()
+    return { 'json_data': json.dumps(loc.to_dict()) }
 
 @view_config(route_name='upload_data', renderer='templates/json.pt')
 def upload_data(request):

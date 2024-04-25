@@ -65,8 +65,8 @@
         </trip-list>
         <path-map id="map"
             data="data.map"
-            selrange="params.sel_range"
-            selpoint="params.sel_loc"
+            sel-range="params.sel_range"
+            sel-loc="params.sel_loc"
             range="params.tick_range">
         </path-map>
         <div style="clear: both;"></div>
@@ -129,7 +129,7 @@
                 <div class="stop_container" ng-if="trip.start_loc != trip.prev_end">
                     <div ng-if="trip.prev_end != null" class="trip_segment trip_segment_unknown">???</div>
                     <a href="#" class="trip_stop" data-type="start">
-                        {{locNames[trip.start_loc]|orthis:'Location ' + trip.start_loc}}
+                        {{locactions[trip.start_loc].name|orthis:'Location ' + trip.start_loc}}
                     </a>
                     <span class="stop_latlon">{{locations[trip.start_loc].lat|number:3}}, {{locations[trip.start_loc].lon|number:3}}</span>
                 </div>
@@ -140,7 +140,7 @@
                 <span class="stop_time">{{trip.end|date:'yyyy/MM/dd H:mm'}}</span>
                 <div class="stop_container">
                     <a href="#" class="trip_stop" data-type="end">
-                        {{locNames[trip.end_loc]|orthis:'Location ' + trip.end_loc}}
+                        {{locations[trip.end_loc].name|orthis:'Location ' + trip.end_loc}}
                     </a>
                     <span class="stop_latlon">{{locations[trip.end_loc].lat|number:3}}, {{locations[trip.end_loc].lon|number:3}}</span>
                 </div>

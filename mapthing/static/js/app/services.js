@@ -8,6 +8,9 @@ angular.module('mapApp.services', ['ngResource'])
     .factory('PointList', function($resource) {
       return $resource('/points.json')
     })
+    .factory('Location', function($resource) {
+      return $resource('/locations.json')
+    })
     .service('pointSource', function(Track, Point) {
       var points;
       var seglist = {};

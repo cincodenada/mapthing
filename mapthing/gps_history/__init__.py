@@ -11,16 +11,17 @@ class Track(object):
     pass
 
 class LocationPool(object):
-    def __init__(self, radius):
-        self.locations = []
-        self.radius = radius
+    def __init__(self, locations = []):
+        self.locations = [Location(**l.to_dict()) for l in locations]
         self.num_points = 0
 
-    def add_point(self, point):
-        return add_points([point])[0]
+    def add_point(self, point, auto_radius):
+        return add_points([point], auto_radius)[0]
 
-    def add_points(self, points):
+    def add_points(self, points, auto_radius):
         matches = {}
+        print(points)
+        print(matches)
         for l in self.locations:
             for i, p in enumerate(points):
                 if i not in matches:
@@ -29,8 +30,8 @@ class LocationPool(object):
 
         for i, p in enumerate(points):
             if i not in matches:
-                newloc = Location(p, self.radius)
-                newloc.id = len(self.locations)
+                newloc = Location(id=len(self.locations)+1, radius=auto_radius, latitude=p.latitude, longitude=p.longitude)
+                newloc.pending = True
                 self.locations.append(newloc)
                 matches[i] = newloc
 
@@ -50,24 +51,29 @@ class Location(object):
     stdev_fence = 2
     stdev_include = 1
 
-    def __init__(self, p = None, radius = 50):
+    def __init__(self, id = None, name = None, radius = 50, **kwargs):
+        self.id = id
+        self.name = name
         self.points = []
         self.lat_sum = 0
         self.lon_sum = 0
 
         self.num_points = 0
 
-        self.radius = old_div(float(radius),1000.0) # Convert m to km
+        self.radius = radius
+        self.radius_km = old_div(float(radius),1000.0) # Convert m to km
 
-        if p:
-            self.add_point(p)
+        if 'latitude' in kwargs:
+            self.add_point(LatLon(kwargs['latitude'], kwargs['longitude']))
+        if 'lat' in kwargs:
+            self.add_point(LatLon(kwargs['lat'], kwargs['lon']))
 
     def center(self):
         return LatLon(old_div(self.lat_sum,self.num_points), old_div(self.lon_sum,self.num_points))
 
     def count_outside(self, points):
         center = self.center()
-        return len([p for p in points if center.distance(LatLon(p.latitude, p.longitude)) > self.radius])
+        return len([p for p in points if center.distance(LatLon(p.latitude, p.longitude)) > self.radius_km])
 
     def bb(self):
         return [LatLon(self.minlat, self.minlon), LatLon(self.maxlat, self.maxlon)]
@@ -89,7 +95,7 @@ class Location(object):
 #               (center[0] - p.latitude) < stdev_lat*stdev_fence and
 #               (center[1] - p.longitude) < stdev_lon*stdev_fence
 #           ):
-            if center.distance(p) > self.radius:
+            if center.distance(p) > self.radius_km:
                 return False
 
         self.points.append(p)
@@ -120,6 +126,7 @@ class Location(object):
     def get_serializable(self, full=True):
         c = self.center()
         out = {
+            'name': self.name,
             'lat': float(c.lat),
             'lon': float(c.lon),
             'radius': self.radius,
@@ -164,12 +171,13 @@ class Trip(object):
         return w
 
 class History(object):
-    def __init__(self, trip_gap=3*60):
+    def __init__(self, locations = [], trip_gap=3*60):
         self.trips = []
         self.points = []
         self.last_time = None
         self.cur_trip = Trip()
         self.trip_gap = datetime.timedelta(seconds=trip_gap) # Convert to ms
+        self.locations = LocationPool(locations)
 
     def add_point(self, p):
         self.points.append(p)
@@ -211,13 +219,11 @@ class History(object):
         return trips
 
     def get_locations(self, radius, min_trip_len = 5):
-        locations = LocationPool(radius)
-
         for t in self.trips:
             if t.num_points() >= min_trip_len:
-                triploc = locations.add_points([t.start, t.end])
+                triploc = self.locations.add_points([t.start, t.end], radius)
 
                 t.startloc = triploc[0].id
                 t.endloc = triploc[1].id
 
-        return locations
+        return self.locations
