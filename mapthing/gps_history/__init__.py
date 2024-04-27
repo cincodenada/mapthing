@@ -9,6 +9,7 @@ from datetime import timedelta
 from collections import deque
 from functools import reduce
 from statistics import mean, stdev
+from itertools import islice, pairwise
 
 def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
@@ -53,7 +54,7 @@ class LocationPool(object):
         return outmap
 
     def locate(self, stop, min_secs=120, force=True):
-        stay_duration = stop.points[-1].time - stop.points[0].time
+        stay_duration = stop.end.time - stop.start.time
         if(stay_duration < timedelta(seconds=min_secs) and not force):
             return None
 
@@ -62,68 +63,46 @@ class LocationPool(object):
         #print('\n'.join([str(p.time) for p in stop.points]))
         return self.add_point(avg_point, 50)
 
-    def split(self, track, window_size=100, min_move_m=50):
+    def find_stops(self, track, window_size=100, min_move_m=50):
         # TODO: Other stuff treats start/end of logs as significant...do we want to??
-        cur_stop = Stop()
-        cur_stop.add_point(track.start)
-        cur_stop.loc = self.locate(cur_stop, force=True)
+        stops = []
+        rolling_loc = deque(islice(track.points, 0, window_size), maxlen=window_size)
+        halfwin = window_size//2
+        winrem = window_size - halfwin
 
-        trips = []
-        rolling_loc = deque(maxlen=window_size)
-        leading_points = []
-        prev_trip = None
-        cur_trip = None
-        for p in track.points:
+        cur_stop = None
+        if not is_moving(rolling_loc):
+            cur_stop = Stop()
+            cur_stop.start = track.start
+            cur_stop.start_idx = 0
+
+        for idx, p in islice(enumerate(track.points), window_size, None):
             # TODO: We could do this much more efficiently by using the mechanics in Location already
-
-            try:
-                leading_point = rolling_loc[0]
-            except IndexError:
-                pass
-
             rolling_loc.append(p)
-            if len(rolling_loc) < window_size:
-                continue
 
             if is_moving(rolling_loc):
-                if not cur_trip:
+                if cur_stop:
+                    cur_stop.end = rolling_loc[halfwin]
+                    cur_stop.end_idx = idx - winrem
                     cur_stop.loc = self.locate(cur_stop)
                     if cur_stop.loc:
-                        prev_stop = cur_stop
-                        cur_trip = Trip(start=cur_stop.end(), start_loc=cur_stop.loc)
-                    else:
-                        cur_trip = prev_trip
-                        prev_trip = None
+                        stops.append(cur_stop)
                     cur_stop = None
-                if prev_trip:
-                    prev_trip.end = prev_stop.start()
-                    prev_trip.end_loc = prev_stop.loc
-                    trips.append(prev_trip)
-                    prev_trip = None
-                cur_trip.add_point(leading_point)
             else:
                 if not cur_stop:
                     cur_stop = Stop()
-                    prev_trip = cur_trip
-                    cur_trip = None
-                cur_stop.add_point(leading_point)
+                    cur_stop.start = rolling_loc[window_size/2]
+                    cur_stop.start_idx = idx - winrem
 
-        final_trip = None
+            is_first = False
+
         if cur_stop:
-            for p in rolling_loc:
-                cur_stop.add_point(p)
-        else:
-            cur_stop = Stop()
-            cur_stop.add_point(track.end)
-        cur_stop.loc = self.locate(cur_stop, force=True)
+            cur_stop.end = track.end
+            cur_stop.end_idx = len(track.points)-1
+            cur_stop.loc = self.locate(cur_stop)
+            stops.append(cur_stop)
 
-        if prev_trip:
-            prev_trip.end = cur_stop.start()
-            prev_trip.end_loc = cur_stop.loc
-            trips.append(prev_trip)
-
-        return trips
-
+        return stops
 
 class Location(object):
     stdev_fence = 2
@@ -280,15 +259,27 @@ class Stop:
     def __init__(self):
         self.points = []
         self.loc = None
+        self.start = None
+        self.start_idx = None
+        self.end = None
+        self.end_idx = None
 
-    def add_point(self, p):
-        self.points.append(p)
+def squish_stops(stops):
+    has_yielded = True
+    for stop, next_stop in pairwise(stops):
+        if stop.loc == next_stop.loc and (next_stop.start_idx - stop.end_idx) < 5:
+            next_stop.start = stop.start
+            next_stop.start_idx = stop.start_idx
+            continue
 
-    def start(self):
-        return self.points[0]
+        yield stop
+        has_yielded = True
 
-    def end(self):
-        return self.points[-1]
+    # Handle the case where it's all one big stop
+    # There may be a more elegant way to do this
+    if not has_yielded:
+        yield stops[-1]
+
 
 class History(object):
     def __init__(self, locations = [], outing_gap=3*60):
@@ -316,21 +307,9 @@ class History(object):
         if(self.cur_outing.num_points() > 0):
             self.outings.append(self.cur_outing)
 
-        tripsets = [self.locations.split(o) for o in self.outings]
-        all_trips = [trip for tripset in tripsets for trip in tripset]
+        return [{
+            "trip": o,
+            "stops": list(squish_stops(self.locations.find_stops(o))),
+        } for o in self.outings]
 
-        cleaned_trips = []
-        pending_trip = None
-        for t in all_trips:
-            if pending_trip:
-                if t.start_loc == t.end_loc and t.num_points() < 5:
-                    pending_trip = pending_trip.join(t)
-                else:
-                    cleaned_trips.append(pending_trip)
-                    pending_trip = t
-            else:
-                pending_trip = t
-        if pending_trip:
-            cleaned_trips.append(pending_trip)
-
-        return cleaned_trips
+        
