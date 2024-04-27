@@ -64,16 +64,18 @@ class LocationPool(object):
         return self.add_point(avg_point, 50)
 
     def find_stops(self, track, window_size=100, min_move_m=50):
+        # Can't do our calculations if we don't have at least two points
+        if len(track.points) < 2:
+            return []
+
         # TODO: Other stuff treats start/end of logs as significant...do we want to??
         stops = []
         rolling_loc = deque(islice(track.points, 0, window_size), maxlen=window_size)
         halfwin = window_size//2
-        winrem = window_size - halfwin
 
         cur_stop = None
         if not is_moving(rolling_loc):
-            cur_stop = Stop()
-            cur_stop.start = track.start
+            cur_stop = Stop(track)
             cur_stop.start_idx = 0
 
         for idx, p in islice(enumerate(track.points), window_size, None):
@@ -82,22 +84,19 @@ class LocationPool(object):
 
             if is_moving(rolling_loc):
                 if cur_stop:
-                    cur_stop.end = rolling_loc[halfwin]
-                    cur_stop.end_idx = idx - winrem
+                    cur_stop.end_idx = idx - halfwin
                     cur_stop.loc = self.locate(cur_stop)
                     if cur_stop.loc:
                         stops.append(cur_stop)
                     cur_stop = None
             else:
                 if not cur_stop:
-                    cur_stop = Stop()
-                    cur_stop.start = rolling_loc[window_size/2]
-                    cur_stop.start_idx = idx - winrem
+                    cur_stop = Stop(track)
+                    cur_stop.start_idx = idx - halfwin
 
             is_first = False
 
         if cur_stop:
-            cur_stop.end = track.end
             cur_stop.end_idx = len(track.points)-1
             cur_stop.loc = self.locate(cur_stop)
             stops.append(cur_stop)
@@ -256,13 +255,25 @@ class Trip(object):
         }
 
 class Stop:
-    def __init__(self):
-        self.points = []
+    def __init__(self, track):
+        self.track = track
         self.loc = None
-        self.start = None
         self.start_idx = None
-        self.end = None
         self.end_idx = None
+
+    @property
+    def start(self):
+        return self.track.points[self.start_idx]
+
+    @property
+    def end(self):
+        return self.track.points[self.end_idx]
+
+    @property
+    def points(self):
+        if self.start_idx is None or self.end_idx is None:
+            raise RuntimeError("Attempted to get points for unfinished stop!")
+        return self.track.points[self.start_idx:self.end_idx]
 
 def squish_stops(stops):
     has_yielded = True
