@@ -616,7 +616,7 @@ angular.module('mapApp.directives', [])
       }
     }
   })
-  .directive('weekView', function(Location) {
+  .directive('dayView', function() {
     return {
       scope: {
         start: '<',
@@ -624,11 +624,58 @@ angular.module('mapApp.directives', [])
         locations: '<',
         trips: '<',
       },
-      templateUrl: 'week_view.html',
+      templateUrl: 'day_view.html',
       link: function(scope, elm, attrs) {
       },
       controller: function($scope) {
-      }
+        $scope.$watchGroup(['start', 'end'], function(cur, prev, scope) {
+          if(cur) {
+            console.log(cur)
+            const [start, end] = cur.map(d => Instant.from(d.toISOString()).toZonedDateTimeISO('UTC').toPlainDate())
+            console.log(scope.days)
+            let curday = start;
+            const days = []
+            while(PlainDate.compare(curday, end) < 1) {
+              days.push(curday)
+              curday = curday.add('P1D')
+            }
+            scope.days = days.map(d => d.toString())
+          }
+        });
+        $scope.$watch('trips', function(cur, prev, scope) {
+          if(cur) {
+            const dayTrips = Object.fromEntries(scope.days.map(d => [d, []]))
+            for(const trip of cur) {
+              console.log(trip)
+              const start = Instant.fromEpochMilliseconds(trip.start).toZonedDateTimeISO(tz)
+              const end = Instant.fromEpochMilliseconds(trip.end).toZonedDateTimeISO(tz)
+              const startDate = start.toPlainDate().toString();
+              const endDate = end.toPlainDate.toString();
+              const annotated = {
+                ...trip,
+                $startTime: start.toPlainTime(),
+                $endTime: end.toPlainTime(),
+              }
+              if(startDate !== endDate) {
+                dayTrips[startDate].push({
+                  ...annotated,
+                  $endTime: PlainTime.from("23:59"),
+                })
+                if(dayTrips[endDate]) {
+                  dayTrips[endDate].push({
+                    ...annotated,
+                    $startTime: PlainTime.from("00:00"),
+                  })
+                }
+              } else {
+                dayTrips[startDate].push(annotated)
+              }
+            }
+            scope.dayTrips = dayTrips
+            console.log('day trips', dayTrips)
+          }
+        })
+      },
     }
   })
   // {{{ notifyLast

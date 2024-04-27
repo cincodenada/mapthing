@@ -1,6 +1,16 @@
 // vim: set ts=2 sts=2 sw=2 :
 'use strict';
 
+const zeroTime = PlainTime.from('00:00')
+
+function secsToPct(secs) {
+  return secs/86400*100;
+}
+
+function timeToPct(plainTime) {
+  return secsToPct(plainTime.since(zeroTime).total('seconds'))
+}
+
 angular.module('mapApp.filters', [])
   .filter('humanize', function() {
     return function(range) {
@@ -25,4 +35,15 @@ angular.module('mapApp.filters', [])
             return val ? val : rep;
         }
     };
-  });
+  })
+  .filter('dayPct', function() {
+    return function(evt) {
+      return evt.$startTime.until(evt.$endTime).total('seconds')/86400*100
+    }
+  })
+  .filter('dayStyle', function() {
+    return function(trip) {
+      return `left: ${timeToPct(trip.$startTime)}%; width: ${secsToPct(trip.$startTime.until(trip.$endTime).total('seconds'))}%`
+    }
+  })
+;

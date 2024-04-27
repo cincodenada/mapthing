@@ -86,3 +86,19 @@
     float: left;
     clear: left;
 }
+
+day-view > div {
+  position: relative;
+  width: 100%;
+}
+day-view > div > div {
+  position: absolute;
+  height: 1em;
+  background: gray;
+}
+day-view .from {
+  float: left;
+}
+day-view .to {
+  float: right;
+}

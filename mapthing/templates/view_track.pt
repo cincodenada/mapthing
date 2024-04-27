@@ -7,6 +7,7 @@
     <meta name="description" content="" />
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@js-temporal/polyfill"></script>
     <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
     <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/ui-lightness/jquery-ui.css" />
     <link rel="shortcut icon" href="${request.static_url('mapthing:static/favicon.ico')}" />
@@ -85,13 +86,13 @@
     </point-sel>
     <anim-control range="params.view_range" outrange="params.anim_range"></anim-control>
 
-    <week-view
+    <day-view
         start="daterange.startDate"
         end="daterange.endDate"
 		locations="data.map.locations"
 		trips="data.view_points.trips"
 		>
-	</week-view>
+	</day-view>
 
 
     <script type="text/ng-template" id="anim_controls.html">
@@ -163,6 +164,17 @@
         </ul>
     </script>
     <script type="text/ng-template" id="day_view.html">
+		<div ng-repeat="day in days">
+			{{day}}
+			<div ng-repeat="trip in dayTrips[day]" style="{{trip|dayStyle}}">
+			  <span class="from">
+			  {{locations[trip.start_loc].name|orthis:'Location ' + trip.end_loc}}
+			  </span>
+			  <span class="to">
+			  {{locations[trip.end_loc].name|orthis:'Location ' + trip.end_loc}}
+			  </span>
+			</div>
+		</div>
     </script>
     <script src="${request.static_url('mapthing:static/node_modules/angular/angular.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/node_modules/angular-resource/angular-resource.js')}" type="text/javascript"></script>
