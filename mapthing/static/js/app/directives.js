@@ -550,7 +550,7 @@ angular.module('mapApp.directives', [])
         scope.$watch('trips', function(cur, prev, scope) {
           console.log('Trips', cur)
         });
-        scope.elm = elm.find('ul');
+        scope.elm = elm.find('#triplist');
         scope.elm.on('click','li a.trip_segment',function() {
           const trip = $(this).scope().trip
           const interval = scope.uniParams.interval
@@ -574,12 +574,14 @@ angular.module('mapApp.directives', [])
             ]
           })
         });
+        /*
         scope.elm.on('mouseout','li a.trip_segment',function() {
           console.log('Clearing selRange');
           scope.$apply(function(scope) {
             scope.selRange = null
           })
         });
+        */
         scope.elm.on('click','li a.trip_stop',function() {
           const stop = $(this).scope().stop
           scope.$apply(function(scope) {
@@ -655,11 +657,14 @@ angular.module('mapApp.directives', [])
                   $startTime: start.toPlainTime(),
                   $endTime: end.toPlainTime(),
                 }
+                console.log('Comparing', startDate, endDate)
                 if(startDate !== endDate) {
-                  dayStops[startDate].push({
-                    ...annotated,
-                    $endTime: lastTime,
-                  })
+                  if(dayStops[startDate]) {
+                    dayStops[startDate].push({
+                      ...annotated,
+                      $endTime: lastTime,
+                    })
+                  }
                   if(dayStops[endDate]) {
                     dayStops[endDate].push({
                       ...annotated,
@@ -672,7 +677,7 @@ angular.module('mapApp.directives', [])
               }
             }
             scope.dayStops = dayStops
-            console.log('day trips', dayStops)
+            console.log('day stops', dayStops)
           }
         })
       },

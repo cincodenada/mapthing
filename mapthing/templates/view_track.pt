@@ -136,7 +136,7 @@
     <script type="text/ng-template" id="trip_list.html">
         <div id="triplist">
             <ul ng-repeat="trip in trips" data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
-			<li ng-if="trip.stops[0].range !== 0" class="trip_entry">
+			<li ng-if="trip.stops[0].range[0] !== 0" class="trip_entry">
 				<div class="trip_segment trip_segment_unknown">???</div>
 			</li>
 			<li ng-repeat="stop in trip.stops" class="trip_entry">
@@ -149,7 +149,7 @@
                 </div>
                 <span class="stop_time">{{stop.end|date:'yyyy/MM/dd HH:mm'}}</span>
                 <a ng-if="!$last" href="#" class="trip_segment">
-                    {{(trip.stops[$index+1].end - stop.start)/1000/60|number:0}} min
+                    {{(trip.stops[$index+1].start - stop.end)/1000/60|number:0}} min
                 </a>
                 <!--
                 <a href="#" 
