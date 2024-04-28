@@ -13,6 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from mapthing.models import BaseModel
+#from .stop import Stop
 from LatLon23 import LatLon
 
 class Point(BaseModel):
@@ -69,6 +70,7 @@ class Segment(BaseModel):
     track_id = Column(Integer, ForeignKey('tracks.id'))
     
     points = relationship(Point)
+    #stops = relationship(Stop)
 
 class Track(BaseModel):
     __tablename__ = 'tracks'

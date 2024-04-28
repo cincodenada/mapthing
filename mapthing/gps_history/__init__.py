@@ -13,6 +13,8 @@ from itertools import islice, pairwise
 from dataclasses import dataclass
 from typing import Any
 
+from mapthing.models import Stop as StopModel, DBSession
+
 def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
 
@@ -102,6 +104,13 @@ class LocationPool(object):
             cur_stop.end_idx = len(track.points)-1
             cur_stop.loc = self.locate(cur_stop)
             stops.append(cur_stop)
+
+        DBSession.add_all([StopModel(
+            location_id=s.loc.id,
+            start_time=s.start.time,
+            end_time=s.end.time,
+        ) for s in stops])
+        DBSession.commit()
 
         return StopSet(stops, track)
 
@@ -214,6 +223,16 @@ class Track(object):
         self.start_loc = start_loc
         self.end_loc = end_loc
         self.points = []
+        self.stops = []
+
+    def point_finder(self):
+        def find_point(search_time):
+            while self.points[find_point.cur_point].time < search_time:
+                find_point.cur_point+=1
+            return (find_point.cur_point, self.points[find_point.cur_point])
+        find_point.cur_point = 0
+
+        return find_point
 
     def add_point(self, p):
         self.points.append(p)
@@ -245,12 +264,12 @@ class Track(object):
             "end": self.end.time,
         }
 
+@dataclass
 class Stop:
-    def __init__(self, track):
-        self.track = track
-        self.loc = None
-        self.start_idx = None
-        self.end_idx = None
+    track: Track
+    loc: int | None = None
+    start_idx: int | None = None
+    end_idx: int | None = None
 
     @property
     def start(self):
@@ -306,13 +325,34 @@ class StopSet:
         }
 
 class History(object):
-    def __init__(self, locations = [], outing_gap=3*60):
+    def __init__(self, locations = [], stops = [], outing_gap=3*60):
         self.outings = []
         self.points = []
         self.last_time = None
+        self.stop_idx = 0
         self.cur_outing = Track()
         self.outing_gap = timedelta(seconds=outing_gap) # Convert to ms
         self.locations = LocationPool(locations)
+        self.stops = stops
+
+    def get_stops(self, start, end):
+        try:
+            while self.stops[self.stop_idx].end_time <= start:
+                self.stop_idx+=1
+
+            start_idx = self.stop_idx
+        except IndexError:
+            return (None, 0)
+
+        try:
+            while self.stops[self.stop_idx].start_time <= end:
+                self.stop_idx+=1
+        except IndexError:
+            pass
+
+        num_stops = self.stop_idx - start_idx
+
+        return (start_idx, num_stops)
 
     def add_point(self, p):
         if self.last_time and p.time < self.last_time:
@@ -321,17 +361,40 @@ class History(object):
         self.points.append(p)
 
         if(self.last_time is not None and (p.time - self.last_time) > self.outing_gap):
+            (idx, count) = self.get_stops(
+                self.cur_outing.start.time,
+                self.cur_outing.end.time
+            )
+            self.cur_outing.stop_offset = idx
+            self.cur_outing.stop_count = count
             self.outings.append(self.cur_outing)
             self.cur_outing = Track()
 
         self.cur_outing.add_point(p)
         self.last_time = p.time
 
+    def find_stops(self, track):
+        if track.stop_count:
+            find_point = track.point_finder()
+            stops = [
+                Stop(
+                    track=track,
+                    loc=self.locations.locations[s.location_id],
+                    start_idx=find_point(s.start_time)[0],
+                    end_idx=find_point(s.end_time)[0],
+                )
+            # TODO: This if is bad
+            for s in self.stops[track.stop_offset:track.stop_offset+track.stop_count] if type(s.location_id) == int]
+            return StopSet(stops, track)
+        
+        return self.locations.find_stops(track)
+
+
     def finish(self, min_length = 3):
         if(self.cur_outing.num_points() > 0):
             self.outings.append(self.cur_outing)
 
         return [
-            self.locations.find_stops(o).squished()
+            self.find_stops(o).squished()
             for o in self.outings
         ]

@@ -25,6 +25,7 @@ from .models import (
     Segment,
     Point,
     Location,
+    Stop,
     )
 
 class DatetimeEncoder(json.JSONEncoder):
@@ -103,6 +104,7 @@ def date_track(request):
         startdate = date_parse(request.params['start'])
         enddate = date_parse(request.params['end'])
         points = Point.getByDate(startdate, enddate).all()
+        stops = Stop.getByDate(startdate, enddate).all()
     elif('ne' in request.params):
         ne = request.params['ne'].split(',')
         sw = request.params['sw'].split(',')
@@ -111,6 +113,7 @@ def date_track(request):
                 ne[i], sw[i] = sw[i], ne[i]
 
         points = Point.getByLatLon(ne, sw)
+        stops = Stop.getByLatLon(ne, sw)
 
     pointlist = {}
     segments = {}
@@ -142,7 +145,7 @@ def date_track(request):
 
     locs = Location.getAll()
 
-    hist = gps_history.History(locs)
+    hist = gps_history.History(locs, stops)
 
     for p, s, t in points:
         hist.add_point(p)
