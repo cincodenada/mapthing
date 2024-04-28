@@ -13,7 +13,7 @@ from itertools import islice, pairwise
 from dataclasses import dataclass
 from typing import Any
 
-from mapthing.models import Stop as StopModel, DBSession
+from mapthing.models import Stop as StopModel, getDb
 
 def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
@@ -105,12 +105,13 @@ class LocationPool(object):
             cur_stop.loc = self.locate(cur_stop)
             stops.append(cur_stop)
 
-        DBSession.add_all([StopModel(
-            location_id=s.loc.id,
-            start_time=s.start.time,
-            end_time=s.end.time,
-        ) for s in stops])
-        DBSession.commit()
+            db = getDb()
+            db.add_all([StopModel(
+                location_id=s.loc.id,
+                start_time=s.start.time,
+                end_time=s.end.time,
+            ) for s in stops])
+            db.commit()
 
         return StopSet(stops, track)
 
@@ -224,6 +225,8 @@ class Track(object):
         self.end_loc = end_loc
         self.points = []
         self.stops = []
+        self.stop_offset = None
+        self.stop_count = None
 
     def point_finder(self):
         def find_point(search_time):

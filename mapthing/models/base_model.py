@@ -19,6 +19,9 @@ DBSession = scoped_session(sessionmaker())
 BaseModel = declarative_base()
 BaseModel.query = DBSession.query
 
+def getDb():
+    return scoped_session(sessionmaker())
+
 class SerializableMixin:
 #   def __init__(self, data):
 #       for field in self.__table__.columns:

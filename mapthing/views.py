@@ -47,6 +47,8 @@ def view_track(request):
     pointlist = []
     for t, p in points:
         pointlist.append((p.latitude,p.longitude))
+
+    DBSession.commit()
     
     return { 'tracks': json.dumps({trackid:track}), 'points': points, 'json_points': json.dumps({trackid: pointlist})}
 
