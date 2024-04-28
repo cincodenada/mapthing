@@ -13,7 +13,7 @@ from itertools import islice, pairwise
 from dataclasses import dataclass
 from typing import Any
 
-from mapthing.models import Stop as StopModel, getDb
+from mapthing import models as Orm
 
 def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
@@ -42,7 +42,6 @@ class LocationPool(object):
         for i, p in enumerate(points):
             if i not in matches:
                 newloc = Location(radius=auto_radius, latitude=p.lat, longitude=p.lon)
-                newloc.pending = True
                 self.locations[newloc.id] = newloc
                 matches[i] = newloc
 
@@ -106,7 +105,7 @@ class LocationPool(object):
             stops.append(cur_stop)
 
             db = getDb()
-            db.add_all([StopModel(
+            db.add_all([Orm.Stop(
                 location_id=s.loc.id,
                 start_time=s.start.time,
                 end_time=s.end.time,
@@ -114,6 +113,22 @@ class LocationPool(object):
             db.commit()
 
         return StopSet(stops, track)
+
+    def persist(self):
+        db = getDb()
+        for l of locations:
+            if l.dirty:
+                Model = Orm.PendingLocation if l.pending else Orm.Location
+                db.add(Model(
+                    id=l.id,
+                    latitude=l.center().lat,
+                    longitude=l.center().lon,
+                    radius=l.radius,
+                    num_points=l.num_points,
+                ))
+                l.dirty=False
+        db.commit()
+
 
 class Location(object):
     stdev_fence = 2
@@ -124,7 +139,9 @@ class Location(object):
         if id:
             self.id = id
         else:
-            self.id = 'auto_' + str(Location.auto_id)
+            self.id = Location.auto_id
+            self.pending = True
+            self.dirty = True
             Location.auto_id += 1
 
         self.name = name

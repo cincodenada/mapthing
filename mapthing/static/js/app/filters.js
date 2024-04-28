@@ -2,7 +2,7 @@
 'use strict';
 
 const zeroTime = PlainTime.from('00:00')
-const lastTime = zeroTime.subtract({'nanosecond': 1})
+const lastTime = zeroTime.subtract({microseconds: 1})
 
 function secsToPct(secs) {
   return secs/86400*100;
