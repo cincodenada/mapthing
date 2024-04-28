@@ -62,6 +62,10 @@
     padding-left: 2px;
 }
 
+#triplist ul {
+  padding-left: 1em;
+}
+
 .trip_segment, .stop_time {
     border-left: 4px solid darkgray;
     margin-left: 15px;

@@ -300,7 +300,7 @@ class StopSet:
 
     def get_serializable(self):
         return {
-            "track": self.track.get_serializable(),
+            **self.track.get_serializable(),
             "stops": [s.get_serializable() for s in self.stops]
         }
 

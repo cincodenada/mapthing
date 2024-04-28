@@ -134,45 +134,37 @@
         </ul>
     </script>
     <script type="text/ng-template" id="trip_list.html">
-        <ul id="triplist">
-            <li ng-repeat="trip in trips" data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}" class="trip_entry">
-                <div class="stop_container" ng-if="trip.start_loc != trip.prev_end">
-                    <div ng-if="trip.prev_end != null" class="trip_segment trip_segment_unknown">???</div>
-                    <a href="#" class="trip_stop" data-type="start">
-                        {{locations[trip.start_loc].name|orthis:'Location ' + trip.start_loc}}
-                    </a>
-                    <span class="stop_latlon">{{locations[trip.start_loc].lat|number:3}}, {{locations[trip.start_loc].lon|number:3}}</span>
-                </div>
-                <span class="stop_time">{{trip.start|date:'yyyy/MM/dd HH:mm'}}</span>
-                <a href="#" class="trip_segment">
-                    {{trip.len/60.0|number:0}} min
-                </a>
-                <span class="stop_time">{{trip.end|date:'yyyy/MM/dd HH:mm'}}</span>
+        <div id="triplist">
+            <ul ng-repeat="trip in trips" data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
+			<li ng-if="trip.stops[0].range !== 0" class="trip_entry">
+				<div class="trip_segment trip_segment_unknown">???</div>
+			</li>
+			<li ng-repeat="stop in trip.stops" class="trip_entry">
+                <span class="stop_time">{{stop.start|date:'yyyy/MM/dd HH:mm'}}</span>
                 <div class="stop_container">
-                    <a href="#" class="trip_stop" data-type="end">
-                        {{locations[trip.end_loc].name|orthis:'Location ' + trip.end_loc}}
+                    <a href="#" class="trip_stop">
+                        {{locations[stop.loc].name|orthis:'Location ' + stop.loc}}
                     </a>
-                    <span class="stop_latlon">{{locations[trip.end_loc].lat|number:3}}, {{locations[trip.end_loc].lon|number:3}}</span>
+                    <span class="stop_latlon">{{locations[stop.loc].lat|number:3}}, {{locations[stop.loc].lon|number:3}}</span>
                 </div>
+                <span class="stop_time">{{stop.end|date:'yyyy/MM/dd HH:mm'}}</span>
+                <a ng-if="!$last" href="#" class="trip_segment">
+                    {{(trip.stops[$index+1].end - stop.start)/1000/60|number:0}} min
+                </a>
                 <!--
                 <a href="#" 
                     title="{{trip.start|date:'yyyy/MM/dd h:mm'}} - {{trip.end|date:'yyyy/MM/dd h:mm'}}">
                     Trip {{$index}} ({{(trip.end-trip.start)/1000/60|number:1}} min)
                 </a>
                 -->
-            </li>
-        </ul>
+			</ul>
+		</div>
     </script>
     <script type="text/ng-template" id="day_view.html">
 		<div ng-repeat="day in days">
 			{{day}}
-			<div ng-repeat="trip in dayTrips[day]" style="{{trip|dayStyle}}">
-			  <span class="from">
-			  {{locations[trip.start_loc].name|orthis:'Location ' + trip.end_loc}}
-			  </span>
-			  <span class="to">
-			  {{locations[trip.end_loc].name|orthis:'Location ' + trip.end_loc}}
-			  </span>
+			<div ng-repeat="stop in dayStops[day]" style="{{stop|dayStyle}}">
+			  {{locations[stop.loc].name|orthis:'Location ' + stop.loc}}
 			</div>
 		</div>
     </script>
