@@ -562,13 +562,15 @@ angular.module('mapApp.directives', [])
           })
         });
         scope.elm.on('mouseover','li a.trip_segment',function() {
-          const trip = $(this).scope().trip
-          console.log('Highlighting trip', trip)
+          const local = $(this).scope()
+          console.log('Highlighting trip from', local.stop)
           const interval = scope.uniParams.interval
           scope.$apply(function(scope) {
+            const tripStart = local.stop.end;
+            const tripEnd = local.trip.stops[local.$index+1].start;
             scope.selRange = [
-              trip.start/1000/interval,
-              trip.end/1000/interval
+              tripStart/1000/interval,
+              tripEnd/1000/interval
             ]
           })
         });
@@ -579,18 +581,16 @@ angular.module('mapApp.directives', [])
           })
         });
         scope.elm.on('click','li a.trip_stop',function() {
-          const trip = $(this).scope().trip
-          const which = $(this).data('type')
+          const stop = $(this).scope().stop
           scope.$apply(function(scope) {
-            scope.editName(trip[`${which}_loc`])
+            scope.editName(stop.loc)
           })
         });
         scope.elm.on('mouseover','li a.trip_stop',function() {
-          const trip = $(this).scope().trip
-          const which = $(this).data('type')
-          console.log('Highlighting stop', trip, which)
+          const stop = $(this).scope().stop
+          console.log('Highlighting stop', stop)
           scope.$apply(function(scope) {
-            scope.selLoc = trip[`${which}_loc`]
+            scope.selLoc = stop.loc
           })
         });
         scope.elm.on('mouseout','li a.trip_stop',function() {
@@ -656,15 +656,15 @@ angular.module('mapApp.directives', [])
                   $startTime: start.toPlainTime(),
                   $endTime: end.toPlainTime(),
                 }
-                if(startDate !== endDate) {
+                if(!startDate.equals(endDate)) {
                   dayStops[startDate].push({
                     ...annotated,
-                    $endTime: PlainTime.from("23:59"),
+                    $endTime: lastTime,
                   })
                   if(dayStops[endDate]) {
                     dayStops[endDate].push({
                       ...annotated,
-                      $startTime: PlainTime.from("00:00"),
+                      $startTime: zeroTime
                     })
                   }
                 } else {

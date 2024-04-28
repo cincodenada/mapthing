@@ -2,6 +2,7 @@
 'use strict';
 
 const zeroTime = PlainTime.from('00:00')
+const lastTime = zeroTime.subtract({'nanosecond': 1})
 
 function secsToPct(secs) {
   return secs/86400*100;
@@ -42,8 +43,8 @@ angular.module('mapApp.filters', [])
     }
   })
   .filter('dayStyle', function() {
-    return function(trip) {
-      return `left: ${timeToPct(trip.$startTime)}%; width: ${secsToPct(trip.$startTime.until(trip.$endTime).total('seconds'))}%`
+    return function(evt) {
+      return `left: ${timeToPct(evt.$startTime)}%; width: ${secsToPct(evt.$startTime.until(evt.$endTime).total('seconds'))}%`
     }
   })
 ;

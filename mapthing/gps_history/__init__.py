@@ -270,7 +270,8 @@ class Stop:
         return {
             "start": self.start.time,
             "end": self.end.time,
-            "range": [self.start_idx, self.end_idx]
+            "range": [self.start_idx, self.end_idx],
+            "loc": self.loc.id or None,
         }
 
 @dataclass
