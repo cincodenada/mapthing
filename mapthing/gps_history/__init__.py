@@ -10,6 +10,8 @@ from collections import deque
 from functools import reduce
 from statistics import mean, stdev
 from itertools import islice, pairwise
+from dataclasses import dataclass
+from typing import Any
 
 def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
@@ -66,7 +68,7 @@ class LocationPool(object):
     def find_stops(self, track, window_size=100, min_move_m=50):
         # Can't do our calculations if we don't have at least two points
         if len(track.points) < 2:
-            return []
+            return StopSet([], track)
 
         # TODO: Other stuff treats start/end of logs as significant...do we want to??
         stops = []
@@ -101,7 +103,7 @@ class LocationPool(object):
             cur_stop.loc = self.locate(cur_stop)
             stops.append(cur_stop)
 
-        return stops
+        return StopSet(stops, track)
 
 class Location(object):
     stdev_fence = 2
@@ -205,7 +207,7 @@ class Location(object):
 
         return out
 
-class Trip(object):
+class Track(object):
     def __init__(self, start = None, end = None, start_loc = None, end_loc = None):
         self.start = start
         self.end = end
@@ -237,21 +239,10 @@ class Trip(object):
     def get_type(self, force):
         pass
 
-    def join(self, other):
-        return Trip(
-            start=self.start,
-            start_loc=self.start_loc,
-            end=other.end,
-            end_loc=other.end_loc
-        )
-
-
     def get_serializable(self):
         return {
             "start": self.start.time,
             "end": self.end.time,
-            "start_loc": getattr(self.start_loc, "id", None),
-            "end_loc": getattr(self.end_loc, "id", None)
         }
 
 class Stop:
@@ -275,29 +266,50 @@ class Stop:
             raise RuntimeError("Attempted to get points for unfinished stop!")
         return self.track.points[self.start_idx:self.end_idx]
 
-def squish_stops(stops):
-    has_yielded = True
-    for stop, next_stop in pairwise(stops):
-        if stop.loc == next_stop.loc and (next_stop.start_idx - stop.end_idx) < 5:
-            next_stop.start = stop.start
-            next_stop.start_idx = stop.start_idx
-            continue
+    def get_serializable(self, full=True):
+        return {
+            "start": self.start.time,
+            "end": self.end.time,
+            "range": [self.start_idx, self.end_idx]
+        }
 
-        yield stop
+@dataclass
+class StopSet:
+    stops: list[Stop]
+    track: Track
+
+    # TODO: This modifies the stop list I think, which is messy
+    def squish(self):
         has_yielded = True
+        for stop, next_stop in pairwise(self.stops):
+            if stop.loc == next_stop.loc and (next_stop.start_idx - stop.end_idx) < 5:
+                next_stop.start = stop.start
+                next_stop.start_idx = stop.start_idx
+                continue
 
-    # Handle the case where it's all one big stop
-    # There may be a more elegant way to do this
-    if not has_yielded:
-        yield stops[-1]
+            yield stop
+            has_yielded = True
 
+        # Handle the case where it's all one big stop
+        # There may be a more elegant way to do this
+        if not has_yielded:
+            yield self.stops[-1]
+
+    def squished(self):
+        return StopSet(list(self.squish()), self.track)
+
+    def get_serializable(self):
+        return {
+            "track": self.track.get_serializable(),
+            "stops": [s.get_serializable() for s in self.stops]
+        }
 
 class History(object):
     def __init__(self, locations = [], outing_gap=3*60):
         self.outings = []
         self.points = []
         self.last_time = None
-        self.cur_outing = Trip()
+        self.cur_outing = Track()
         self.outing_gap = timedelta(seconds=outing_gap) # Convert to ms
         self.locations = LocationPool(locations)
 
@@ -309,7 +321,7 @@ class History(object):
 
         if(self.last_time is not None and (p.time - self.last_time) > self.outing_gap):
             self.outings.append(self.cur_outing)
-            self.cur_outing = Trip()
+            self.cur_outing = Track()
 
         self.cur_outing.add_point(p)
         self.last_time = p.time
@@ -318,9 +330,7 @@ class History(object):
         if(self.cur_outing.num_points() > 0):
             self.outings.append(self.cur_outing)
 
-        return [{
-            "trip": o,
-            "stops": list(squish_stops(self.locations.find_stops(o))),
-        } for o in self.outings]
-
-        
+        return [
+            self.locations.find_stops(o).squished()
+            for o in self.outings
+        ]
