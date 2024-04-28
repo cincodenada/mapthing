@@ -649,13 +649,13 @@ angular.module('mapApp.directives', [])
                 const start = Instant.fromEpochMilliseconds(stop.start).toZonedDateTimeISO(tz)
                 const end = Instant.fromEpochMilliseconds(stop.end).toZonedDateTimeISO(tz)
                 const startDate = start.toPlainDate().toString();
-                const endDate = end.toPlainDate.toString();
+                const endDate = end.toPlainDate().toString();
                 const annotated = {
                   ...stop,
                   $startTime: start.toPlainTime(),
                   $endTime: end.toPlainTime(),
                 }
-                if(!startDate.equals(endDate)) {
+                if(startDate !== endDate) {
                   dayStops[startDate].push({
                     ...annotated,
                     $endTime: lastTime,
