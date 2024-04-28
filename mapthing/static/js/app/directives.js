@@ -606,10 +606,9 @@ angular.module('mapApp.directives', [])
             const curLoc = $scope.locations[locid]
             $scope.locations[locid].name = newname;
             Location.save({
+              ...curLoc,
               name: newname,
-              latitude: curLoc.lat,
-              longitude: curLoc.lon,
-              radius: curLoc.radius,
+              type: "place",
             })
           }
         }

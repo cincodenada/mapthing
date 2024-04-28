@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from mapthing import models as Orm
+from mapthing.models import getDb
 
 def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
@@ -25,7 +26,6 @@ def is_moving(points, min_move_m=50):
 class LocationPool(object):
     def __init__(self, locations = []):
         self.locations = {l.id: Location(**l.to_dict()) for l in locations}
-        self.auto_id = 0
         self.num_points = 0
 
     def add_point(self, point, auto_radius):
@@ -41,7 +41,7 @@ class LocationPool(object):
 
         for i, p in enumerate(points):
             if i not in matches:
-                newloc = Location(radius=auto_radius, latitude=p.lat, longitude=p.lon)
+                newloc = Location(radius=auto_radius, latitude=p.lat, longitude=p.lon, type=Orm.LocationType.auto)
                 self.locations[newloc.id] = newloc
                 matches[i] = newloc
 
@@ -104,47 +104,43 @@ class LocationPool(object):
             cur_stop.loc = self.locate(cur_stop)
             stops.append(cur_stop)
 
-            db = getDb()
-            db.add_all([Orm.Stop(
-                location_id=s.loc.id,
-                start_time=s.start.time,
-                end_time=s.end.time,
-            ) for s in stops])
-            db.commit()
+        self.persist()
+
+        db = getDb()
+        db.add_all([Orm.Stop(
+            location_id=s.loc.id,
+            start_time=s.start.time,
+            end_time=s.end.time,
+        ) for s in stops])
+        db.commit()
 
         return StopSet(stops, track)
 
     def persist(self):
         db = getDb()
-        for l of locations:
-            if l.dirty:
-                Model = Orm.PendingLocation if l.pending else Orm.Location
-                db.add(Model(
-                    id=l.id,
-                    latitude=l.center().lat,
-                    longitude=l.center().lon,
-                    radius=l.radius,
-                    num_points=l.num_points,
-                ))
-                l.dirty=False
+        new_locs = [l for l in self.locations.values() if not l.id]
+        to_add = [Orm.Location(
+            latitude=l.center().lat,
+            longitude=l.center().lon,
+            radius=l.radius,
+            type=l.type,
+            #num_points=l.num_points,
+        ) for l in new_locs]
+        db.add_all(to_add)
         db.commit()
+        # Backpopulate our new ids
+        for idx, l in enumerate(to_add):
+            new_locs[idx].id = l.id
 
-
+@dataclass
 class Location(object):
     stdev_fence = 2
     stdev_include = 1
-    auto_id = 0
 
-    def __init__(self, id = None, name = None, radius = 50, **kwargs):
-        if id:
-            self.id = id
-        else:
-            self.id = Location.auto_id
-            self.pending = True
-            self.dirty = True
-            Location.auto_id += 1
-
+    def __init__(self, id = None, name = None, radius = 50, type = None, **kwargs):
+        self.id = id
         self.name = name
+        self.type = type
         self.points = []
         self.lat_sum = 0
         self.lon_sum = 0
@@ -323,7 +319,6 @@ class StopSet:
         has_yielded = True
         for stop, next_stop in pairwise(self.stops):
             if stop.loc == next_stop.loc and (next_stop.start_idx - stop.end_idx) < 5:
-                next_stop.start = stop.start
                 next_stop.start_idx = stop.start_idx
                 continue
 
