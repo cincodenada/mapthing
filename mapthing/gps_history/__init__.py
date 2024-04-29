@@ -21,7 +21,8 @@ def splitLatsAndLons(points):
 
 def is_moving(points, min_move_m=50):
     dev = [stdev(l) for l in splitLatsAndLons(points)]
-    return dev[0]*1e5 >= min_move_m and dev[1]*1e5 >= min_move_m
+    #print('/'.join([f"{d*1e5:4.0f}" for d in dev]))
+    return dev[0]*1e5 >= min_move_m or dev[1]*1e5 >= min_move_m
 
 class LocationPool(object):
     def __init__(self, locations = []):
@@ -290,6 +291,10 @@ class StopSet:
 
     # TODO: This modifies the stop list I think, which is messy
     def squish(self):
+        if(len(self.stops) == 1):
+            yield self.stops[0]
+            return
+
         has_yielded = True
         for stop, next_stop in pairwise(self.stops):
             if stop.loc == next_stop.loc and (next_stop.start_idx - stop.end_idx) < 5:
