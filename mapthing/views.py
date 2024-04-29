@@ -212,6 +212,29 @@ def date_track(request):
 
     trips = hist.finish()
 
+    db = getDb()
+    new_locs = [l for l in hist.locations.locations.values() if not l.id]
+    to_add = [Location(
+        latitude=l.center().lat,
+        longitude=l.center().lon,
+        radius=l.radius,
+        type=l.type,
+        #num_points=l.num_points,
+    ) for l in new_locs]
+    db.add_all(to_add)
+
+    for t in trips:
+        db.add_all([Stop(
+            location_id=s.loc.id,
+            start_time=s.start.time,
+            end_time=s.end.time,
+        ) for s in t.stops])
+    db.commit()
+
+    # Backpopulate our new ids to the locations
+    for idx, l in enumerate(to_add):
+        new_locs[idx].id = l.id
+
     return {'json_data': json.dumps({
         'tracks': tracks, 
         'segments': segments, 

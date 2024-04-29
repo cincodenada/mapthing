@@ -104,33 +104,7 @@ class LocationPool(object):
             cur_stop.loc = self.locate(cur_stop)
             stops.append(cur_stop)
 
-        self.persist()
-
-        db = getDb()
-        db.add_all([Orm.Stop(
-            location_id=s.loc.id,
-            start_time=s.start.time,
-            end_time=s.end.time,
-        ) for s in stops])
-        db.commit()
-
         return StopSet(stops, track)
-
-    def persist(self):
-        db = getDb()
-        new_locs = [l for l in self.locations.values() if not l.id]
-        to_add = [Orm.Location(
-            latitude=l.center().lat,
-            longitude=l.center().lon,
-            radius=l.radius,
-            type=l.type,
-            #num_points=l.num_points,
-        ) for l in new_locs]
-        db.add_all(to_add)
-        db.commit()
-        # Backpopulate our new ids
-        for idx, l in enumerate(to_add):
-            new_locs[idx].id = l.id
 
 @dataclass
 class Location(object):
