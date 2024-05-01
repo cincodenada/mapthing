@@ -26,6 +26,7 @@ from .models import (
     Point,
     Location,
     Stop,
+    getDb
     )
 
 class DatetimeEncoder(json.JSONEncoder):
@@ -117,33 +118,8 @@ def date_track(request):
         points = Point.getByLatLon(ne, sw)
         stops = Stop.getByLatLon(ne, sw)
 
-    pointlist = {}
-    segments = {}
-    timepoints = []
-    tracks = {}
-    trips = []
-    speedpoints = {
-        'walking': {
-            'color': '#00FF00',
-            'midpoint': 1.25,
-        },
-        'jogging': {
-            'color': '#FF6600',
-            'midpoint': 2,
-        },
-        'biking': {
-            'color': '#FFFF00',
-            'midpoint': 7.5,
-        },
-        'driving': {
-            'color': '#FF0000',
-            'midpoint': 30.5,
-        },
-    }
-    avg_len = 10 
-    mode_len = 20
-    rollingavg = [0]*avg_len
-    rollingcat = ['walking']*mode_len
+    categorizer = gps_history.Categorizer()
+    jsonifier = gps_history.Jsonifier()
 
     locs = Location.getAll()
 
@@ -151,95 +127,26 @@ def date_track(request):
 
     for p, s, t in points:
         hist.add_point(p)
-
-        if(p.speed):
-            rollingavg.insert(0,p.speed)
-            rollingavg.pop()
-        avg = old_div(sum(rollingavg),avg_len)
-        diff = [(mode, abs(1-(old_div(avg,speedpoints[mode]['midpoint'])))) for mode in speedpoints]
-        diff.sort(key=itemgetter(1))
-        rollingcat.insert(0,diff[0][0])
-        rollingcat.pop()
-        counts = {} 
-        for val in rollingcat:
-            if(val in counts):
-                counts[val]+=1
-            else:
-                counts[val]=1
-
-        winner = False
-        for mode in counts:
-            if not winner or counts[mode] > counts[winner]:
-                winner = mode
-
-        if(winner):
-            color = speedpoints[winner]['color']
-        else:
-            color = '#000000'
-
-        if not s.id in pointlist:
-            pointlist[s.id] = []
-        pointnum = len(timepoints)
-        timepoints.append({
-            'lat': p.latitude,
-            'lon': p.longitude,
-            'color': color,
-            'time': p.time,
-            'segid': s.id,
-        })
-        pointlist[s.id].append(pointnum)
-        if not s.id in segments:
-            segments[s.id] = {
-                'id': s.id,
-                'track_id': s.track_id,
-                'start_time': None,
-                'end_time': None,
-            }
-
-        if(segments[s.id]['start_time'] is None or p.time < segments[s.id]['start_time']):
-            segments[s.id]['start_time'] = p.time
-        if(segments[s.id]['end_time'] is None or p.time > segments[s.id]['end_time']):
-            segments[s.id]['end_time'] = p.time
-
-        if not t.id in tracks:
-            tracks[t.id] = {
-                'id': t.id,
-                'name': t.name,
-                'segments': [],
-            }
-        if not s.id in tracks[t.id]['segments']:
-            tracks[t.id]['segments'].append(s.id)
+        categorizer.add_point(p)
+        jsonifier.add_point(p, s, t)
 
     trips = hist.finish()
 
     db = getDb()
     new_locs = [l for l in hist.locations.locations.values() if not l.id]
-    to_add = [Location(
-        latitude=l.center().lat,
-        longitude=l.center().lon,
-        radius=l.radius,
-        type=l.type,
-        #num_points=l.num_points,
-    ) for l in new_locs]
-    db.add_all(to_add)
+    orm_locs = [Location.fromHistLocations(new_locs) for l in new_locs]
+    db.add_all(orm_locs)
 
     for t in trips:
-        db.add_all([Stop(
-            location_id=s.loc.id,
-            start_time=s.start.time,
-            end_time=s.end.time,
-        ) for s in t.stops])
+        db.add_all(Stop.fromHistStops(t.stops))
     db.commit()
 
     # Backpopulate our new ids to the locations
-    for idx, l in enumerate(to_add):
+    for idx, l in enumerate(orm_locs):
         new_locs[idx].id = l.id
 
     return {'json_data': json.dumps({
-        'tracks': tracks, 
-        'segments': segments, 
-        'points': pointlist,
-        'timepoints': timepoints,
+        **jsonifier.get_serializable(),
         'trips': [t.get_serializable() for t in trips],
         'locations': hist.locations.get_serializable(),
     }, cls=DatetimeEncoder)}

@@ -1,5 +1,5 @@
 #import shapefile
-from operator import truediv as old_div
+from operator import truediv as old_div, itemgetter
 from builtins import object
 import math
 import json
@@ -12,9 +12,6 @@ from statistics import mean, stdev
 from itertools import islice, pairwise
 from dataclasses import dataclass
 from typing import Any
-
-from mapthing import models as Orm
-from mapthing.models import getDb
 
 def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
@@ -383,7 +380,6 @@ class History(object):
         
         return self.locations.find_stops(track)
 
-
     def finish(self, min_length = 3):
         if(self.cur_outing.num_points() > 0):
             self.outings.append(self.cur_outing)
@@ -392,3 +388,109 @@ class History(object):
             self.find_stops(o).squished()
             for o in self.outings
         ]
+
+class Jsonifier:
+    def __init__(self):
+        self.pointlist = {}
+        self.segments = {}
+        self.timepoints = []
+        self.tracks = {}
+
+    def add_point(self, p, s, t):
+        if not s.id in self.pointlist:
+            self.pointlist[s.id] = []
+
+        pointnum = len(self.timepoints)
+        self.timepoints.append({
+            'lat': p.latitude,
+            'lon': p.longitude,
+            #'color': color,
+            'time': p.time,
+            'segid': s.id,
+        })
+        self.pointlist[s.id].append(pointnum)
+        if not s.id in self.segments:
+            self.segments[s.id] = {
+                'id': s.id,
+                'track_id': s.track_id,
+                'start_time': None,
+                'end_time': None,
+            }
+
+        if(self.segments[s.id]['start_time'] is None or p.time < self.segments[s.id]['start_time']):
+            self.segments[s.id]['start_time'] = p.time
+        if(self.segments[s.id]['end_time'] is None or p.time > self.segments[s.id]['end_time']):
+            self.segments[s.id]['end_time'] = p.time
+
+        if not t.id in self.tracks:
+            self.tracks[t.id] = {
+                'id': t.id,
+                'name': t.name,
+                'segments': [],
+            }
+        if not s.id in self.tracks[t.id]['segments']:
+            self.tracks[t.id]['segments'].append(s.id)
+
+    def get_serializable(self):
+        return {
+            'tracks': self.tracks, 
+            'segments': self.segments, 
+            'points': self.pointlist,
+            'timepoints': self.timepoints,
+        }
+
+
+class Categorizer:
+    def __init__(self):
+        self.speedpoints = {
+            'walking': {
+                'color': '#00FF00',
+                'midpoint': 1.25,
+            },
+            'jogging': {
+                'color': '#FF6600',
+                'midpoint': 2,
+            },
+            'biking': {
+                'color': '#FFFF00',
+                'midpoint': 7.5,
+            },
+            'driving': {
+                'color': '#FF0000',
+                'midpoint': 30.5,
+            },
+        }
+        self.avg_len = 10 
+        self.mode_len = 20
+        self.rollingavg = [0]*self.avg_len
+        self.rollingcat = ['walking']*self.mode_len
+        self.colors = []
+
+    def add_point(self, p):
+        if(p.speed):
+            self.rollingavg.insert(0,p.speed)
+            self.rollingavg.pop()
+        avg = old_div(sum(self.rollingavg),self.avg_len)
+        diff = [(
+            mode,
+            abs(1-(old_div(avg,self.speedpoints[mode]['midpoint'])))
+        ) for mode in self.speedpoints]
+        diff.sort(key=itemgetter(1))
+        self.rollingcat.insert(0,diff[0][0])
+        self.rollingcat.pop()
+        counts = {} 
+        for val in self.rollingcat:
+            if(val in counts):
+                counts[val]+=1
+            else:
+                counts[val]=1
+
+        winner = False
+        for mode in counts:
+            if not winner or counts[mode] > counts[winner]:
+                winner = mode
+
+        if(winner):
+            color = self.speedpoints[winner]['color']
+        else:
+            color = '#000000'

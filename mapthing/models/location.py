@@ -44,3 +44,17 @@ class Location(BaseModel, SerializableMixin):
                 .filter(lon < Location.longitude + Location.radius/111333)\
                 .filter(lon > Location.longitude - Location.radius/111333)\
                 .order_by(asc((Location.latitude - lat) + (Location.longitude - lon)))
+
+    @classmethod
+    def fromHistLocation(cls, l):
+        return Location(
+            latitude=l.center().lat,
+            longitude=l.center().lon,
+            radius=l.radius,
+            type=l.type,
+            #num_points=l.num_points,
+        ) 
+
+    @classmethod
+    def fromHistLocations(cls, llist):
+        return [cls.fromHistLocation(l) for l in llist]

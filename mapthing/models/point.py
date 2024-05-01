@@ -103,6 +103,7 @@ class Track(BaseModel):
         return cls.query(Track,Point) \
                 .join(Track.segments) \
                 .join(Segment.points) \
+                .order_by(Point.time) \
                 .filter(Track.id==id).all()
 
 #Index('my_index', MyModel.name, unique=True, mysql_length=255)

@@ -46,3 +46,15 @@ class Stop(BaseModel, SerializableMixin):
                 .filter(Stop.end_time >= start.isoformat())\
                 .filter(Stop.start_time <= end.isoformat())\
                 .order_by(Stop.start_time)
+
+    @classmethod
+    def fromHistStop(cls, s):
+        return Stop(
+            location_id=s.loc.id,
+            start_time=s.start.time,
+            end_time=s.end.time,
+        )
+
+    @classmethod
+    def fromHistStops(cls, slist):
+        return [cls.fromHistStop(s) for s in slist]
