@@ -9,7 +9,8 @@ function secsToPct(secs) {
 }
 
 function timeToPct(plainTime) {
-  return secsToPct(plainTime.since(zeroTime).total('seconds'))
+  const offset = plainTime.since(zeroTime).total('seconds')
+  return secsToPct(offset > 0 ? offset : 0)
 }
 
 angular.module('mapApp.filters', [])
