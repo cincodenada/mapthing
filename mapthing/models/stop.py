@@ -18,10 +18,12 @@ from .location import Location
 
 class Stop(BaseModel, SerializableMixin):
     __tablename__ = 'stops'
-    id = Column(Integer, primary_key=True)
-    segment_id = Column(Integer, ForeignKey('segments.id'))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    analysis_id = Column(Integer, ForeignKey('analyses.id'))
     location_id = Column(Integer, ForeignKey('locations.id'))
+    start_id = Column(Integer, ForeignKey('points.id'))
     start_time = Column(DateTime(timezone=True))
+    end_id = Column(Integer, ForeignKey('points.id'))
     end_time = Column(DateTime(timezone=True))
 
     location = relationship(Location)
@@ -52,7 +54,9 @@ class Stop(BaseModel, SerializableMixin):
         return Stop(
             location_id=s.loc.id,
             start_time=s.start.time,
+            start_id=s.start.id,
             end_time=s.end.time,
+            end_id=s.end.id,
         )
 
     @classmethod
