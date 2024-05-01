@@ -17,11 +17,11 @@ from sqlalchemy.orm import relationship
 
 from mapthing.models import BaseModel, SerializableMixin
 
-class LocationType(enum.Enum):
-    place=1
-    auto=2
-    zone=3
-    waypoint=4
+class LocationType(str, enum.Enum):
+    place='place'
+    auto='auto'
+    zone='zone'
+    waypoint='waypoint'
 
 class Location(BaseModel, SerializableMixin):
     __tablename__ = 'locations'

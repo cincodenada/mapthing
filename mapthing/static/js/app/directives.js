@@ -211,7 +211,7 @@ angular.module('mapApp.directives', [])
             });
 
             // And our tracks
-            scope.tracks = Track.query({start: starttime.format('YYYY-MM-DD'), end: endtime.format('YYYY-MM-DD')}, function() {
+            scope.tracks = Track.query({start: starttime.format('YYYY-MM-DD HH:mm:ss'), end: endtime.format('YYYY-MM-DD HH:mm:ss')}, function() {
               scope.bounds = new mxn.BoundingBox();
 
               // Get canvas for drawing
@@ -606,9 +606,10 @@ angular.module('mapApp.directives', [])
           const newname = prompt('New location name?');
           if(newname) {
             const curLoc = $scope.locations[locid]
+            console.log(curLoc)
             $scope.locations[locid].name = newname;
             Location.save({
-              ...curLoc,
+              id: curLoc.id,
               name: newname,
               type: "place",
             })

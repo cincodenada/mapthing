@@ -206,11 +206,11 @@ def date_track(request):
 @view_config(route_name='locations', renderer='templates/json.pt')
 def edit_place(request):
     vals = json.loads(request.body)
-    loc = Location(**vals)
-    print(vals)
-    DBSession.add(loc)
+    id = vals["id"]
+    del vals["id"]
+    DBSession.execute(update(Location).where(Location.id==id).values(**vals))
     DBSession.commit()
-    return { 'json_data': json.dumps(loc.to_dict()) }
+    return { 'json_data': "yay" }
 
 @view_config(route_name='upload_data', renderer='templates/json.pt')
 def upload_data(request):

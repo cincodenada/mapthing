@@ -190,6 +190,7 @@ class Location(object):
     def get_serializable(self, full=True):
         c = self.center()
         out = {
+            'id': self.id,
             'name': self.name,
             'lat': float(c.lat),
             'lon': float(c.lon),
