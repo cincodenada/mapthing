@@ -110,7 +110,6 @@ def date_track(request):
         startdate = date_parse(request.params['start'])
         enddate = date_parse(request.params['end'])
         points = Point.getByDate(startdate, enddate).all()
-        subtracks = Subtrack.getByDate(startdate, enddate)
     elif('ne' in request.params):
         ne = request.params['ne'].split(',')
         sw = request.params['sw'].split(',')
@@ -127,25 +126,35 @@ def date_track(request):
     locs = Location.getAll()
     location_pool = gps_history.LocationPool(locs)
 
+    track_ids = set()
     for p, s, t in points:
-        categorizer.add_point(p)
+        #categorizer.add_point(p)
         jsonifier.add_point(p, s, t)
+        track_ids.add(t.id)
 
-    subtracks_by_track = defaultdict(list)
+    print(track_ids)
+    subtracks = Subtrack.getByTrack(track_ids)
+    subtracks_by_track = {}
     for [st] in subtracks:
         tid = st.track_id
+        if tid not in subtracks_by_track:
+            subtracks_by_track[tid] = []
         subtracks_by_track[tid].append(st)
+
+    print([(key, len(subtracks_by_track[key])) for key in subtracks_by_track.keys()])
 
     existing_trips = []
     new_stopsets = []
     for tid, points in groupby(points, lambda pst: pst[2].id):
         if tid in subtracks_by_track:
+            print("Using existing trips for track", tid)
             existing_trips += subtracks_by_track[tid]
         else:
+            print("Generating trips for track", tid)
             hist = gps_history.History(location_pool)
             for p, s, t in points:
                 hist.add_point(p)
-            new_stopsets += hist.finish()
+            new_stopsets += (tid, hist.finish())
                 
     db = getDb()
 
@@ -162,7 +171,7 @@ def date_track(request):
         print(l.id, new_locs[idx])
             
     new_trips = []
-    for ss in new_stopsets:
+    for tid, ss in new_stopsets:
         t = ss.track
         st = Subtrack(
             track_id=tid,
@@ -193,8 +202,8 @@ def date_track(request):
             "start": s.start_time,
             "end": s.end_time,
             "loc": s.location_id or None,
-        } for s in st.stops]
-    } for st in all_trips]
+        } for s in sorted(st.stops, key=attrgetter("start_time"))]
+    } for st in sorted(all_trips, key=attrgetter("start_time"))]
                     
 
     return {'json_data': json.dumps({

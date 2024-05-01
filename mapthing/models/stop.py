@@ -88,3 +88,11 @@ class Subtrack(BaseModel):
                 .where(Subtrack.end_time >= start.isoformat())\
                 .where(Subtrack.start_time <= end.isoformat())\
                 .order_by(Subtrack.id))
+
+    @classmethod
+    def getByTrack(cls, tids):
+        return DBSession.execute(select(Subtrack)\
+                .options(selectinload(Subtrack.stops))\
+                .options(selectinload(Subtrack.track))\
+                .where(Subtrack.track_id.in_(tids))\
+                .order_by(Subtrack.id))
