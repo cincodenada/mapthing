@@ -1,6 +1,8 @@
 // vim: set ts=2 sts=2 sw=2 :
 'use strict';
 
+const makeTime = (ms) => Instant.fromEpochMilliseconds(ms).toZonedDateTimeISO(tz)
+
 angular.module('mapApp.directives', [])
   // {{{ animControl
   .directive('animControl', function() {
@@ -444,7 +446,7 @@ angular.module('mapApp.directives', [])
 
             var addline = function(points, seg) {
               var newline = new mxn.Polyline(points);
-              newline.setColor(is_highlighted ? '#0000FF' : seg.color);
+              newline.setColor(is_highlighted ? '#0000FF' : seg.color || '#006600');
               newline.setWidth(is_highlighted ? '6' : '4');
               $scope.map.addPolyline(newline);
 
@@ -544,12 +546,6 @@ angular.module('mapApp.directives', [])
       },
       templateUrl: 'trip_list.html',
       link: function(scope, elm, attrs) {
-        scope.$watch('locations', function(cur, prev, scope) {
-          console.log('Locations', cur)
-        });
-        scope.$watch('trips', function(cur, prev, scope) {
-          console.log('Trips', cur)
-        });
         scope.elm = elm.find('#triplist');
         scope.elm.on('click','li a.trip_segment',function() {
           const trip = $(this).scope().trip
@@ -615,6 +611,45 @@ angular.module('mapApp.directives', [])
             })
           }
         }
+        $scope.$watch('trips', function(cur, prev, scope) {
+          const smallGap = 60*60*1000;
+          if(cur) {
+            const mergedTrips = []
+            let pendingTrip = null;
+            for(const trip of cur) {
+              if(pendingTrip) {
+                if(trip.stops.length === 0) { continue }
+                const lastStop = pendingTrip.stops.slice(-1)[0]
+                const firstStop = trip.stops[0]
+                console.log("merge?", lastStop, firstStop)
+                if(lastStop && firstStop && lastStop.loc == firstStop.loc && firstStop.start - lastStop.end < smallGap) {
+                  console.log("merging!")
+                  pendingTrip = {
+                    ...pendingTrip,
+                    end: trip.end,
+                    len: trip.end - pendingTrip.start,
+                    stops: [
+                      ...pendingTrip.stops.slice(0, -1),
+                      {
+                        ...lastStop,
+                        end: firstStop.end
+                      },
+                      ...trip.stops.slice(1)
+                    ]
+                  }
+                } else {
+                  mergedTrips.push(pendingTrip)
+                  pendingTrip = trip
+                }
+              } else {
+                pendingTrip = trip
+              }
+            }
+            if(pendingTrip) { mergedTrips.push(pendingTrip) }
+            scope.mergedTrips = mergedTrips
+            console.log('merged trips', mergedTrips)
+          }
+        })
       }
     }
   })
@@ -625,9 +660,35 @@ angular.module('mapApp.directives', [])
         end: '<',
         locations: '<',
         trips: '<',
+        selRange: '=',
+        selLoc: '=',
+        uniParams: '<',
       },
       templateUrl: 'day_view.html',
       link: function(scope, elm, attrs) {
+        // Tried to do this better, failed
+        elm.on('mouseover','.bar',function() {
+          const stop = $(this).scope().stop
+          console.log('Highlighting stop', stop)
+          scope.$apply(function(scope) {
+            scope.selLoc = stop.loc
+          })
+        });
+        elm.on('mouseout','.bar',function() {
+          scope.$apply(function(scope) {
+            scope.selLoc = null
+          })
+        });
+        elm.on('mouseover','.line',function() {
+          const interval = scope.uniParams.interval
+          const range = $(this).data('range')
+          scope.$apply(function(scope) {
+            scope.selRange = [
+              Temporal.ZonedDateTime.from(range.$startTime).epochSeconds/interval,
+              Temporal.ZonedDateTime.from(range.$endTime).epochSeconds/interval
+            ]
+          })
+        });
       },
       controller: function($scope) {
         $scope.$watchGroup(['start', 'end'], function(cur, prev, scope) {
@@ -648,28 +709,46 @@ angular.module('mapApp.directives', [])
           if(cur) {
             const dayStops = Object.fromEntries(scope.days.map(d => [d, []]))
             for(const trip of cur) {
-              for(const stop of trip.stops) {
-                const start = Instant.fromEpochMilliseconds(stop.start).toZonedDateTimeISO(tz)
-                const end = Instant.fromEpochMilliseconds(stop.end).toZonedDateTimeISO(tz)
+              for(const idxs in trip.stops) {
+                const idx = Number(idxs)
+                const stop = trip.stops[idx]
+                const start = makeTime(stop.start);
+                const end = makeTime(stop.end);
                 const startDate = start.toPlainDate().toString();
                 const endDate = end.toPlainDate().toString();
                 const annotated = {
                   ...stop,
-                  $startTime: start.toPlainTime(),
-                  $endTime: end.toPlainTime(),
+                  $startTime: start,
+                  $endTime: end,
                 }
-                console.log('Comparing', startDate, endDate)
+                if(idx === 0) {
+                  annotated.before = {
+                    $startTime: makeTime(trip.start),
+                    $endTime: start
+                  }
+                }
+                if(idx === trip.stops.length-1) {
+                  annotated.after = {
+                    $startTime: end,
+                    $endTime: makeTime(trip.end)
+                  }
+                } else {
+                  annotated.after = {
+                    $startTime: end,
+                    $endTime: makeTime(trip.stops[idx+1].start)
+                  }
+                }
                 if(startDate !== endDate) {
                   if(dayStops[startDate]) {
                     dayStops[startDate].push({
                       ...annotated,
-                      $endTime: lastTime,
+                      $endTime: start.withPlainTime(lastTime),
                     })
                   }
                   if(dayStops[endDate]) {
                     dayStops[endDate].push({
                       ...annotated,
-                      $startTime: zeroTime
+                      $startTime: end.withPlainTime(zeroTime),
                     })
                   }
                 } else {

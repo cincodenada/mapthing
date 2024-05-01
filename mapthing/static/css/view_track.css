@@ -121,6 +121,12 @@ day-view .bar-footer {
   font-size: 50%;
   flex-direction: row;
 }
+day-view .line {
+  background: gray;
+  overflow: hidden;
+  height: 2px;
+  margin-top: 1em;
+}
 day-view .time {
   flex-grow: 1;
 }

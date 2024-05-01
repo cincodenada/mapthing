@@ -91,6 +91,9 @@
         end="daterange.endDate"
 		locations="data.map.locations"
 		trips="data.view_points.trips"
+		sel-loc="params.sel_loc"
+		sel-range="params.sel_range"
+        uni-params="uni"
 		>
 	</day-view>
 
@@ -135,7 +138,7 @@
     </script>
     <script type="text/ng-template" id="trip_list.html">
         <div id="triplist">
-			<div ng-repeat="trip in trips">
+			<div ng-repeat="trip in mergedTrips">
 			<!--Trip start: {{trip.start|date:'yyyy/MM/dd HH:mm'}}-->
 			<ul data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
 			<li ng-if="trip.stops[0].range[0] !== 0" class="trip_entry">
@@ -169,14 +172,20 @@
 		<tr ng-repeat="day in days">
 			<th>{{day}}</th>
 			<td>
-				<div ng-repeat="stop in dayStops[day]" style="{{stop|dayStyle}}">
-					<div class="bar" title="{{locations[stop.loc].name|orthis:'Location ' + stop.loc}}">
+				<div ng-if="stop.before" ng-repeat-start="stop in dayStops[day]" style="{{stop.before|dayStyle}}">
+					<div class="line" data-range="{{stop.before}}"></div>
+				</div>
+				<div  style="{{stop|dayStyle}}">
+					<div class="bar" title="{{locations[stop.loc].name|orthis:'Location ' + stop.loc}} ({{stop.start|date:'HH:mm'}}-{{stop.end|date:'HH:mm'}}, {{(stop.end-stop.start)|date:'HH:mm'}})">
 					{{locations[stop.loc].name|orthis:'Location ' + stop.loc}}
 					</div>
 					<div class="bar-footer">
 						<span class="time from">{{stop.start|date:'HH:mm'}}</span>
 						<span class="time to">{{stop.end|date:'HH:mm'}}</span>
 					</div>
+				</div>
+				<div ng-if="stop.after" ng-repeat-end style="{{stop.after|dayStyle}}">
+					<div class="line" data-range="{{stop.after}}"></div>
 				</div>
 			</td>
 		</tr>

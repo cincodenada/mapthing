@@ -8,8 +8,8 @@ function secsToPct(secs) {
   return secs/86400*100;
 }
 
-function timeToPct(plainTime) {
-  const offset = plainTime.since(zeroTime).total('seconds')
+function timeToPct(time) {
+  const offset = time.toPlainTime().since(zeroTime).total('seconds')
   return secsToPct(offset > 0 ? offset : 0)
 }
 

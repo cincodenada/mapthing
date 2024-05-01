@@ -1,6 +1,9 @@
 // vim: set ts=2 sts=2 sw=2 :
 'use strict';
 
+const locEvt = new Event("location")
+const selEvt = new Event("selection")
+
 angular.module('mapApp.controllers', [])
     .controller('mapController', function($scope) {
       $scope.params = $scope.params || {};

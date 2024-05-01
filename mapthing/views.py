@@ -154,7 +154,7 @@ def date_track(request):
             hist = gps_history.History(location_pool)
             for p, s, t in points:
                 hist.add_point(p)
-            new_stopsets += (tid, hist.finish())
+            new_stopsets.append((tid, hist.finish()))
                 
     db = getDb()
 
@@ -171,24 +171,25 @@ def date_track(request):
         print(l.id, new_locs[idx])
             
     new_trips = []
-    for tid, ss in new_stopsets:
-        t = ss.track
-        st = Subtrack(
-            track_id=tid,
-            start_id=t.start.id,
-            start_time=t.start.time,
-            end_id=t.end.id,
-            end_time=t.end.time
-        )
-        for s in ss.stops:
-            st.stops.append(Stop(
-                location_id=s.loc.id,
-                start_id=s.start.id,
-                start_time=s.start.time,
-                end_id=s.end.id,
-                end_time=s.end.time,
-            ))
-        new_trips.append(st)
+    for tid, sslist in new_stopsets:
+        for ss in sslist:
+            t = ss.track
+            st = Subtrack(
+                track_id=tid,
+                start_id=t.start.id,
+                start_time=t.start.time,
+                end_id=t.end.id,
+                end_time=t.end.time
+            )
+            for s in ss.stops:
+                st.stops.append(Stop(
+                    location_id=s.loc.id,
+                    start_id=s.start.id,
+                    start_time=s.start.time,
+                    end_id=s.end.id,
+                    end_time=s.end.time,
+                ))
+            new_trips.append(st)
 
     db = getDb()
     db.add_all(new_trips)
