@@ -12,6 +12,7 @@ from statistics import mean, stdev
 from itertools import islice, pairwise
 from dataclasses import dataclass
 from typing import Any
+from mapthing.models import LocationType
 
 def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
@@ -39,7 +40,7 @@ class LocationPool(object):
 
         for i, p in enumerate(points):
             if i not in matches:
-                newloc = Location(radius=auto_radius, latitude=p.lat, longitude=p.lon, type=Orm.LocationType.auto)
+                newloc = Location(radius=auto_radius, latitude=p.lat, longitude=p.lon, type=LocationType.auto)
                 self.locations[newloc.id] = newloc
                 matches[i] = newloc
 
