@@ -16,6 +16,8 @@ from operator import itemgetter, attrgetter
 import tempfile
 from . import gps_history
 from datetime import date, timedelta
+from itertools import groupby
+from collections import defaultdict
 
 from . import uploader
 
@@ -26,6 +28,7 @@ from .models import (
     Point,
     Location,
     Stop,
+    Subtrack,
     getDb
     )
 
@@ -107,7 +110,7 @@ def date_track(request):
         startdate = date_parse(request.params['start'])
         enddate = date_parse(request.params['end'])
         points = Point.getByDate(startdate, enddate).all()
-        stops = Stop.getByDate(startdate, enddate).all()
+        subtracks = Subtrack.getByDate(startdate, enddate)
     elif('ne' in request.params):
         ne = request.params['ne'].split(',')
         sw = request.params['sw'].split(',')
@@ -122,33 +125,82 @@ def date_track(request):
     jsonifier = gps_history.Jsonifier()
 
     locs = Location.getAll()
-
-    hist = gps_history.History(locs, stops)
+    location_pool = gps_history.LocationPool(locs)
 
     for p, s, t in points:
-        hist.add_point(p)
         categorizer.add_point(p)
         jsonifier.add_point(p, s, t)
 
-    trips = hist.finish()
+    subtracks_by_track = defaultdict(list)
+    for [st] in subtracks:
+        tid = st.track_id
+        subtracks_by_track[tid].append(st)
 
+    existing_trips = []
+    new_stopsets = []
+    for tid, points in groupby(points, lambda pst: pst[2].id):
+        if tid in subtracks_by_track:
+            existing_trips += subtracks_by_track[tid]
+        else:
+            hist = gps_history.History(location_pool)
+            for p, s, t in points:
+                hist.add_point(p)
+            new_stopsets += hist.finish()
+                
     db = getDb()
-    new_locs = [l for l in hist.locations.locations.values() if not l.id]
-    orm_locs = [Location.fromHistLocations(new_locs) for l in new_locs]
+
+    new_locs = [l for l in location_pool.locations if not l.id]
+    orm_locs = Location.fromHistLocations(new_locs)
     db.add_all(orm_locs)
 
-    for t in trips:
-        db.add_all(Stop.fromHistStops(t.stops))
     db.commit()
 
     # Backpopulate our new ids to the locations
     for idx, l in enumerate(orm_locs):
+        print(l.id, new_locs[idx])
         new_locs[idx].id = l.id
+        print(l.id, new_locs[idx])
+            
+    new_trips = []
+    for ss in new_stopsets:
+        t = ss.track
+        st = Subtrack(
+            track_id=tid,
+            start_id=t.start.id,
+            start_time=t.start.time,
+            end_id=t.end.id,
+            end_time=t.end.time
+        )
+        for s in ss.stops:
+            st.stops.append(Stop(
+                location_id=s.loc.id,
+                start_id=s.start.id,
+                start_time=s.start.time,
+                end_id=s.end.id,
+                end_time=s.end.time,
+            ))
+        new_trips.append(st)
+
+    db = getDb()
+    db.add_all(new_trips)
+    db.commit()
+
+    all_trips = [*existing_trips, *new_trips]
+    out_trips = [{
+        "start": st.start_time,
+        "end": st.end_time,
+        "stops": [{
+            "start": s.start_time,
+            "end": s.end_time,
+            "loc": s.location_id or None,
+        } for s in st.stops]
+    } for st in all_trips]
+                    
 
     return {'json_data': json.dumps({
         **jsonifier.get_serializable(),
-        'trips': [t.get_serializable() for t in trips],
-        'locations': hist.locations.get_serializable(),
+        'trips': out_trips,
+        'locations': location_pool.get_serializable(),
     }, cls=DatetimeEncoder)}
 
 @view_config(route_name='locations', renderer='templates/json.pt')

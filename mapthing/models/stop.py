@@ -11,15 +11,17 @@ from sqlalchemy import (
     literal_column,
     asc
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, selectinload
+from sqlalchemy import select
 
-from mapthing.models import BaseModel, SerializableMixin
+from mapthing.models import BaseModel, SerializableMixin, DBSession
 from .location import Location
+from .point import Point, Track
 
 class Stop(BaseModel, SerializableMixin):
     __tablename__ = 'stops'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    analysis_id = Column(Integer, ForeignKey('analyses.id'))
+    subtrack_id = Column(Integer, ForeignKey('subtracks.id'))
     location_id = Column(Integer, ForeignKey('locations.id'))
     start_id = Column(Integer, ForeignKey('points.id'))
     start_time = Column(DateTime(timezone=True))
@@ -62,3 +64,27 @@ class Stop(BaseModel, SerializableMixin):
     @classmethod
     def fromHistStops(cls, slist):
         return [cls.fromHistStop(s) for s in slist]
+
+class Subtrack(BaseModel):
+    __tablename__ = 'subtracks'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    track_id = Column(Integer, ForeignKey('tracks.id'))
+    start_id = Column(Integer, ForeignKey('points.id'))
+    start_time = Column(DateTime(timezone=True))
+    end_id = Column(Integer, ForeignKey('points.id'))
+    end_time = Column(DateTime(timezone=True))
+
+    stops = relationship(Stop)
+    track = relationship(Track)
+    start = relationship(Point, foreign_keys=[start_id])
+    end = relationship(Point, foreign_keys=[end_id])
+
+    @classmethod
+    def getByDate(cls, start, end):
+        # Shouldn't have to do isoformat() here but...
+        return DBSession.execute(select(Subtrack)\
+                .options(selectinload(Subtrack.stops))\
+                .options(selectinload(Subtrack.track))\
+                .where(Subtrack.end_time >= start.isoformat())\
+                .where(Subtrack.start_time <= end.isoformat())\
+                .order_by(Subtrack.id))

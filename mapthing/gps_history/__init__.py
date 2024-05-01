@@ -24,7 +24,7 @@ def is_moving(points, min_move_m=50):
 
 class LocationPool(object):
     def __init__(self, locations = []):
-        self.locations = {l.id: Location(**l.to_dict()) for l in locations}
+        self.locations = [Location(**l.to_dict()) for l in locations]
         self.num_points = 0
 
     def add_point(self, point, auto_radius):
@@ -32,7 +32,7 @@ class LocationPool(object):
 
     def add_points(self, points, auto_radius):
         matches = {}
-        for l in self.locations.values():
+        for l in self.locations:
             for i, p in enumerate(points):
                 if i not in matches:
                     if l.add_point(p):
@@ -41,7 +41,7 @@ class LocationPool(object):
         for i, p in enumerate(points):
             if i not in matches:
                 newloc = Location(radius=auto_radius, latitude=p.lat, longitude=p.lon, type=LocationType.auto)
-                self.locations[newloc.id] = newloc
+                self.locations.append(newloc)
                 matches[i] = newloc
 
         self.num_points += len(points)
@@ -50,7 +50,7 @@ class LocationPool(object):
 
     def get_serializable(self, full=True):
         outmap = {}
-        for l in self.locations.values():
+        for l in self.locations:
             outmap[l.id] = l.get_serializable(full)
 
         return outmap
@@ -204,24 +204,11 @@ class Location(object):
         return out
 
 class Track(object):
-    def __init__(self, start = None, end = None, start_loc = None, end_loc = None):
+    def __init__(self, start = None, end = None):
         self.start = start
         self.end = end
-        self.start_loc = start_loc
-        self.end_loc = end_loc
         self.points = []
         self.stops = []
-        self.stop_offset = None
-        self.stop_count = None
-
-    def point_finder(self):
-        def find_point(search_time):
-            while self.points[find_point.cur_point].time < search_time:
-                find_point.cur_point+=1
-            return (find_point.cur_point, self.points[find_point.cur_point])
-        find_point.cur_point = 0
-
-        return find_point
 
     def add_point(self, p):
         self.points.append(p)
@@ -256,7 +243,7 @@ class Track(object):
 @dataclass
 class Stop:
     track: Track
-    loc: int | None = None
+    loc: Location | None = None
     start_idx: int | None = None
     end_idx: int | None = None
 
@@ -317,15 +304,15 @@ class StopSet:
         }
 
 class History(object):
-    def __init__(self, locations = [], stops = [], outing_gap=3*60):
+    def __init__(self, locations = None, outing_gap=3*60):
         self.outings = []
         self.points = []
         self.last_time = None
         self.stop_idx = 0
         self.cur_outing = Track()
         self.outing_gap = timedelta(seconds=outing_gap) # Convert to ms
-        self.locations = LocationPool(locations)
-        self.stops = stops
+        self.locations = locations
+        self.stops = []
 
     def get_stops(self, start, end):
         try:
@@ -366,19 +353,6 @@ class History(object):
         self.last_time = p.time
 
     def find_stops(self, track):
-        if track.stop_count:
-            find_point = track.point_finder()
-            stops = [
-                Stop(
-                    track=track,
-                    loc=self.locations.locations[s.location_id],
-                    start_idx=find_point(s.start_time)[0],
-                    end_idx=find_point(s.end_time)[0],
-                )
-            # TODO: This if is bad
-            for s in self.stops[track.stop_offset:track.stop_offset+track.stop_count] if type(s.location_id) == int]
-            return StopSet(stops, track)
-        
         return self.locations.find_stops(track)
 
     def finish(self, min_length = 3):
