@@ -552,8 +552,8 @@ angular.module('mapApp.directives', [])
           const interval = scope.uniParams.interval
           scope.$apply(function(scope) {
             scope.viewRange = [
-              trip.start/1000/interval,
-              trip.end/1000/interval
+              Math.floor(trip.start/1000/interval),
+              Math.ceil(trip.end/1000/interval)
             ]
           })
         });
@@ -565,8 +565,8 @@ angular.module('mapApp.directives', [])
             const tripStart = local.stop.end;
             const tripEnd = local.trip.stops[local.$index+1].start;
             scope.selRange = [
-              tripStart/1000/interval,
-              tripEnd/1000/interval
+              Math.floor(tripStart/1000/interval),
+              Math.ceil(tripEnd/1000/interval)
             ]
           })
         });
@@ -621,9 +621,9 @@ angular.module('mapApp.directives', [])
                 if(trip.stops.length === 0) { continue }
                 const lastStop = pendingTrip.stops.slice(-1)[0]
                 const firstStop = trip.stops[0]
-                console.log("merge?", lastStop, firstStop)
+                //console.log("merge?", lastStop, firstStop)
                 if(lastStop && firstStop && lastStop.loc == firstStop.loc && firstStop.start - lastStop.end < smallGap) {
-                  console.log("merging!")
+                  //console.log("merging!")
                   pendingTrip = {
                     ...pendingTrip,
                     end: trip.end,
@@ -647,7 +647,7 @@ angular.module('mapApp.directives', [])
             }
             if(pendingTrip) { mergedTrips.push(pendingTrip) }
             scope.mergedTrips = mergedTrips
-            console.log('merged trips', mergedTrips)
+            //console.log('merged trips', mergedTrips)
           }
         })
       }
@@ -684,8 +684,8 @@ angular.module('mapApp.directives', [])
           const range = $(this).data('range')
           scope.$apply(function(scope) {
             scope.selRange = [
-              Temporal.ZonedDateTime.from(range.$startTime).epochSeconds/interval,
-              Temporal.ZonedDateTime.from(range.$endTime).epochSeconds/interval
+              Math.floor(Temporal.ZonedDateTime.from(range.$startTime).epochSeconds/interval),
+              Math.ceil(Temporal.ZonedDateTime.from(range.$endTime).epochSeconds/interval)
             ]
           })
         });
