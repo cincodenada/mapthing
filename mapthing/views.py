@@ -143,16 +143,20 @@ def date_track(request):
 
     print([(key, len(subtracks_by_track[key])) for key in subtracks_by_track.keys()])
 
+    points_by_track = defaultdict(list)
+    for p, s, t in points:
+        points_by_track[t.id].append(p)
+
     existing_trips = []
     new_stopsets = []
-    for tid, points in groupby(points, lambda pst: pst[2].id):
+    for tid, points in points_by_track.items():
         if tid in subtracks_by_track:
             print("Using existing trips for track", tid)
             existing_trips += subtracks_by_track[tid]
         else:
             print("Generating trips for track", tid)
             hist = gps_history.History(location_pool)
-            for p, s, t in points:
+            for p in points:
                 hist.add_point(p)
             new_stopsets.append((tid, hist.finish()))
                 
