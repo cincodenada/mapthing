@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     func,
     literal_column,
+    or_
 )
 from sqlalchemy.orm import relationship
 
@@ -37,6 +38,7 @@ class Point(BaseModel):
                 .join(Segment.points)\
                 .filter(Point.time >= start.isoformat())\
                 .filter(Point.time <= end.isoformat())\
+                .filter((Point.src.is_(None)) | (Point.src != "network"))\
                 .order_by(Point.time)
 
     @classmethod
@@ -48,6 +50,7 @@ class Point(BaseModel):
                 .filter(Point.latitude <= ne[0])\
                 .filter(Point.longitude >= sw[1])\
                 .filter(Point.longitude <= ne[1])\
+                .filter((Point.src.is_(None)) | (Point.src != "network"))\
                 .order_by(Point.time)
 
     @classmethod
@@ -59,6 +62,7 @@ class Point(BaseModel):
                 .filter(Point.latitude <= ne[0])\
                 .filter(Point.longitude >= sw[1])\
                 .filter(Point.longitude <= ne[1])\
+                .filter((Point.src.is_(None)) | (Point.src != "network"))\
                 .group_by(timestr)\
                 .order_by(Point.time)
 
