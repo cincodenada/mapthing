@@ -26,6 +26,7 @@ class Point(BaseModel):
     accuracy = Column(Float)
     altitude = Column(Float)
     bearing = Column(Float)
+    src = Column(String)
     segment_id = Column(Integer, ForeignKey('segments.id'))
 
     @classmethod

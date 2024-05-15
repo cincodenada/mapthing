@@ -5,6 +5,7 @@ import datetime
 import os
 import glob
 import zipfile
+import re
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -69,6 +70,11 @@ class FileImporter(object):
         return cls(infile)
 
 class ImportGpx(FileImporter):
+    extension_fields = {
+        "bearing": "bearing",
+        "speed": "speed",
+    }
+
     def load(self):
         counts = Counter()
         gpx = gpxpy.parse(open(self.infile.name, 'r'))
@@ -92,9 +98,18 @@ class ImportGpx(FileImporter):
                     p.speed = point.speed
                     p.altitude = point.elevation
                     p.bearing = point.course
+                    p.src = point.source
                     # TODO: Import src
-                    if(point.extensions and 'ogt10:accuracy' in point.extensions):
-                        p.accuracy = point.extensions['ogt10:accuracy']
+                    if point.extensions:
+                        for elm in point.extensions:
+                            if len(elm):
+                                for child in elm:
+                                    basetag = re.sub(r'^\{.*\}','',child.tag)
+                                    try:
+                                        setattr(p, self.extension_fields[basetag], child.text)
+                                    except KeyError:
+                                        print(f"Unhandled extension field {basetag}={child.text}")
+                                
                     s.points.append(p)
             try:
                 DBSession.commit()
