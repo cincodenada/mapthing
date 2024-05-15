@@ -70,6 +70,10 @@ def get_tracks(request):
         trackdata.append(dict(list(zip(('id','start','end','minlat','maxlat','minlon','maxlon'),curtrack))))
     return { 'json_data': json.dumps(trackdata, cls=DatetimeEncoder) }
 
+@view_config(route_name='sources', renderer='templates/sources.pt')
+def sources(request):
+    return {}
+    
 @view_config(route_name='ajax_track', renderer='templates/view_track.pt')
 def ajax_track(request):
     if 'end' in request.params:

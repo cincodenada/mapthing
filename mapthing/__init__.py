@@ -17,6 +17,7 @@ def main(global_config, **settings):
     config.include('pyramid_chameleon')
     config.add_static_view('static', 'static', cache_max_age=3600)
     config.add_route('home', '/')
+    config.add_route('sources', '/sources/')
     config.add_route('view_track', '/track/{id}')
     config.add_route('ajax_points', '/points.json')
     config.add_route('ajax_track', '/tracks/')
