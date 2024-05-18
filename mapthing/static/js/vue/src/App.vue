@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import axios from 'axios'
 import SourceView from '@/components/SourceView.vue'
 
-const sources = ref([
-  {
-    id: 1,
-    start: 0,
-    end: 1000,
-  }
-])
+const sources = ref([])
+
+axios.get('/sources.json', { params }).then(resp => {
+	console.log(resp);
+	sources.value = resp.data
+})
 </script>
 
 <template>

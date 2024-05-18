@@ -89,6 +89,7 @@ class Track(BaseModel):
     def getByDate(cls, start, end):
         return cls.query(
                 Track.id,
+				Track.name,
                 func.min(Point.time),
                 func.max(Point.time),
                 func.min(Point.latitude),

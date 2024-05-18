@@ -67,12 +67,41 @@ def get_tracks(request):
         curtrack = data.fetchone()
         if(curtrack is None):
             break;
-        trackdata.append(dict(list(zip(('id','start','end','minlat','maxlat','minlon','maxlon'),curtrack))))
+        trackdata.append(dict(list(zip(('id','name','start','end','minlat','maxlat','minlon','maxlon'),curtrack))))
+    return { 'json_data': json.dumps(trackdata, cls=DatetimeEncoder) }
+
+@view_config(route_name='ajax_sources', renderer='templates/json.pt')
+def sources(request):
+    startdate = date_parse(request.params['start'])
+    enddate = date_parse(request.params['end'])
+    #TODO: This ain't great
+    query = Track.getByDate(startdate, enddate)
+    trackdata = []
+    data = DBSession.execute(query)
+    while(True):
+        curtrack = data.fetchone()
+        if(curtrack is None):
+            break;
+        trackdata.append(dict(list(zip(('id','name','start','end','minlat','maxlat','minlon','maxlon'),curtrack))))
     return { 'json_data': json.dumps(trackdata, cls=DatetimeEncoder) }
 
 @view_config(route_name='sources', renderer='templates/sources.pt')
-def sources(request):
-    return {}
+def view_sources(request):
+    if 'end' in request.params:
+        enddate = date_parse(request.params['end'])
+    else:
+        enddate = datetime.now().replace(microsecond=0)
+
+    if 'start' in request.params:
+        startdate = date_parse(request.params['start'])
+    else:
+        startdate = enddate - timedelta(days=7)
+
+    params = {
+        'start': startdate.isoformat(' '),
+        'end': enddate.isoformat(' '),
+    }
+    return { 'json_params': json.dumps(params) }
     
 @view_config(route_name='ajax_track', renderer='templates/view_track.pt')
 def ajax_track(request):

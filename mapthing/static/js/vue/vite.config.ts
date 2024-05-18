@@ -18,4 +18,7 @@ export default defineConfig({
     }
   },
   base: "/static/js/vue/dist/",
+  build: {
+    sourcemap: true
+  },
 })
