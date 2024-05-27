@@ -7,7 +7,7 @@
     <meta name="description" content="" />
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@js-temporal/polyfill"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@js-temporal/polyfill"></script>
     <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
     <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/ui-lightness/jquery-ui.css" />
     <link rel="shortcut icon" href="${request.static_url('mapthing:static/favicon.ico')}" />
@@ -89,13 +89,13 @@
     <day-view
         start="daterange.startDate"
         end="daterange.endDate"
-		locations="data.map.locations"
-		trips="data.view_points.trips"
-		sel-loc="params.sel_loc"
-		sel-range="params.sel_range"
+        locations="data.map.locations"
+        trips="data.view_points.trips"
+        sel-loc="params.sel_loc"
+        sel-range="params.sel_range"
         uni-params="uni"
-		>
-	</day-view>
+        >
+    </day-view>
 
 
     <script type="text/ng-template" id="anim_controls.html">
@@ -138,13 +138,13 @@
     </script>
     <script type="text/ng-template" id="trip_list.html">
         <div id="triplist">
-			<div ng-repeat="trip in mergedTrips">
-			<!--Trip start: {{trip.start|date:'yyyy/MM/dd HH:mm'}}-->
-			<ul data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
-			<li ng-if="trip.stops[0].range[0] !== 0" class="trip_entry">
-				<div class="trip_segment trip_segment_unknown">???</div>
-			</li>
-			<li ng-repeat="stop in trip.stops" class="trip_entry">
+            <div ng-repeat="trip in mergedTrips">
+            <!--Trip start: {{trip.start|date:'yyyy/MM/dd HH:mm'}}-->
+            <ul data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
+            <li ng-if="trip.stops[0].range[0] !== 0" class="trip_entry">
+                <div class="trip_segment trip_segment_unknown">???</div>
+            </li>
+            <li ng-repeat="stop in trip.stops" class="trip_entry">
                 <span class="stop_time">{{stop.start|date:'yyyy/MM/dd HH:mm'}}</span>
                 <div class="stop_container">
                     <a href="#" class="trip_stop">
@@ -162,34 +162,34 @@
                     Trip {{$index}} ({{(trip.end-trip.start)/1000/60|number:1}} min)
                 </a>
                 -->
-			</ul>
-			<!--Trip end: {{trip.start|date:'yyyy/MM/dd HH:mm'}}-->
-			</div>
-		</div>
+            </ul>
+            <!--Trip end: {{trip.start|date:'yyyy/MM/dd HH:mm'}}-->
+            </div>
+        </div>
     </script>
     <script type="text/ng-template" id="day_view.html">
-		<table>
-		<tr ng-repeat="day in days">
-			<th>{{day}}</th>
-			<td>
-				<div ng-if="stop.before" ng-repeat-start="stop in dayStops[day]" style="{{stop.before|dayStyle}}">
-					<div class="line" data-range="{{stop.before}}"></div>
-				</div>
-				<div  style="{{stop|dayStyle}}">
-					<div class="bar" title="{{locations[stop.loc].name|orthis:'Location ' + stop.loc}} ({{stop.start|date:'HH:mm'}}-{{stop.end|date:'HH:mm'}}, {{(stop.end-stop.start)|date:'HH:mm'}})">
-					{{locations[stop.loc].name|orthis:'Location ' + stop.loc}}
-					</div>
-					<div class="bar-footer">
-						<span class="time from">{{stop.start|date:'HH:mm'}}</span>
-						<span class="time to">{{stop.end|date:'HH:mm'}}</span>
-					</div>
-				</div>
-				<div ng-if="stop.after" ng-repeat-end style="{{stop.after|dayStyle}}">
-					<div class="line" data-range="{{stop.after}}"></div>
-				</div>
-			</td>
-		</tr>
-		</table>
+        <table>
+        <tr ng-repeat="day in days">
+            <th>{{day}}</th>
+            <td>
+                <div ng-if="stop.before" ng-repeat-start="stop in dayStops[day]" style="{{stop.before|dayStyle}}">
+                    <div class="line" data-range="{{stop.before}}"></div>
+                </div>
+                <div  style="{{stop|dayStyle}}">
+                    <div class="bar" title="{{locations[stop.loc].name|orthis:'Location ' + stop.loc}} ({{stop.start|date:'HH:mm'}}-{{stop.end|date:'HH:mm'}}, {{(stop.end-stop.start)|date:'HH:mm'}})">
+                    {{locations[stop.loc].name|orthis:'Location ' + stop.loc}}
+                    </div>
+                    <div class="bar-footer">
+                        <span class="time from">{{stop.start|date:'HH:mm'}}</span>
+                        <span class="time to">{{stop.end|date:'HH:mm'}}</span>
+                    </div>
+                </div>
+                <div ng-if="stop.after" ng-repeat-end style="{{stop.after|dayStyle}}">
+                    <div class="line" data-range="{{stop.after}}"></div>
+                </div>
+            </td>
+        </tr>
+        </table>
     </script>
     <script src="${request.static_url('mapthing:static/node_modules/angular/angular.js')}" type="text/javascript"></script>
     <script src="${request.static_url('mapthing:static/node_modules/angular-resource/angular-resource.js')}" type="text/javascript"></script>
