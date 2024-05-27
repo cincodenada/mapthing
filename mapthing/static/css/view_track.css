@@ -68,6 +68,7 @@
 
 #triplist ul {
   padding-left: 1em;
+  margin: 0;
 }
 
 .trip_segment, .stop_time {
@@ -77,8 +78,7 @@
 }
 
 .trip_segment {
-    padding-top: 5px;
-    padding-bottom: 5px;
+    display: block;
 }
 
 .trip_entry {
