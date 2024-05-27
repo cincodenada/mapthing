@@ -3,6 +3,20 @@
 
 const makeTime = (ms) => Instant.fromEpochMilliseconds(ms).toZonedDateTimeISO(tz)
 
+function averageLatLon(latLonList) {
+  return Object.fromEntries(Object.entries(
+    latLonList.reduce(
+      (acc, p) => ({ lat: acc.lat + p.lat, lon: acc.lon + p.lon })
+    )
+  ).map(([k, v]) => [k, v/latLonList.length]))
+}
+
+function latLonFromGeometryPoint({x, y}) {
+  const pt = new mxn.LatLonPoint();
+  pt.fromProprietary('openlayers', {lat: y, lon: x})
+  return pt
+}
+
 function makeResizer(mxnMap) {
   const rawMap = mxnMap.getMap();
   const layer = new OpenLayers.Layer.Vector('resizer')
@@ -18,8 +32,7 @@ function makeResizer(mxnMap) {
     title: "Drag",
     displayClass: "olControlDragAnnotation",
     onDrag: function(e) {
-      console.log(e)
-      const newRadius = e.geometry.getCentroid().distanceTo(ctx.outlineCenter);
+      const newRadiusKm = latLonFromGeometryPoint(e.geometry.getCentroid()).distance(ctx.outlineCenter);
       console.log(newRadius)
       /*
       console.log(
@@ -42,6 +55,8 @@ function makeResizer(mxnMap) {
     activate: (loc, mxnRadius, mxnPolyline) => {
       ctx.curRadius = mxnRadius;
       ctx.curOutline = mxnPolyline;
+
+      console.log(ctx.curOutline);
       
       const handleLoc = new mxn.LatLonPoint(
         mxnRadius.center.lat,
@@ -55,7 +70,8 @@ function makeResizer(mxnMap) {
       handlePoly.api = "openlayers";
 
       ctx.layer.addFeatures([handlePoly.toProprietary()])
-      ctx.outlineCenter = ctx.curOutline.toProprietary().geometry.getCentroid()
+      // getCentroid() returns the top of the circle for some reason??
+      ctx.outlineCenter = averageLatLon(ctx.curOutline.points);
 
       mxnMap.dragControl.activate()
     }
