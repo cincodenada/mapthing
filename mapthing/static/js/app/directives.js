@@ -721,11 +721,12 @@ angular.module('mapApp.directives', [])
           console.log('Highlighting trip from', local)
           const interval = scope.uniParams.interval
           scope.$apply(function(scope) {
-            const tripStart = local.stop ? local.stop.end : local.trip.start;
-            const tripEnd = local.$last ? local.trip.end : local.trip.stops[local.$index+1].start;
+            const span = local.stop
+              ? { start: local.stop.end, end: local.$last ? local.trip.end : local.trip.stops[local.$index+1] }
+              : { start: local.trip.start, end: local.trip.stops[0].start }
             scope.selRange = [
-              Math.floor(tripStart/1000/interval),
-              Math.ceil(tripEnd/1000/interval)
+              Math.floor(span.start/1000/interval),
+              Math.ceil(span.end/1000/interval)
             ]
           })
         });
