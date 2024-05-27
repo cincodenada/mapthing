@@ -143,33 +143,30 @@
             <div ng-repeat="trip in mergedTrips">
             <!--Trip start: {{trip.start|date:'yyyy/MM/dd HH:mm'}}-->
             <ul data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
-            <li ng-if="trip.stops[0].start !== trip.start" class="trip_entry">
-                <a href="#" class="trip_segment">
-                    {{(trip.stops[0].start - trip.start)/1000/60|number:0}} min
+            <li ng-repeat="event in trip.events" class="trip_entry {{$last ? 'last' : ($first ? 'first' : '')}}">
+                <a ng-if="event.type === 'segment'" href="#" class="trip_segment" data-start="{{event.start}}" data-end="{{event.end}}">
+                    {{(event.end - event.start)/1000/60|number:0}} min
                 </a>
-            </li>
-            <li ng-repeat="stop in trip.stops" class="trip_entry">
-                <span class="stop_time">{{stop.start|date:'yyyy/MM/dd HH:mm'}}</span>
-                <div class="stop_container">
-                    <a ng-if="!stop.isEditing" href="#" class="trip_stop">
-                        {{locations[stop.loc].name|orthis:'Location ' + stop.loc}}
-                    </a>
-                    <div ng-if="stop.isEditing" class="trip_stop">
-                        <form>
-                            <input type="text" ng-model="pendingLoc.name"/>
-                            <input type="submit" value="✅"/>
-                            <input type="reset" value="❌"/>
-                        </form>
+                <div ng-if="event.type === 'stop'">
+                    <span class="stop_time">{{event.start|date:'yyyy/MM/dd HH:mm'}}</span>
+                    <div class="stop_container">
+                        <a ng-if="!event.isEditing" href="#" class="trip_stop">
+                            {{locations[event.loc].name|orthis:'Location ' + event.loc}}
+                        </a>
+                        <div ng-if="event.isEditing" class="trip_stop">
+                            <form>
+                                <select name="type">
+                                    <option value="place"> </option>
+                                    <option value="place">🗑️</option>
+                                <input type="text" ng-model="pendingLoc.name"/>
+                                <input type="submit" value="✅"/>
+                                <input type="reset" value="❌"/>
+                            </form>
+                        </div>
+                        <span class="stop_latlon">{{locations[event.loc].lat|number:3}}, {{locations[event.loc].lon|number:3}}</span>
                     </div>
-                    <span class="stop_latlon">{{locations[stop.loc].lat|number:3}}, {{locations[stop.loc].lon|number:3}}</span>
+                    <span class="stop_time">{{event.end|date:'yyyy/MM/dd HH:mm'}}</span>
                 </div>
-                <span class="stop_time">{{stop.end|date:'yyyy/MM/dd HH:mm'}}</span>
-                <a ng-if="!$last" href="#" class="trip_segment">
-                    {{(trip.stops[$index+1].start - stop.end)/1000/60|number:0}} min
-                </a>
-                <a ng-if="$last && stop.end !== trip.end" href="#" class="trip_segment">
-                    {{(trip.end - stop.end)/1000/60|number:0}} min
-                </a>
                 <!--
                 <a href="#" 
                     title="{{trip.start|date:'yyyy/MM/dd h:mm'}} - {{trip.end|date:'yyyy/MM/dd h:mm'}}">

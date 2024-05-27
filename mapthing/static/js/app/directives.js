@@ -717,16 +717,13 @@ angular.module('mapApp.directives', [])
           })
         });
         scope.elm.on('mouseover','li a.trip_segment',function() {
-          const local = $(this).scope()
-          console.log('Highlighting trip from', local)
+          const elm = $(this)
+          console.log('Highlighting trip from', elm)
           const interval = scope.uniParams.interval
           scope.$apply(function(scope) {
-            const span = local.stop
-              ? { start: local.stop.end, end: local.$last ? local.trip.end : local.trip.stops[local.$index+1] }
-              : { start: local.trip.start, end: local.trip.stops[0].start }
             scope.selRange = [
-              Math.floor(span.start/1000/interval),
-              Math.ceil(span.end/1000/interval)
+              Math.floor(elm.data('start')/1000/interval),
+              Math.ceil(elm.data('end')/1000/interval)
             ]
           })
         });
@@ -739,25 +736,25 @@ angular.module('mapApp.directives', [])
         });
         */
         scope.elm.on('click','li a.trip_stop',function() {
-          const stop = $(this).scope().stop
+          const stop = $(this).scope().event
           scope.$apply(function(scope) {
             scope.startEditPlace(stop)
           })
         });
         scope.elm.on('submit','li form',function() {
-          const stop = $(this).scope().stop
+          const stop = $(this).scope().event
           scope.$apply(function(scope) {
             scope.finishEditPlace(stop)
           })
         });
         scope.elm.on('reset','li form',function() {
-          const stop = $(this).scope().stop
+          const stop = $(this).scope().event
           scope.$apply(function(scope) {
             scope.cancelEditPlace(stop)
           })
         });
         scope.elm.on('mouseover','li a.trip_stop',function() {
-          const stop = $(this).scope().stop
+          const stop = $(this).scope().event
           console.log('Highlighting stop', stop)
           scope.$apply(function(scope) {
             scope.selLocId = stop.loc
@@ -797,10 +794,42 @@ angular.module('mapApp.directives', [])
           const smallGap = 60*60*1000;
           if(cur) {
             const mergedTrips = []
+            function finishTrip(trip) {
+              const firstStop = trip.stops[0]
+              const events = []
+              if(firstStop && firstStop.start !== trip.start) {
+                events.push({
+                  type: 'segment',
+                  start: trip.start,
+                  end: firstStop.start
+                })
+              }
+              for(const [idx, stop] of Object.entries(trip.stops)) {
+                events.push({
+                  ...stop,
+                  type: 'stop'
+                });
+                const nextStop = trip.stops[idx+1];
+                if(nextStop) {
+                  events.push({
+                    type: 'segment',
+                    start: stop.end,
+                    end: nextStop.start
+                  })
+                } else {
+                  events.push({
+                    type: 'segment',
+                    start: stop.end,
+                    end: trip.end,
+                  })
+                }
+              }
+              return { ...trip, events }
+            }
+
             let pendingTrip = null;
             for(const trip of cur) {
               if(pendingTrip) {
-                if(trip.stops.length === 0) { continue }
                 const lastStop = pendingTrip.stops.slice(-1)[0]
                 const firstStop = trip.stops[0]
                 //console.log("merge?", lastStop, firstStop)
@@ -820,14 +849,14 @@ angular.module('mapApp.directives', [])
                     ]
                   }
                 } else {
-                  mergedTrips.push(pendingTrip)
+                  mergedTrips.push(finishTrip(pendingTrip))
                   pendingTrip = trip
                 }
               } else {
                 pendingTrip = trip
               }
             }
-            if(pendingTrip) { mergedTrips.push(pendingTrip) }
+            if(pendingTrip) { mergedTrips.push(finishTrip(pendingTrip)) }
             scope.mergedTrips = mergedTrips
             //console.log('merged trips', mergedTrips)
           }
@@ -850,7 +879,7 @@ angular.module('mapApp.directives', [])
       link: function(scope, elm, attrs) {
         // Tried to do this better, failed
         elm.on('mouseover','.bar',function() {
-          const stop = $(this).scope().stop
+          const stop = $(this).scope().event
           console.log('Highlighting stop', stop)
           scope.$apply(function(scope) {
             scope.selLocId = stop.loc
