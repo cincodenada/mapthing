@@ -335,6 +335,7 @@ angular.module('mapApp.directives', [])
         range: '=',
         selRange: '=',
         selLoc: '=',
+        editingLoc: '=',
       },
       link: function(scope, elm, attrs) {
         scope.map = new mxn.Mapstraction(attrs.id, 'openlayers')
@@ -357,7 +358,7 @@ angular.module('mapApp.directives', [])
             scope.draw();
           });
         }
-  
+
         scope.$watch('data.bounds', function(cur, prev, scope) {
           if(scope.map && cur) { scope.map.setBounds(cur); }
         });
@@ -401,7 +402,12 @@ angular.module('mapApp.directives', [])
         scope.$watch('selLoc', function(cur, prev, scope) {
           if(cur !== null) {
             var loc = scope.data.locations[cur]
-            scope.data.point = loc
+            scope.data.selLoc = loc
+            scope.drawPoints(true);
+          }
+        });
+        scope.$watch('editingLoc', function(cur, prev, scope) {
+          if(cur !== null) {
             scope.drawPoints(true);
           }
         });
@@ -502,20 +508,20 @@ angular.module('mapApp.directives', [])
           }
         }
         $scope.drawPoints = function(zoom=false) {
-          console.log($scope.data.point);
+          console.log($scope.data.selLoc);
           $scope.map.removeAllMarkers();
-          if($scope.data.point) {
-            const p = $scope.data.point;
+          if($scope.data.selLoc) {
+            const loc = $scope.data.selLoc;
             var center = new mxn.LatLonPoint(
-              p.lat,
-              p.lon
+              loc.lat,
+              loc.lon
             );
             const zoomPoints = [center]
             var marker = new mxn.Marker(center);
             marker.setIcon('/static/point.png')
             $scope.map.addMarker(marker);
-            if(p.points) {
-              p.points.forEach(function(cp) {
+            if(loc.points) {
+              loc.points.forEach(function(cp) {
                 const llp = new mxn.LatLonPoint(cp[0], cp[1])
                 var curm = new mxn.Marker(llp);
                 zoomPoints.push(llp);
@@ -526,8 +532,57 @@ angular.module('mapApp.directives', [])
             if(zoom) {
               $scope.map.centerAndZoomOnPoints(zoomPoints);
             }
-            var radius = new mxn.Radius(center, 20);
-            $scope.map.addPolyline(radius.getPolyline(p.radius/1000, 'red'));
+            const radius = new mxn.Radius(center, 20);
+            const outline = radius.getPolyline(loc.radius/1000, 'red');
+            outline.setWidth(2)
+            $scope.map.addPolyline(outline);
+            if($scope.editingLoc) {
+              $scope.map.curOutline = outline;
+              console.log("Editing", radius)
+              const handleLoc = new mxn.LatLonPoint(
+                radius.center.lat,
+                radius.center.lon + loc.radius/1000/radius.center.lonConv()
+              )
+              console.log(radius.center, handleLoc, radius.center.lonConv())
+              const handleRad = new mxn.Radius(handleLoc, 4);
+              const handlePoly = handleRad.getPolyline(loc.radius/10000, 'black')
+              handlePoly.setClosed(true);
+              handlePoly.setFillColor("black");
+              handlePoly.api = "openlayers";
+              
+              const map = $scope.map.getMap();
+              if(!$scope.map.layers.controls) {
+                $scope.map.layers.controls = new OpenLayers.Layer.Vector('controls')
+                map.addLayer($scope.map.layers.controls)
+              }
+              const ctlLayer = $scope.map.layers.controls;
+              ctlLayer.addFeatures([handlePoly.toProprietary()])
+              const outlineCenter = outline.toProprietary().geometry.getCentroid()
+              console.log(outline)
+              const dragControl = new OpenLayers.Control.DragFeature(ctlLayer, {
+                title: "Drag",
+                displayClass: "olControlDragAnnotation",
+                autoActivate: true,
+                onDrag: function(e) {
+                  console.log(e)
+                  const newRadius = e.geometry.getCentroid().distanceTo(outlineCenter);
+                  console.log(newRadius)
+                  /*
+                  console.log(
+                  $scope.map.removePolyline($scope.map.curOutline)
+                  loc.radius
+                  const outline = radius.getPolyline(loc.radius/1000, 'red');
+                  outline.setWidth(2)
+                  $scope.map.addPolyline(outline);
+                  console.log("Dragged", e)
+                  */
+                },
+                onComplete: function(e) {
+                  console.log("Done")
+                }
+              });
+              map.addControl(dragControl); 
+            }
           }
         }
       },
@@ -542,6 +597,7 @@ angular.module('mapApp.directives', [])
         viewRange: '=',
         selRange: '=',
         selLoc: '=',
+        editingLoc: '=',
         uniParams: '<',
       },
       templateUrl: 'trip_list.html',
@@ -581,7 +637,7 @@ angular.module('mapApp.directives', [])
         scope.elm.on('click','li a.trip_stop',function() {
           const stop = $(this).scope().stop
           scope.$apply(function(scope) {
-            scope.editName(stop.loc)
+            scope.editPlace(stop.loc)
           })
         });
         scope.elm.on('mouseover','li a.trip_stop',function() {
@@ -598,7 +654,10 @@ angular.module('mapApp.directives', [])
         });
       },
       controller: function($scope) {
-        $scope.editName = function(locid) {
+        $scope.editPlace = function(locid) {
+          $scope.selLoc = locid
+          $scope.editingLoc = true
+          /*
           const newname = prompt('New location name?');
           if(newname) {
             const curLoc = $scope.locations[locid]
@@ -610,6 +669,7 @@ angular.module('mapApp.directives', [])
               type: "place",
             })
           }
+          */
         }
         $scope.$watch('trips', function(cur, prev, scope) {
           const smallGap = 60*60*1000;
