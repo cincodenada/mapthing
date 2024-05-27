@@ -743,13 +743,13 @@ angular.module('mapApp.directives', [])
             scope.startEditPlace(stop)
           })
         });
-        scope.elm.on('click','li button.save',function() {
+        scope.elm.on('submit','li form',function() {
           const stop = $(this).scope().stop
           scope.$apply(function(scope) {
             scope.finishEditPlace(stop)
           })
         });
-        scope.elm.on('click','li button.cancel',function() {
+        scope.elm.on('reset','li form',function() {
           const stop = $(this).scope().stop
           scope.$apply(function(scope) {
             scope.cancelEditPlace(stop)

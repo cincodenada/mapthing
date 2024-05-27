@@ -155,9 +155,11 @@
                         {{locations[stop.loc].name|orthis:'Location ' + stop.loc}}
                     </a>
                     <div ng-if="stop.isEditing" class="trip_stop">
-                        <input type="text" ng-model="stop.editName"/>
-                        <button class="save">✅</button>
-                        <button class="cancel">❌</button>
+                        <form>
+                            <input type="text" ng-model="pendingLoc.name"/>
+                            <input type="submit" value="✅"/>
+                            <input type="reset" value="❌"/>
+                        </form>
                     </div>
                     <span class="stop_latlon">{{locations[stop.loc].lat|number:3}}, {{locations[stop.loc].lon|number:3}}</span>
                 </div>
