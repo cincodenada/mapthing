@@ -61,7 +61,7 @@
             view-range="params.view_range"
             sel-range="params.sel_range"
             sel-loc="params.sel_loc"
-            editing-loc="params.editing_loc"
+            pending-loc="params.pending_loc"
             uni-params="uni"
         >
         </trip-list>
@@ -69,7 +69,7 @@
             data="data.map"
             sel-range="params.sel_range"
             sel-loc="params.sel_loc"
-            editing-loc="params.editing_loc"
+            pending-loc="params.pending_loc"
             range="params.tick_range">
         </path-map>
         <div style="clear: both;"></div>

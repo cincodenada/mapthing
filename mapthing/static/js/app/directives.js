@@ -476,6 +476,7 @@ angular.module('mapApp.directives', [])
         range: '=',
         selRange: '=',
         selLocId: '=selLoc',
+        pendingLoc: '=',
         editingLoc: '=',
       },
       link: function(scope, elm, attrs) {
@@ -547,15 +548,12 @@ angular.module('mapApp.directives', [])
         scope.$watch('selLocId', function(cur, prev, scope) {
           if(cur !== null) {
             if(cur !== prev) { scope.map.outlineCache.clear(); }
-            var loc = scope.data.locations[cur]
-            scope.data.selLoc = loc
+            scope.data.selLoc = scope.data.locations[cur]
             scope.drawPoints(true);
           }
         });
-        scope.$watch('editingLoc', function(cur, prev, scope) {
-          if(cur !== null) {
-            scope.drawPoints(true);
-          }
+        scope.$watch('pendingLoc', function(cur, prev, scope) {
+          scope.drawPoints(true);
         });
       },
       controller: function($scope) {
@@ -656,8 +654,8 @@ angular.module('mapApp.directives', [])
         $scope.drawPoints = function(zoom=false) {
           console.log($scope.data.selLoc);
           $scope.map.removeAllMarkers();
-          if($scope.data.selLoc) {
-            const loc = $scope.data.selLoc;
+          const loc = $scope.pendingLoc || $scope.data.selLoc;
+          if(loc) {
             if(!$scope.map.outlineCache.outline) {
               var center = new mxn.LatLonPoint(
                 loc.lat,
@@ -682,12 +680,12 @@ angular.module('mapApp.directives', [])
                 $scope.map.centerAndZoomOnPoints(zoomPoints);
               }
             }
-            
-            if($scope.editingLoc) {
-              $scope.map.resizer.activate(loc)
-            } else {
-              $scope.map.resizer.deactivate()
-            }
+          }
+          
+          if($scope.pendingLoc) {
+            $scope.map.resizer.activate($scope.pendingLoc)
+          } else {
+            $scope.map.resizer.deactivate()
           }
         }
       },
@@ -702,7 +700,7 @@ angular.module('mapApp.directives', [])
         viewRange: '=',
         selRange: '=',
         selLocId: '=selLoc',
-        editingLoc: '=',
+        pendingLoc: '=',
         uniParams: '<',
       },
       templateUrl: 'trip_list.html',
@@ -773,27 +771,26 @@ angular.module('mapApp.directives', [])
       controller: function($scope) {
         $scope.startEditPlace = function(stop) {
           $scope.selLocId = stop.loc
-          $scope.editingLoc = true
-          stop.editName = stop.loc.name
+          $scope.pendingLoc = {...$scope.locations[stop.loc]}
           stop.isEditing = true
         }
         $scope.cancelEditPlace = function(stop) {
-          $scope.editingLoc = false
+          $scope.pendingLoc = null;
           stop.isEditing = false
-          stop.editName = null;
         }
         $scope.finishEditPlace = function(stop) {
-          const curLoc = $scope.locations[stop.loc]
-          curLoc.name = stop.editName;
+          const { id, name, lat, lon, radius } = $scope.pendingLoc;
           Location.save({
-            id: curLoc.id,
-            name: curLoc.name,
-            latitude: curLoc.lat,
-            longitude: curLoc.lon,
+            id,
+            name,
+            radius,
+            latitude: lat,
+            longitude: lon,
             type: "place",
           })
-          
-          $scope.stopEditPlace(stop)
+          // TODO: Confirm save first
+          $scope.locations[stop.loc] = $scope.pendingLoc;
+          $scope.cancelEditPlace(stop)
         }
         $scope.$watch('trips', function(cur, prev, scope) {
           const smallGap = 60*60*1000;
