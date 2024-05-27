@@ -17,7 +17,7 @@ function latLonFromGeometryPoint({x, y}) {
   return pt
 }
 
-function makeResizer(mxnMap) {
+function makeResizer(mxnMap, Location) {
   const rawMap = mxnMap.getMap();
   const layer = new OpenLayers.Layer.Vector('resizer')
   mxnMap.layers.resizer = layer
@@ -31,9 +31,36 @@ function makeResizer(mxnMap) {
   mxnMap.dragControl = new OpenLayers.Control.DragFeature(layer, {
     title: "Drag",
     displayClass: "olControlDragAnnotation",
-    onDrag: function(e) {
-      const newRadiusKm = latLonFromGeometryPoint(e.geometry.getCentroid()).distance(ctx.outlineCenter);
-      console.log(newRadius)
+    onDrag: function(feature) {
+      const prevLoc = ctx.curRadius.center;
+      const handleLoc = feature.geometry.getCentroid(true)
+      const mxnLoc = latLonFromGeometryPoint(handleLoc)
+      if(feature === ctx.resizeHandle) {
+        ctx.loc.radius = mxnLoc.distance(prevLoc)*1000;
+        
+        mxnMap.removePolyline(ctx.curOutline)
+        ctx.curOutline = ctx.curRadius.getPolyline(ctx.loc.radius/1000, 'red');
+        ctx.curOutline.setWidth(2)
+        mxnMap.addPolyline(ctx.curOutline)
+      } else if (feature === ctx.moveHandle) {
+        ctx.curRadius = new mxn.Radius(mxnLoc, 20)
+        
+        ctx.loc.lat = mxnLoc.lat;
+        ctx.loc.lon = mxnLoc.lon;
+        
+        mxnMap.removePolyline(ctx.curOutline)
+        ctx.curOutline = ctx.curRadius.getPolyline(ctx.loc.radius/1000, 'red');
+        ctx.curOutline.setWidth(2)
+        mxnMap.addPolyline(ctx.curOutline)
+        
+        const outlineLoc = prevLoc.toProprietary('openlayers')
+        console.log(outlineLoc)
+        ctx.resizeHandle.geometry.move(
+          handleLoc.x - outlineLoc.lon,
+          handleLoc.y - outlineLoc.lat
+        )
+        ctx.layer.drawFeature(ctx.resizeHandle)
+      }
       /*
       console.log(
       $mxnMap.removePolyline($mxnMap.curOutline)
@@ -45,14 +72,22 @@ function makeResizer(mxnMap) {
       */
     },
     onComplete: function(e) {
-      console.log("Done")
+      Location.save({
+        id: ctx.loc.id,
+        radius: ctx.loc.radius,
+        latitude: ctx.loc.lat,
+        longitude: ctx.loc.lon,
+      })
     }
   });
   
   rawMap.addControl(mxnMap.dragControl); 
 
-  return {
+  const handle = {
     activate: (loc, mxnRadius, mxnPolyline) => {
+      if(ctx.loc) { handle.deactivate() }
+      
+      ctx.loc = loc;
       ctx.curRadius = mxnRadius;
       ctx.curOutline = mxnPolyline;
 
@@ -63,19 +98,34 @@ function makeResizer(mxnMap) {
         mxnRadius.center.lon + loc.radius/1000/mxnRadius.center.lonConv()
       )
       
-      const handleRad = new mxn.Radius(handleLoc, 4);
-      const handlePoly = handleRad.getPolyline(loc.radius/10000, 'black')
-      handlePoly.setClosed(true);
-      handlePoly.setFillColor("black");
-      handlePoly.api = "openlayers";
-
-      ctx.layer.addFeatures([handlePoly.toProprietary()])
-      // getCentroid() returns the top of the circle for some reason??
-      ctx.outlineCenter = averageLatLon(ctx.curOutline.points);
+      const resizeRad = new mxn.Radius(handleLoc, 4);
+      const resizePoly = resizeRad.getPolyline(loc.radius/10000, 'black')
+      resizePoly.setClosed(true);
+      resizePoly.setFillColor("black");
+      resizePoly.api = "openlayers";
+      
+      const movePoly = mxnRadius.getPolyline(loc.radius/10000, 'black')
+      movePoly.setClosed(true);
+      movePoly.setFillColor("black");
+      movePoly.api = "openlayers";
+      
+      ctx.resizeHandle = resizePoly.toProprietary()
+      ctx.moveHandle = movePoly.toProprietary()
+      ctx.layer.addFeatures([ctx.resizeHandle, ctx.moveHandle])
 
       mxnMap.dragControl.activate()
+    },
+
+    deactivate: () => {
+      ctx.layer.removeFeatures([ctx.resizeHandle, ctx.moveHandle])
+      ctx.resizeHandle = null
+      ctx.moveHandle = null
+      ctx.loc = null
+
+      mxnMap.dragControl.deactivate()
     }
   }
+  return handle;
 }
 
 angular.module('mapApp.directives', [])
@@ -403,7 +453,7 @@ angular.module('mapApp.directives', [])
   })
   // }}}
   // {{{ pathMap
-  .directive('pathMap', function(PointList) {
+  .directive('pathMap', function(PointList, Location) {
     return {
       scope: {
         data: '=',
@@ -422,7 +472,7 @@ angular.module('mapApp.directives', [])
             map_type:true,
         });
         
-        scope.map.resizer = makeResizer(scope.map)        
+        scope.map.resizer = makeResizer(scope.map, Location)
 
         const parent = scope.$parent;
 
