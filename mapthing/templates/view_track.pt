@@ -141,14 +141,13 @@
     <script type="text/ng-template" id="trip_list.html">
         <div id="triplist">
             <div ng-repeat="trip in mergedTrips">
-            <!--Trip start: {{trip.start|date:'yyyy/MM/dd HH:mm'}}-->
             <ul data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
-            <li ng-repeat="event in trip.events" class="trip_entry {{$last ? 'last' : ($first ? 'first' : '')}}">
+            <li ng-repeat="event in trip.events" class="trip_entry {{$last ? 'last' : ''}} {{$first ? 'first' : ''}}">
                 <a ng-if="event.type === 'segment'" href="#" class="trip_segment" data-start="{{event.start}}" data-end="{{event.end}}">
                     {{(event.end - event.start)/1000/60|number:0}} min
                 </a>
-                <div ng-if="event.type === 'stop'">
-                    <span class="stop_time">{{event.start|date:'yyyy/MM/dd HH:mm'}}</span>
+                <div ng-if="event.type === 'stop'" data-start="{{event.start}}" data-end="{{event.end}}">
+                    <div class="stop_time">{{event.start|date:'yyyy/MM/dd HH:mm'}}</div>
                     <div class="stop_container">
                         <a ng-if="!event.isEditing" href="#" class="trip_stop">
                             {{locations[event.loc].name|orthis:'Location ' + event.loc}}
@@ -165,16 +164,17 @@
                         </div>
                         <span class="stop_latlon">{{locations[event.loc].lat|number:3}}, {{locations[event.loc].lon|number:3}}</span>
                     </div>
-                    <span class="stop_time">{{event.end|date:'yyyy/MM/dd HH:mm'}}</span>
+                    <div class="stop_time">{{event.end|date:'yyyy/MM/dd HH:mm'}}</div>
                 </div>
-                <!--
-                <a href="#" 
-                    title="{{trip.start|date:'yyyy/MM/dd h:mm'}} - {{trip.end|date:'yyyy/MM/dd h:mm'}}">
-                    Trip {{$index}} ({{(trip.end-trip.start)/1000/60|number:1}} min)
-                </a>
-                -->
             </ul>
-            <!--Trip end: {{trip.start|date:'yyyy/MM/dd HH:mm'}}-->
+            <div ng-if="trip.gapAfter > 1000*60*5" class="trip_gap">
+                <span ng-if="trip.gapAfter < 1000*60*60">
+                    ({{trip.gapAfter/1000/60|number:0}} min gap)
+                </span>
+                <span ng-if="trip.gapAfter >= 1000*60*60">
+                    ({{trip.gapAfter/1000/60/60|number:1}} hr gap)
+                </span>
+            </div>
             </div>
         </div>
     </script>

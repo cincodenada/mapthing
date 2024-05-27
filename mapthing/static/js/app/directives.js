@@ -794,6 +794,7 @@ angular.module('mapApp.directives', [])
           const smallGap = 60*60*1000;
           if(cur) {
             const mergedTrips = []
+            
             function finishTrip(trip) {
               const firstStop = trip.stops[0]
               const events = []
@@ -816,7 +817,7 @@ angular.module('mapApp.directives', [])
                     start: stop.end,
                     end: nextStop.start
                   })
-                } else {
+                } else if(stop.end !== trip.end) {
                   events.push({
                     type: 'segment',
                     start: stop.end,
@@ -857,6 +858,16 @@ angular.module('mapApp.directives', [])
               }
             }
             if(pendingTrip) { mergedTrips.push(finishTrip(pendingTrip)) }
+            
+            console.log('trips', cur)
+            console.log('merged', mergedTrips)
+            for(const idx in mergedTrips) {
+              const trip = mergedTrips[idx];
+              const nextTrip = mergedTrips[Number(idx)+1];
+              if(nextTrip) {
+                trip.gapAfter = nextTrip.start - trip.end
+              }
+            }
             scope.mergedTrips = mergedTrips
             //console.log('merged trips', mergedTrips)
           }

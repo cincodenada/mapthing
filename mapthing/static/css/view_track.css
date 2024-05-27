@@ -91,10 +91,25 @@
     float: left;
     clear: both;
 }
+.trip_entry.first .trip_segment,
+.trip_entry.first div:first-child .stop_time:first-child
+{
+    border-top: 4px solid transparent;
+}
+.trip_entry.last .trip_segment,
+.trip_entry.last div:first-child .stop_time:last-child
+{
+    border-bottom: 4px solid transparent;
+}
 
 .stop_container {
     float: left;
     clear: left;
+}
+
+.trip_gap {
+    color: gray;
+    margin-left: 1em;
 }
 
 day-view table {
