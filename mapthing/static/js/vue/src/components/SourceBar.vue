@@ -23,6 +23,6 @@ const style = computed(() => {
 
 <template>
   <div class="source_bar" :style :title="source.name">
-    
+    {{source.name}}
   </div>
 </template>

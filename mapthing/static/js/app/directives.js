@@ -786,6 +786,7 @@ angular.module('mapApp.directives', [])
         });
         $scope.$watch('trips', function(cur, prev, scope) {
           if(cur) {
+            console.log('trips', cur)
             const dayStops = Object.fromEntries(scope.days.map(d => [d, []]))
             for(const trip of cur) {
               for(const idxs in trip.stops) {
@@ -831,7 +832,11 @@ angular.module('mapApp.directives', [])
                     })
                   }
                 } else {
-                  dayStops[startDate].push(annotated)
+                  if(dayStops[startDate]) {
+                    dayStops[startDate].push(annotated)
+                  } else {
+                    console.warning("Unexpected missing date", startDate)
+                  }
                 }
               }
             }
