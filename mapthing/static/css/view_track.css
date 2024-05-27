@@ -12,7 +12,6 @@
 .sel_view, .uni_view {
     border: 1px solid;
     width: 100%;
-    clear: both;
 }
 .sel_view { height: 3em; }
 .sel_view canvas {
@@ -46,11 +45,9 @@
     padding: 4px;
     background: #333399;
     border-radius: 10px;
-    clear: both;
     color: white;
     font-weight: bold;
-    float: left;
-    clear: both;
+    display: inline-block;
 }
 .trip_stop input {
     color: black;
@@ -62,6 +59,7 @@
 .stop_time, .stop_latlon {
     font-size: 80%;
     color: darkgray;
+    line-height: 2;
 }
 
 .stop_latlon {
@@ -76,8 +74,6 @@
     border-left: 4px solid darkgray;
     margin-left: 15px;
     padding-left: 5px;
-    float: left;
-    clear: both;
 }
 
 .trip_segment {
@@ -88,8 +84,6 @@
 .trip_entry {
     list-style-type: none;
     margin: 0;
-    float: left;
-    clear: both;
 }
 .trip_entry.first .trip_segment,
 .trip_entry.first div:first-child .stop_time:first-child
@@ -100,11 +94,6 @@
 .trip_entry.last div:first-child .stop_time:last-child
 {
     border-bottom: 4px solid transparent;
-}
-
-.stop_container {
-    float: left;
-    clear: left;
 }
 
 .trip_gap {
