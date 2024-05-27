@@ -52,6 +52,12 @@
     float: left;
     clear: both;
 }
+.trip_stop input {
+    color: black;
+}
+.trip_stop button {
+    line-height: 100%;
+}
 
 .stop_time, .stop_latlon {
     font-size: 80%;

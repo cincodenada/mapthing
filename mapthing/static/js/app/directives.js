@@ -24,7 +24,6 @@ function makeResizer(mxnMap, Location) {
   rawMap.addLayer(layer)
   
   const ctx = {
-    curOutline: null,
     layer
   };
 
@@ -32,26 +31,26 @@ function makeResizer(mxnMap, Location) {
     title: "Drag",
     displayClass: "olControlDragAnnotation",
     onDrag: function(feature) {
-      const prevLoc = ctx.curRadius.center;
+      const prevLoc = mxnMap.curRadius.center;
       const handleLoc = feature.geometry.getCentroid(true)
       const mxnLoc = latLonFromGeometryPoint(handleLoc)
       if(feature === ctx.resizeHandle) {
         ctx.loc.radius = mxnLoc.distance(prevLoc)*1000;
         
-        mxnMap.removePolyline(ctx.curOutline)
-        ctx.curOutline = ctx.curRadius.getPolyline(ctx.loc.radius/1000, 'red');
-        ctx.curOutline.setWidth(2)
-        mxnMap.addPolyline(ctx.curOutline)
+        mxnMap.removePolyline(mxnMap.curOutline)
+        mxnMap.curOutline = mxnMap.curRadius.getPolyline(ctx.loc.radius/1000, 'red');
+        mxnMap.curOutline.setWidth(2)
+        mxnMap.addPolyline(mxnMap.curOutline)
       } else if (feature === ctx.moveHandle) {
-        ctx.curRadius = new mxn.Radius(mxnLoc, 20)
+        mxnMap.curRadius = new mxn.Radius(mxnLoc, 20)
         
         ctx.loc.lat = mxnLoc.lat;
         ctx.loc.lon = mxnLoc.lon;
         
-        mxnMap.removePolyline(ctx.curOutline)
-        ctx.curOutline = ctx.curRadius.getPolyline(ctx.loc.radius/1000, 'red');
-        ctx.curOutline.setWidth(2)
-        mxnMap.addPolyline(ctx.curOutline)
+        mxnMap.removePolyline(mxnMap.curOutline)
+        mxnMap.curOutline = mxnMap.curRadius.getPolyline(ctx.loc.radius/1000, 'red');
+        mxnMap.curOutline.setWidth(2)
+        mxnMap.addPolyline(mxnMap.curOutline)
         
         const outlineLoc = prevLoc.toProprietary('openlayers')
         console.log(outlineLoc)
@@ -61,15 +60,6 @@ function makeResizer(mxnMap, Location) {
         )
         ctx.layer.drawFeature(ctx.resizeHandle)
       }
-      /*
-      console.log(
-      $mxnMap.removePolyline($mxnMap.curOutline)
-      loc.radius
-      const outline = radius.getPolyline(loc.radius/1000, 'red');
-      outline.setWidth(2)
-      $mxnMap.addPolyline(outline);
-      console.log("Dragged", e)
-      */
     },
     onComplete: function(e) {
       Location.save({
@@ -84,15 +74,15 @@ function makeResizer(mxnMap, Location) {
   rawMap.addControl(mxnMap.dragControl); 
 
   const handle = {
-    activate: (loc, mxnRadius, mxnPolyline) => {
-      if(ctx.loc) { handle.deactivate() }
+    activate: (loc, mxnRadius) => {
+      if(ctx.loc) {
+        if(ctx.loc === loc) { return }
+        handle.deactivate()
+      }
+      console.log("Activating", loc)
       
       ctx.loc = loc;
-      ctx.curRadius = mxnRadius;
-      ctx.curOutline = mxnPolyline;
 
-      console.log(ctx.curOutline);
-      
       const handleLoc = new mxn.LatLonPoint(
         mxnRadius.center.lat,
         mxnRadius.center.lon + loc.radius/1000/mxnRadius.center.lonConv()
@@ -117,12 +107,15 @@ function makeResizer(mxnMap, Location) {
     },
 
     deactivate: () => {
-      ctx.layer.removeFeatures([ctx.resizeHandle, ctx.moveHandle])
-      ctx.resizeHandle = null
-      ctx.moveHandle = null
-      ctx.loc = null
-
-      mxnMap.dragControl.deactivate()
+      if(ctx.resizeHandle) {
+        console.log("Deactivating")
+        ctx.layer.removeFeatures([ctx.resizeHandle, ctx.moveHandle])
+        ctx.resizeHandle = null
+        ctx.moveHandle = null
+        ctx.loc = null
+        
+        mxnMap.dragControl.deactivate()
+      }
     }
   }
   return handle;
@@ -528,6 +521,10 @@ angular.module('mapApp.directives', [])
         });
 
         scope.$watch('selLoc', function(cur, prev, scope) {
+          if(cur !== prev) {
+            scope.map.removePolyline(scope.map.curOutline)
+            scope.map.curOutline = null;
+          }
           if(cur !== null) {
             var loc = scope.data.locations[cur]
             scope.data.selLoc = loc
@@ -640,33 +637,41 @@ angular.module('mapApp.directives', [])
           $scope.map.removeAllMarkers();
           if($scope.data.selLoc) {
             const loc = $scope.data.selLoc;
-            var center = new mxn.LatLonPoint(
-              loc.lat,
-              loc.lon
-            );
-            const zoomPoints = [center]
-            var marker = new mxn.Marker(center);
-            marker.setIcon('/static/point.png')
-            $scope.map.addMarker(marker);
-            if(loc.points) {
-              loc.points.forEach(function(cp) {
-                const llp = new mxn.LatLonPoint(cp[0], cp[1])
-                var curm = new mxn.Marker(llp);
-                zoomPoints.push(llp);
-                curm.setIcon('/static/point.png')
-                $scope.map.addMarker(curm);
-              })
+            if(!$scope.map.curOutline) {
+              var center = new mxn.LatLonPoint(
+                loc.lat,
+                loc.lon
+              );
+              const zoomPoints = [center]
+              var marker = new mxn.Marker(center);
+              marker.setIcon('/static/point.png')
+              $scope.map.addMarker(marker);
+              if(loc.points) {
+                loc.points.forEach(function(cp) {
+                  const llp = new mxn.LatLonPoint(cp[0], cp[1])
+                  var curm = new mxn.Marker(llp);
+                  zoomPoints.push(llp);
+                  curm.setIcon('/static/point.png')
+                  $scope.map.addMarker(curm);
+                })
+              }
+              
+              const radius = new mxn.Radius(center, 20);
+              const outline = radius.getPolyline(loc.radius/1000, 'red');
+              outline.setWidth(2)
+              $scope.map.addPolyline(outline);
+              $scope.map.curOutline = outline;
+              $scope.map.curRadius = curRadius;
+              
+              if(zoom) {
+                $scope.map.centerAndZoomOnPoints(zoomPoints);
+              }
             }
-            if(zoom) {
-              $scope.map.centerAndZoomOnPoints(zoomPoints);
-            }
-            const radius = new mxn.Radius(center, 20);
-            const outline = radius.getPolyline(loc.radius/1000, 'red');
-            outline.setWidth(2)
-            $scope.map.addPolyline(outline);
+            
             if($scope.editingLoc) {
-              console.log("Editing", radius)
-              $scope.map.resizer.activate(loc, radius, outline)
+              $scope.map.resizer.activate(loc)
+            } else {
+              $scope.map.resizer.deactivate()
             }
           }
         }
@@ -722,7 +727,19 @@ angular.module('mapApp.directives', [])
         scope.elm.on('click','li a.trip_stop',function() {
           const stop = $(this).scope().stop
           scope.$apply(function(scope) {
-            scope.editPlace(stop.loc)
+            scope.startEditPlace(stop)
+          })
+        });
+        scope.elm.on('click','li button.save',function() {
+          const stop = $(this).scope().stop
+          scope.$apply(function(scope) {
+            scope.finishEditPlace(stop)
+          })
+        });
+        scope.elm.on('click','li button.cancel',function() {
+          const stop = $(this).scope().stop
+          scope.$apply(function(scope) {
+            scope.cancelEditPlace(stop)
           })
         });
         scope.elm.on('mouseover','li a.trip_stop',function() {
@@ -739,22 +756,29 @@ angular.module('mapApp.directives', [])
         });
       },
       controller: function($scope) {
-        $scope.editPlace = function(locid) {
-          $scope.selLoc = locid
+        $scope.startEditPlace = function(stop) {
+          $scope.selLoc = stop.loc
           $scope.editingLoc = true
-          /*
-          const newname = prompt('New location name?');
-          if(newname) {
-            const curLoc = $scope.locations[locid]
-            console.log(curLoc)
-            $scope.locations[locid].name = newname;
-            Location.save({
-              id: curLoc.id,
-              name: newname,
-              type: "place",
-            })
-          }
-          */
+          stop.editName = stop.loc.name
+          stop.isEditing = true
+        }
+        $scope.cancelEditPlace = function(stop) {
+          $scope.editingLoc = false
+          stop.isEditing = false
+          stop.editName = null;
+        }
+        $scope.finishEditPlace = function(stop) {
+          const curLoc = $scope.locations[stop.loc]
+          curLoc.name = stop.editName;
+          Location.save({
+            id: curLoc.id,
+            name: curLoc.name,
+            latitude: curLoc.lat,
+            longitude: curLoc.lon,
+            type: "place",
+          })
+          
+          $scope.stopEditPlace(stop)
         }
         $scope.$watch('trips', function(cur, prev, scope) {
           const smallGap = 60*60*1000;
