@@ -559,11 +559,11 @@ angular.module('mapApp.directives', [])
         });
         scope.elm.on('mouseover','li a.trip_segment',function() {
           const local = $(this).scope()
-          console.log('Highlighting trip from', local.stop)
+          console.log('Highlighting trip from', local)
           const interval = scope.uniParams.interval
           scope.$apply(function(scope) {
-            const tripStart = local.stop.end;
-            const tripEnd = local.trip.stops[local.$index+1].start;
+            const tripStart = local.stop ? local.stop.end : local.trip.start;
+            const tripEnd = local.$last ? local.trip.end : local.trip.stops[local.$index+1].start;
             scope.selRange = [
               Math.floor(tripStart/1000/interval),
               Math.ceil(tripEnd/1000/interval)

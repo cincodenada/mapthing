@@ -141,7 +141,7 @@
             <div ng-repeat="trip in mergedTrips">
             <!--Trip start: {{trip.start|date:'yyyy/MM/dd HH:mm'}}-->
             <ul data-start="{{trip.start/1000}}" data-end="{{trip.end/1000}}">
-            <li ng-if="trip.stops[0].range[0] !== 0" class="trip_entry">
+            <li ng-if="trip.stops[0].start !== trip.start" class="trip_entry">
                 <a href="#" class="trip_segment">
                     {{(trip.stops[0].start - trip.start)/1000/60|number:0}} min
                 </a>
