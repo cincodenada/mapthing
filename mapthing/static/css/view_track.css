@@ -55,6 +55,14 @@
 .trip_stop button {
     line-height: 100%;
 }
+.waypoint .trip_stop {
+    margin-left: -13px;
+    padding: 6px;
+}
+.waypoint .trip_stop span {
+    display: none
+}
+
 
 .stop_time, .stop_latlon {
     font-size: 80%;
@@ -71,7 +79,7 @@
   margin: 0;
 }
 
-.trip_segment, .stop_time {
+.trip_segment, .stop_time, .stop_container.waypoint {
     border-left: 4px solid darkgray;
     margin-left: 15px;
     padding-left: 5px;

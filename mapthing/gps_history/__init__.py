@@ -196,6 +196,7 @@ class Location(object):
             'lon': float(c.lon),
             'radius': self.radius,
             'num_points': self.num_points,
+            'type': self.type,
         }
         if(full):
             out['points'] = []

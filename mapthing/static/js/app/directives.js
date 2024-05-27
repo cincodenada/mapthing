@@ -770,6 +770,9 @@ angular.module('mapApp.directives', [])
         $scope.startEditPlace = function(stop) {
           $scope.selLocId = stop.loc
           $scope.pendingLoc = {...$scope.locations[stop.loc]}
+          if($scope.pendingLoc.type === "auto") {
+            $scope.pendingLoc.type = "place"
+          }
           stop.isEditing = true
         }
         $scope.cancelEditPlace = function(stop) {
@@ -777,14 +780,14 @@ angular.module('mapApp.directives', [])
           stop.isEditing = false
         }
         $scope.finishEditPlace = function(stop) {
-          const { id, name, lat, lon, radius } = $scope.pendingLoc;
+          const { id, name, lat, lon, radius, type } = $scope.pendingLoc;
           Location.save({
             id,
             name,
             radius,
             latitude: lat,
             longitude: lon,
-            type: "place",
+            type,
           })
           // TODO: Confirm save first
           $scope.locations[stop.loc] = $scope.pendingLoc;

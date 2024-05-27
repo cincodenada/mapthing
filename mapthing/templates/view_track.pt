@@ -148,15 +148,18 @@
                 </a>
                 <div ng-if="event.type === 'stop'" data-start="{{event.start}}" data-end="{{event.end}}">
                     <div class="stop_time">{{event.start|date:'yyyy/MM/dd HH:mm'}}</div>
-                    <div class="stop_container">
+                    <div class="stop_container {{locations[event.loc].type}}">
                         <a ng-if="!event.isEditing" href="#" class="trip_stop">
-                            {{locations[event.loc].name|orthis:'Location ' + event.loc}}
+                            <span>{{locations[event.loc].name|orthis:'Location ' + locations[event.loc].id}}</span>
                         </a>
                         <div ng-if="event.isEditing" class="trip_stop">
                             <form>
-                                <select name="type">
-                                    <option value="place"> </option>
-                                    <option value="place">🗑️</option>
+                                <select name="type" ng-model="pendingLoc.type">
+                                    <option value="region">🏘️</option>
+                                    <option value="place">👁️</option>
+                                    <option value="waypoint">🚏</option>
+                                    <option value="ignore">🗑️</option>
+                                </select>
                                 <input type="text" ng-model="pendingLoc.name"/>
                                 <input type="submit" value="✅"/>
                                 <input type="reset" value="❌"/>

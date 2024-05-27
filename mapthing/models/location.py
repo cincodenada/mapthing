@@ -20,8 +20,9 @@ from mapthing.models import BaseModel, SerializableMixin
 class LocationType(str, enum.Enum):
     place='place'
     auto='auto'
-    zone='zone'
+    region='region'
     waypoint='waypoint'
+    ignore='ignore'
 
 class Location(BaseModel, SerializableMixin):
     __tablename__ = 'locations'
