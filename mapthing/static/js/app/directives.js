@@ -3,6 +3,65 @@
 
 const makeTime = (ms) => Instant.fromEpochMilliseconds(ms).toZonedDateTimeISO(tz)
 
+function makeResizer(mxnMap) {
+  const rawMap = mxnMap.getMap();
+  const layer = new OpenLayers.Layer.Vector('resizer')
+  mxnMap.layers.resizer = layer
+  rawMap.addLayer(layer)
+  
+  const ctx = {
+    curOutline: null,
+    layer
+  };
+
+  mxnMap.dragControl = new OpenLayers.Control.DragFeature(layer, {
+    title: "Drag",
+    displayClass: "olControlDragAnnotation",
+    onDrag: function(e) {
+      console.log(e)
+      const newRadius = e.geometry.getCentroid().distanceTo(ctx.outlineCenter);
+      console.log(newRadius)
+      /*
+      console.log(
+      $mxnMap.removePolyline($mxnMap.curOutline)
+      loc.radius
+      const outline = radius.getPolyline(loc.radius/1000, 'red');
+      outline.setWidth(2)
+      $mxnMap.addPolyline(outline);
+      console.log("Dragged", e)
+      */
+    },
+    onComplete: function(e) {
+      console.log("Done")
+    }
+  });
+  
+  rawMap.addControl(mxnMap.dragControl); 
+
+  return {
+    activate: (loc, mxnRadius, mxnPolyline) => {
+      ctx.curRadius = mxnRadius;
+      ctx.curOutline = mxnPolyline;
+      
+      const handleLoc = new mxn.LatLonPoint(
+        mxnRadius.center.lat,
+        mxnRadius.center.lon + loc.radius/1000/mxnRadius.center.lonConv()
+      )
+      
+      const handleRad = new mxn.Radius(handleLoc, 4);
+      const handlePoly = handleRad.getPolyline(loc.radius/10000, 'black')
+      handlePoly.setClosed(true);
+      handlePoly.setFillColor("black");
+      handlePoly.api = "openlayers";
+
+      ctx.layer.addFeatures([handlePoly.toProprietary()])
+      ctx.outlineCenter = ctx.curOutline.toProprietary().geometry.getCentroid()
+
+      mxnMap.dragControl.activate()
+    }
+  }
+}
+
 angular.module('mapApp.directives', [])
   // {{{ animControl
   .directive('animControl', function() {
@@ -341,10 +400,13 @@ angular.module('mapApp.directives', [])
         scope.map = new mxn.Mapstraction(attrs.id, 'openlayers')
 
         scope.map.enableScrollWheelZoom();
+
         scope.map.addControls({
             scale:true,
             map_type:true,
         });
+        
+        scope.map.resizer = makeResizer(scope.map)        
 
         const parent = scope.$parent;
 
@@ -537,51 +599,8 @@ angular.module('mapApp.directives', [])
             outline.setWidth(2)
             $scope.map.addPolyline(outline);
             if($scope.editingLoc) {
-              $scope.map.curOutline = outline;
               console.log("Editing", radius)
-              const handleLoc = new mxn.LatLonPoint(
-                radius.center.lat,
-                radius.center.lon + loc.radius/1000/radius.center.lonConv()
-              )
-              console.log(radius.center, handleLoc, radius.center.lonConv())
-              const handleRad = new mxn.Radius(handleLoc, 4);
-              const handlePoly = handleRad.getPolyline(loc.radius/10000, 'black')
-              handlePoly.setClosed(true);
-              handlePoly.setFillColor("black");
-              handlePoly.api = "openlayers";
-              
-              const map = $scope.map.getMap();
-              if(!$scope.map.layers.controls) {
-                $scope.map.layers.controls = new OpenLayers.Layer.Vector('controls')
-                map.addLayer($scope.map.layers.controls)
-              }
-              const ctlLayer = $scope.map.layers.controls;
-              ctlLayer.addFeatures([handlePoly.toProprietary()])
-              const outlineCenter = outline.toProprietary().geometry.getCentroid()
-              console.log(outline)
-              const dragControl = new OpenLayers.Control.DragFeature(ctlLayer, {
-                title: "Drag",
-                displayClass: "olControlDragAnnotation",
-                autoActivate: true,
-                onDrag: function(e) {
-                  console.log(e)
-                  const newRadius = e.geometry.getCentroid().distanceTo(outlineCenter);
-                  console.log(newRadius)
-                  /*
-                  console.log(
-                  $scope.map.removePolyline($scope.map.curOutline)
-                  loc.radius
-                  const outline = radius.getPolyline(loc.radius/1000, 'red');
-                  outline.setWidth(2)
-                  $scope.map.addPolyline(outline);
-                  console.log("Dragged", e)
-                  */
-                },
-                onComplete: function(e) {
-                  console.log("Done")
-                }
-              });
-              map.addControl(dragControl); 
+              $scope.map.resizer.activate(loc, radius, outline)
             }
           }
         }
