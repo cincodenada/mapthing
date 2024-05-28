@@ -45,23 +45,25 @@ def notfound(request):
 
 @view_config(route_name='view_track', renderer='templates/view_track.pt')
 def view_track(request):
+    db = getDb()
     trackid = request.matchdict['id']
-    track = DBSession.query(Track).filter_by(id=trackid).first()
+    track = db.query(Track).filter_by(id=trackid).first()
     points = track.getPoints(trackid)
     pointlist = []
     for t, p in points:
         pointlist.append((p.latitude,p.longitude))
 
-    DBSession.commit()
+    db.commit()
     
     return { 'tracks': json.dumps({trackid:track}), 'points': points, 'json_points': json.dumps({trackid: pointlist})}
 
 @view_config(route_name='get_tracks', renderer='templates/json.pt')
 def get_tracks(request):
+    db = getDb()
     startdate = date_parse(request.params['start'])
     enddate = date_parse(request.params['end'])
     trackdata = []
-    query = Track.getByDate(startdate, enddate)
+    query = Track.getByDate(db, startdate, enddate)
     data = DBSession.execute(query)
     while(True):
         curtrack = data.fetchone()
@@ -72,18 +74,20 @@ def get_tracks(request):
 
 @view_config(route_name='ajax_sources', renderer='templates/json.pt')
 def sources(request):
+    db = getDb()
     startdate = date_parse(request.params['start'])
     enddate = date_parse(request.params['end'])
     #TODO: This ain't great
-    query = Track.getByDate(startdate, enddate)
-    trackdata = []
-    data = DBSession.execute(query)
-    while(True):
-        curtrack = data.fetchone()
-        if(curtrack is None):
-            break;
-        trackdata.append(dict(list(zip(('id','name','start','end','minlat','maxlat','minlon','maxlon'),curtrack))))
-    return { 'json_data': json.dumps(trackdata, cls=DatetimeEncoder) }
+    trackdata = {}
+    subtracks = defaultdict(list)
+    for track in Track.getByDate(db, startdate, enddate):
+        trackdata[track.id] = dict(track)
+        trackdata[track.id]['subtracks'] = []
+    print(trackdata)
+    for subtrack in Subtrack.getByDate(db, startdate, enddate):
+        trackdata[subtrack.track_id]['subtracks'].append(subtrack.to_dict())
+        
+    return { 'json_data': json.dumps(list(trackdata.values()), cls=DatetimeEncoder) }
 
 @view_config(route_name='sources', renderer='templates/sources.pt')
 def view_sources(request):

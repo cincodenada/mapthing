@@ -86,16 +86,16 @@ class Track(BaseModel):
     segments = relationship(Segment)
 
     @classmethod
-    def getByDate(cls, start, end):
-        return cls.query(
+    def getByDate(cls, session, start, end):
+        return session.query(
                 Track.id,
-				Track.name,
-                func.min(Point.time),
-                func.max(Point.time),
-                func.min(Point.latitude),
-                func.max(Point.latitude),
-                func.min(Point.longitude),
-                func.max(Point.longitude),
+                Track.name,
+                func.min(Point.time).label('start'),
+                func.max(Point.time).label('end'),
+                func.min(Point.latitude).label('minlat'),
+                func.max(Point.latitude).label('maxlat'),
+                func.min(Point.longitude).label('minlon'),
+                func.max(Point.longitude).label('maxlon'),
                 )\
                 .join(Track.segments)\
                 .join(Segment.points)\

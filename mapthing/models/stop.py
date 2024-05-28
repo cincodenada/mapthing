@@ -65,7 +65,7 @@ class Stop(BaseModel, SerializableMixin):
     def fromHistStops(cls, slist):
         return [cls.fromHistStop(s) for s in slist]
 
-class Subtrack(BaseModel):
+class Subtrack(BaseModel, SerializableMixin):
     __tablename__ = 'subtracks'
     id = Column(Integer, primary_key=True, autoincrement=True)
     track_id = Column(Integer, ForeignKey('tracks.id'))
@@ -80,14 +80,13 @@ class Subtrack(BaseModel):
     end = relationship(Point, foreign_keys=[end_id])
 
     @classmethod
-    def getByDate(cls, start, end):
+    def getByDate(cls, session, start, end):
         # Shouldn't have to do isoformat() here but...
-        return DBSession.execute(select(Subtrack)\
+        return session.query(Subtrack)\
                 .options(selectinload(Subtrack.stops))\
-                .options(selectinload(Subtrack.track))\
                 .where(Subtrack.end_time >= start.isoformat())\
                 .where(Subtrack.start_time <= end.isoformat())\
-                .order_by(Subtrack.id))
+                .order_by(Subtrack.id)
 
     @classmethod
     def getByTrack(cls, tids):
