@@ -28,6 +28,29 @@ class SerializableMixin:
 #           if getattr(field, 'name'):
 #               setattr(self, field.name, data[field.name])
 
+    def column_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns},
+
+    def serialize_relation(self, name):
+        relation = getattr(self, name)
+        print('relation', relation)
+        try:
+            return [v.to_dict() for v in relation]
+        except TypeError as e:
+            print(e)
+            print(relation)
+            print(type(relation))
+            return relation.to_dict()
+        
+    def relation_dict(self):
+        return {
+            name: self.serialize_relation(name) for name, val in self.__mapper__.relationships.items()
+        }
+        
     def to_dict(self):
-        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+        print(self.relation_dict())
+        return {
+          **self.column_dict(),
+          **self.relation_dict(),
+        }
 
