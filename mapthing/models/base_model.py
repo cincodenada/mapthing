@@ -29,7 +29,8 @@ class SerializableMixin:
 #               setattr(self, field.name, data[field.name])
 
     def column_dict(self):
-        return {column.name: getattr(self, column.name) for column in self.__table__.columns},
+        print(self.__table__.columns)
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
     def serialize_relation(self, name):
         relation = getattr(self, name)
@@ -48,9 +49,5 @@ class SerializableMixin:
         }
         
     def to_dict(self):
-        print(self.relation_dict())
-        return {
-          **self.column_dict(),
-          **self.relation_dict(),
-        }
+        return self.column_dict()
 

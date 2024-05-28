@@ -85,7 +85,11 @@ def sources(request):
         trackdata[track.id]['subtracks'] = []
     print(trackdata)
     for subtrack in Subtrack.getByDate(db, startdate, enddate):
-        trackdata[subtrack.track_id]['subtracks'].append(subtrack.to_dict())
+        print(subtrack)
+        dv = subtrack.to_dict()
+        print(dv)
+        dv['stops'] = [s.to_dict() for s in subtrack.stops]
+        trackdata[subtrack.track_id]['subtracks'].append(dv)
         
     return { 'json_data': json.dumps(list(trackdata.values()), cls=DatetimeEncoder) }
 
