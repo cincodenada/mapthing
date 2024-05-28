@@ -24,5 +24,11 @@ const style = computed(() => {
 <template>
   <div class="source_bar" :style :title="source.name">
     {{source.name}}
+    <div v-for="subtrack in source.subtracks">
+      {{subtrack.id}}
+      <span v-for="stop in subtrack.stops">
+        *
+      </span>
+    </div>
   </div>
 </template>

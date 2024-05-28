@@ -85,7 +85,6 @@ def sources(request):
         trackdata[track.id]['subtracks'] = []
     print(trackdata)
     for subtrack in Subtrack.getByDate(db, startdate, enddate):
-        print(subtrack)
         dv = subtrack.to_dict()
         trackdata[subtrack.track_id]['subtracks'].append(dv)
         
