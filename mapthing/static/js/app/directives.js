@@ -561,6 +561,8 @@ angular.module('mapApp.directives', [])
           $scope.draw();
           // Don't rezoom the map if we have no lines
           if($scope.map.polylines.length == 0) { return; }
+          // Also don't zoom if we're editing a location
+          if($scope.pendingLoc) { return; }
 
           if(smoothzoom) {
             //Do fancy shit
@@ -652,7 +654,6 @@ angular.module('mapApp.directives', [])
           }
         }
         $scope.drawPoints = function(zoom=false) {
-          console.log($scope.data.selLoc);
           $scope.map.removeAllMarkers();
           const loc = $scope.pendingLoc || $scope.data.selLoc;
           if(loc) {
@@ -676,9 +677,12 @@ angular.module('mapApp.directives', [])
               }
               
               $scope.map.outlineCache.makeOutline(center, loc.radius)
-              if(zoom) {
+              if(zoom && !$scope.pendingLoc) {
                 $scope.map.centerAndZoomOnPoints(zoomPoints);
               }
+            } else {
+              // Re-add in case we've removed all polylines in draw()
+              $scope.map.addPolyline($scope.map.outlineCache.outline, true)
             }
           }
           
@@ -797,7 +801,9 @@ angular.module('mapApp.directives', [])
           const smallGap = 60*60*1000;
           if(cur) {
             const mergedTrips = []
-            
+
+            console.log(scope)
+
             function finishTrip(trip) {
               const firstStop = trip.stops[0]
               const events = []
