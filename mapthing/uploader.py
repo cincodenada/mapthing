@@ -6,6 +6,7 @@ import os
 import glob
 import zipfile
 import re
+from collections import deque
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -77,8 +78,34 @@ class ImportGpx(FileImporter):
 
     def load(self):
         counts = Counter()
-        gpx = gpxpy.parse(open(self.infile.name, 'r'))
+        recent_times = deque(maxlen=50)
+        gpxfile = open(self.infile.name, 'r')
+        try:
+            gpx = gpxpy.parse(gpxfile)
+        except Exception as e:
+            print(e)
+            pos = gpxfile.tell()
+            gpxfile.seek(pos-200)
+            print(pos, gpxfile.read(200))
+            print(gpxfile.read(10).encode('utf-8'))
+            raise e
         epoch = datetime.datetime.utcfromtimestamp(0)
+        
+        # Ughhhhh this is a mess
+        first_time = min([p.time for p in gpx.tracks[0].segments[0].points[0:10]])
+        last_time = max([p.time for p in gpx.tracks[-1].segments[-1].points[-10:]])
+        early_points = DBSession.query(Point.time)\
+            .filter(Point.time >= first_time)\
+            .order_by(Point.time)\
+            .limit(10)\
+            .all()
+        late_points = DBSession.query(Point.time)\
+            .filter(Point.time <= last_time)\
+            .order_by(Point.time.desc())\
+            .limit(10)\
+            .all()
+        border_points = set([v for v, in early_points+late_points])
+
         for track in gpx.tracks:
             counts['tracks']+=1
             t = Track()
@@ -90,7 +117,13 @@ class ImportGpx(FileImporter):
                 s = Segment()
                 t.segments.append(s)
                 for point in seg.points:
+                    # Sometimes we get duplicate network points??
+                    if point.time in recent_times or point.time.replace(tzinfo=None) in border_points:
+                        continue
+                    recent_times.append(point.time)
+
                     counts['points']+=1
+
                     p = Point()
                     p.latitude = point.latitude
                     p.longitude = point.longitude
@@ -114,6 +147,7 @@ class ImportGpx(FileImporter):
             try:
                 DBSession.commit()
             except IntegrityError as e:
+                print(e)
                 print("Duplicates found, rolling back...")
                 DBSession.rollback()
 
