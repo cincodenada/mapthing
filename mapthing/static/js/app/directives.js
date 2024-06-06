@@ -819,7 +819,7 @@ angular.module('mapApp.directives', [])
                   ...stop,
                   type: 'stop'
                 });
-                const nextStop = trip.stops[idx+1];
+                const nextStop = trip.stops[Number(idx)+1];
                 if(nextStop) {
                   events.push({
                     type: 'segment',
