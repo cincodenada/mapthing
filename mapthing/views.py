@@ -28,9 +28,13 @@ from .models import (
     Point,
     Location,
     Stop,
+    Analysis as AnalysisModel,
     Subtrack,
     getDb
     )
+
+from .helpers.analysis import AnalysisHelper
+
 
 class DatetimeEncoder(json.JSONEncoder):
     epoch = datetime.utcfromtimestamp(0)
@@ -144,6 +148,8 @@ def ajax_times(request):
 
 @view_config(route_name='ajax_points', renderer='templates/json.pt')
 def date_track(request):
+    db = getDb()
+
     if('start' in request.params):
         startdate = date_parse(request.params['start'])
         enddate = date_parse(request.params['end'])
@@ -170,36 +176,30 @@ def date_track(request):
         jsonifier.add_point(p, s, t)
         track_ids.add(t.id)
 
-    print(track_ids)
-    subtracks = Subtrack.getByTrack(track_ids)
-    subtracks_by_track = {}
-    for [st] in subtracks:
-        tid = st.track_id
-        if tid not in subtracks_by_track:
-            subtracks_by_track[tid] = []
-        subtracks_by_track[tid].append(st)
-
-    print([(key, len(subtracks_by_track[key])) for key in subtracks_by_track.keys()])
+    analyses = {t.id: t for t in db.query(AnalysisModel).join(Subtrack).filter(AnalysisModel.track_id.in_(track_ids))}
+    print('Analyses', analyses)
 
     points_by_track = defaultdict(list)
     for p, s, t in points:
         points_by_track[t.id].append(p)
 
+    Analysis = AnalysisHelper(db)
     existing_trips = []
-    new_stopsets = []
+    new_trips = []
+    new_analyses = []
     for tid, points in points_by_track.items():
-        if tid in subtracks_by_track:
+        if tid in analyses:
             print("Using existing trips for track", tid)
-            existing_trips += subtracks_by_track[tid]
+            existing_trips += analyses[tid].subtracks
         else:
             print("Generating trips for track", tid)
             hist = gps_history.History(location_pool)
             for p in points:
                 hist.add_point(p)
-            new_stopsets.append((tid, hist.finish()))
+            analysis = Analysis.fromHistory(tid, hist.finish())
+            new_trips += analysis.subtracks
+            new_analyses.append(analysis)
                 
-    db = getDb()
-
     new_locs = [l for l in location_pool.locations if not l.id]
     orm_locs = Location.fromHistLocations(new_locs)
     db.add_all(orm_locs)
@@ -212,29 +212,7 @@ def date_track(request):
         new_locs[idx].id = l.id
         print(l.id, new_locs[idx])
             
-    new_trips = []
-    for tid, sslist in new_stopsets:
-        for ss in sslist:
-            t = ss.track
-            st = Subtrack(
-                track_id=tid,
-                start_id=t.start.id,
-                start_time=t.start.time,
-                end_id=t.end.id,
-                end_time=t.end.time
-            )
-            for s in ss.stops:
-                st.stops.append(Stop(
-                    location_id=s.loc.id,
-                    start_id=s.start.id,
-                    start_time=s.start.time,
-                    end_id=s.end.id,
-                    end_time=s.end.time,
-                ))
-            new_trips.append(st)
-
-    db = getDb()
-    db.add_all(new_trips)
+    db.add_all(new_analyses)
     db.commit()
 
     all_trips = [*existing_trips, *new_trips]

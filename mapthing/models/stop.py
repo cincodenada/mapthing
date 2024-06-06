@@ -68,14 +68,14 @@ class Stop(BaseModel, SerializableMixin):
 class Subtrack(BaseModel, SerializableMixin):
     __tablename__ = 'subtracks'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    track_id = Column(Integer, ForeignKey('tracks.id'))
+    analysis_id = Column(Integer, ForeignKey('analyses.id'))
     start_id = Column(Integer, ForeignKey('points.id'))
     start_time = Column(DateTime(timezone=True))
     end_id = Column(Integer, ForeignKey('points.id'))
     end_time = Column(DateTime(timezone=True))
 
     stops = relationship(Stop)
-    track = relationship(Track)
+    analysis = relationship("Analysis", back_populates="subtracks")
     start = relationship(Point, foreign_keys=[start_id])
     end = relationship(Point, foreign_keys=[end_id])
 

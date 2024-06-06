@@ -83,6 +83,7 @@ class Track(BaseModel):
     name = Column(String)
     created = Column(DateTime(timezone=True))
     
+    analysis = relationship("Analysis", back_populates="track", uselist=False) 
     segments = relationship(Segment)
 
     @classmethod
