@@ -21,6 +21,7 @@ from collections import defaultdict
 
 from . import uploader
 
+from sqlalchemy import select
 from .models import (
     DBSession,
     Track,
@@ -233,7 +234,7 @@ def date_track(request):
         'locations': location_pool.get_serializable(),
     }, cls=DatetimeEncoder)}
 
-@view_config(route_name='locations', renderer='templates/json.pt')
+@view_config(route_name='places_json', renderer='templates/json.pt')
 def edit_place(request):
     vals = json.loads(request.body)
     id = vals["id"]
@@ -241,6 +242,11 @@ def edit_place(request):
     DBSession.execute(update(Location).where(Location.id==id).values(**vals))
     DBSession.commit()
     return { 'json_data': "yay" }
+
+@view_config(route_name='places', renderer='templates/places.pt')
+def edit_place(request):
+    db = getDb()
+    return { 'places': [Location.to_dict(l) for l in db.execute(select(Location))] }
 
 @view_config(route_name='upload_data', renderer='templates/json.pt')
 def upload_data(request):
