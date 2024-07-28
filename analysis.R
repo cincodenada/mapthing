@@ -57,10 +57,6 @@ rollsd = function(x, windowsize) {
   frollapply(x, windowsize, sd, adaptive=T)
 }
 
-windowsize = timewindow(track$Time, 100);
-#latsd = rollsd(track$Latitude, windowsize);
-#lonsd = rollsd(track$Longitude, windowsize);
-
 zt = zooify(post_process(track))
 
 debug = NULL
@@ -75,17 +71,24 @@ roll_cols = function(x, windowsize, func, ...) {
 }
 
 thresh = function(x, lowt, hight) {
-  low = x$lat_sd + x$lon_sd < lowt
-  high = x$lat_sd + x$lon_sd < hight
-  merge(
-    x,
-    low,
-    high
-  )
+  low = (x$lat_sd + x$lon_sd) * 1e5 < lowt
+  high = (x$lat_sd + x$lon_sd) * 1e5 > hight
+  merge(low, high)
 }
 
-roll = roll_cols(zt, 60, sd, na.rm=T)
-rolled = merge(zt, roll)
+edge = function(x) {
+  sparse = x[!is.na(x$low)]
+  start = rollapply(sparse$low, 2, function(x) { x[[2]] && !x[[1]] })
+  end = rollapply(sparse$high, 2, function(x) { !x[[1]] && x[[2]] })
+  merge(start, end)
+}
+
+if(!exists('roll')) {
+  roll = roll_cols(zt, 60, sd, na.rm=T)
+}
+thresh = thresh(roll, 20, 50)
+edges = edge(thresh)
+
 
 
 
