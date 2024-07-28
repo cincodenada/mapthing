@@ -78,19 +78,27 @@ thresh = function(x, lowt, hight) {
 
 edge = function(x) {
   sparse = x[!is.na(x$low)]
-  start = rollapply(sparse$low, 2, function(x) { x[[2]] && !x[[1]] })
-  end = rollapply(sparse$high, 2, function(x) { !x[[1]] && x[[2]] })
-  merge(start, end)
+  state = rollapply(sparse, 2, function(x) {
+    if(x[2,"low"] && !x[1,"low"]) {
+      return("start")
+    } else if(!x[1,"high"] && x[2, "high"]) {
+      return("end")
+    }
+  }, by.column=F)
+  state[!is.na(state)]
 }
 
 if(!exists('roll')) {
   roll = roll_cols(zt, 60, sd, na.rm=T)
 }
 thresh = thresh(roll, 20, 50)
-edges = edge(thresh)
-
-
-
+edges = tidy(edge(thresh)) %>%
+  filter(value != lag(value) | row_number() == 1) %>%
+  reframe(
+    start_time=index,
+    end_time=lead(index),
+    type=ifelse(value=="start","stop","go")
+  )
 
 t = ggplot(track, aes(x=Time, y=((latsd+lonsd)/2)*1e5)) +
   geom_point() +
