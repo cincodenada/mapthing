@@ -33,16 +33,17 @@ class LocationPool(object):
     def add_points(self, points, auto_radius):
         matches = {}
         for l in self.locations:
-            for i, p in enumerate(points):
-                if i not in matches:
-                    if l.add_point(p):
-                        matches[i] = l
+            if l.add_point(point):
+                return l
 
-        for i, p in enumerate(points):
-            if i not in matches:
-                newloc = Location(radius=auto_radius, latitude=p.lat, longitude=p.lon, type=LocationType.auto)
-                self.locations.append(newloc)
-                matches[i] = newloc
+        newloc = Location(
+            radius=auto_radius,
+            latitude=point.lat,
+            longitude=point.lon,
+            type=auto_type,
+        )
+        self.locations.append(newloc)
+        return newloc
 
         self.num_points += len(points)
 
