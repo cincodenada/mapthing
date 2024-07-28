@@ -64,13 +64,16 @@ windowsize = timewindow(track$Time, 100);
 zt = zooify(post_process(track))
 
 roll_cols = function(x, windowsize, func) {
-  merge(
-    rollapply(x$Longitude, list(windowsize), func),
-    rollapply(x$Latitude, list(windowsize), func)
-  )
+  rollapply(x, windowsize, function(row) {
+    c(
+      lat_sd=sd(row["Latitude"], na.rm=T),
+      lon_sd=sd(row["Longitude"], na.rm=T)
+    )
+  }, by.column=F)
 }
 
 roll = roll_cols(zt, 60, sd)
+rolled = merge(zt, roll)
 
 t = ggplot(track, aes(x=Time, y=((latsd+lonsd)/2)*1e5)) +
   geom_point() +
