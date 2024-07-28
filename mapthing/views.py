@@ -177,7 +177,7 @@ def date_track(request):
         jsonifier.add_point(p, s, t)
         track_ids.add(t.id)
 
-    analyses = {t.id: t for t in db.query(AnalysisModel).join(Subtrack).filter(AnalysisModel.track_id.in_(track_ids))}
+    analyses = {a.track_id: a for a in db.query(AnalysisModel).join(Subtrack).filter(AnalysisModel.track_id.in_(track_ids))}
     print('Analyses', analyses)
 
     points_by_track = defaultdict(list)
