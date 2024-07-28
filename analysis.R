@@ -20,9 +20,11 @@ post_process = function(track) {
     dbg_len("Dedup") %>%
     mutate(
       dist = c(NA, distHaversine(data.frame(Longitude, Latitude))),
-    ) %>%
-    zoo(order.by=.$Time)
+    )
+}
 
+zooify = function(x) {
+  zt = zoo(x, order.by=x$Time)
   zg = zoo(, seq(start(zt), end(zt), "sec"))
 
   merge(zt, zg)
@@ -59,8 +61,17 @@ windowsize = timewindow(track$Time, 100);
 #latsd = rollsd(track$Latitude, windowsize);
 #lonsd = rollsd(track$Longitude, windowsize);
 
-zt = post_process(track)
+zt = zooify(post_process(track))
 
+roll_cols = function(x, cols, windowsize, func) {
+  cbind(
+    sapply({{cols}}, function(col) {
+      rollapply(zt[[col]], list(windowsize), func)
+    })
+  )
+}
+
+roll = roll_cols(zt, c(Longitude, Latitude), 60, sd)
 
 t = ggplot(track, aes(x=Time, y=((latsd+lonsd)/2)*1e5)) +
   geom_point() +
