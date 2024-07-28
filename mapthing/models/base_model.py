@@ -12,7 +12,7 @@ from sqlalchemy import (
     )
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker, declarative_mixin, declared_attr
 
 DBSession = scoped_session(sessionmaker())
 
@@ -22,6 +22,7 @@ BaseModel.query = DBSession.query
 def getDb():
     return scoped_session(sessionmaker())
 
+@declarative_mixin
 class SerializableMixin:
 #   def __init__(self, data):
 #       for field in self.__table__.columns:
@@ -46,6 +47,7 @@ class SerializableMixin:
         return {
             name: self.serialize_relation(name) for name, val in self.__mapper__.relationships.items()
         }
+        
         
     def to_dict(self):
         return {**self.column_dict(), **self.relation_dict()}

@@ -246,7 +246,7 @@ def edit_place(request):
 @view_config(route_name='places', renderer='templates/places.pt')
 def edit_place(request):
     db = getDb()
-    return { 'places': [Location.to_dict(l) for l in db.execute(select(Location))] }
+    return { 'places': [l.to_dict() for l in db.query(Location)] }
 
 @view_config(route_name='upload_data', renderer='templates/json.pt')
 def upload_data(request):
