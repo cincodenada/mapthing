@@ -63,17 +63,31 @@ windowsize = timewindow(track$Time, 100);
 
 zt = zooify(post_process(track))
 
-roll_cols = function(x, windowsize, func) {
+debug = NULL
+roll_cols = function(x, windowsize, func, ...) {
   rollapply(x, windowsize, function(row) {
+    z = zoo(row)
     c(
-      lat_sd=sd(row["Latitude"], na.rm=T),
-      lon_sd=sd(row["Longitude"], na.rm=T)
+      lat_sd=func(z$Latitude, ...),
+      lon_sd=func(z$Longitude, ...)
     )
   }, by.column=F)
 }
 
-roll = roll_cols(zt, 60, sd)
+thresh = function(x, lowt, hight) {
+  low = x$lat_sd + x$lon_sd < lowt
+  high = x$lat_sd + x$lon_sd < hight
+  merge(
+    x,
+    low,
+    high
+  )
+}
+
+roll = roll_cols(zt, 60, sd, na.rm=T)
 rolled = merge(zt, roll)
+
+
 
 t = ggplot(track, aes(x=Time, y=((latsd+lonsd)/2)*1e5)) +
   geom_point() +
