@@ -27,11 +27,9 @@ class LocationPool(object):
         self.locations = [Location(**l.to_dict()) for l in locations]
         self.num_points = 0
 
-    def add_point(self, point, auto_radius):
-        return self.add_points([point], auto_radius)[0]
+    def add_point(self, point, auto_radius, auto_type = LocationType.auto):
+        self.num_points += 1
 
-    def add_points(self, points, auto_radius):
-        matches = {}
         for l in self.locations:
             if l.add_point(point):
                 return l
@@ -45,9 +43,8 @@ class LocationPool(object):
         self.locations.append(newloc)
         return newloc
 
-        self.num_points += len(points)
-
-        return matches
+    def add_points(self, points, auto_radius):
+        return [self.add_point(p) for p in points]
 
     def get_serializable(self, full=True):
         outmap = {}
