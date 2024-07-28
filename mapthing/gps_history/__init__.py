@@ -14,13 +14,45 @@ from dataclasses import dataclass
 from typing import Any
 from mapthing.models import LocationType
 
+class TimePoint():
+    def __init__(self, point_source):
+        self.points = enumerate(point_source)
+        self.next_point = next(self.points)
+        self.gap = 1
+        self.idx = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.gap <= 1:
+            out_point = self.next_point
+            self.next_point = next(self.points)
+            self.gap = (self.next_point[1].time - out_point[1].time).total_seconds()
+            return out_point
+        else:
+            self.gap -= 1
+            return (None, None)
+
 def splitLatsAndLons(points):
     return list(zip(*[(p.latitude, p.longitude) for p in points]))
 
-def is_moving(points, min_move_m=50):
-    dev = [stdev(l) for l in splitLatsAndLons(points)]
+def is_moving(points, thresholds_m):
+    latlons = splitLatsAndLons([p for (i, p) in points if p is not None])
+    if len(latlons) < 2 or len(latlons[0]) < 2:
+        return None
+
+    dev = [stdev(l) for l in latlons]
     #print('/'.join([f"{d*1e5:4.0f}" for d in dev]))
-    return dev[0]*1e5 >= min_move_m or dev[1]*1e5 >= min_move_m
+    (low_m, high_m) = thresholds_m
+    comb = math.sqrt(dev[0]**2 + dev[1]**2)*1e5
+    if comb < low_m:
+        return False
+    elif comb > high_m:
+        return True
+
+    return None
+    #return dev[0]*1e5 >= min_move_m or dev[1]*1e5 >= min_move_m
 
 class LocationPool(object):
     def __init__(self, locations = []):
@@ -53,46 +85,64 @@ class LocationPool(object):
 
         return outmap
 
-    def locate(self, stop, min_secs=120, force=True):
+    def locate(self, stop, min_secs=120):
         stay_duration = stop.end.time - stop.start.time
-        if(stay_duration < timedelta(seconds=min_secs) and not force):
-            return None
+        is_short = stay_duration < timedelta(seconds=min_secs)
 
         lats, lons = splitLatsAndLons(stop.points)
         avg_point = LatLon(mean(lats), mean(lons))
         #print('\n'.join([str(p.time) for p in stop.points]))
-        return self.add_point(avg_point, 50)
+        return self.add_point(avg_point, 50, LocationType.waypoint if is_short else LocationType.auto)
 
-    def find_stops(self, track, window_size=100, min_move_m=50):
+    def find_stops(self, track, window_size_sec=60, thresholds_m=(20, 50), max_gap_sec=60*10):
         # Can't do our calculations if we don't have at least two points
         if len(track.points) < 2:
             return StopSet([], track)
 
+        time_points = TimePoint(track.points)
+
         # TODO: Other stuff treats start/end of logs as significant...do we want to??
         stops = []
-        rolling_loc = deque(islice(track.points, 0, window_size), maxlen=window_size)
-        halfwin = window_size//2
+        rolling_loc = deque(islice(time_points, 0, window_size_sec), maxlen=window_size_sec)
+
 
         cur_stop = None
-        if not is_moving(rolling_loc):
+        if is_moving(rolling_loc, thresholds_m) == False:
             cur_stop = Stop(track)
             cur_stop.start_idx = 0
 
-        for idx, p in islice(enumerate(track.points), window_size, None):
-            # TODO: We could do this much more efficiently by using the mechanics in Location already
-            rolling_loc.append(p)
+        gap_len = next(idx for (idx, p) in reversed(rolling_loc) if p)
+        last_idx = 0
 
-            if is_moving(rolling_loc):
+        for idx, p in islice(time_points, window_size_sec, None):
+            # TODO: We could do this much more efficiently by using the mechanics in Location already
+            rolling_loc.append((idx, p))
+
+            if p:
+                gap_len = 0
+                last_idx = idx
+            else:
+                gap_len += 1
+
+            if gap_len > max_gap_sec:
                 if cur_stop:
-                    cur_stop.end_idx = idx - halfwin
+                    cur_stop.end_idx = last_idx
                     cur_stop.loc = self.locate(cur_stop)
                     if cur_stop.loc:
                         stops.append(cur_stop)
                     cur_stop = None
             else:
-                if not cur_stop:
-                    cur_stop = Stop(track)
-                    cur_stop.start_idx = idx - halfwin
+                if is_moving(rolling_loc, thresholds_m) == True:
+                    if cur_stop:
+                        cur_stop.end_idx = last_idx
+                        cur_stop.loc = self.locate(cur_stop)
+                        if cur_stop.loc:
+                            stops.append(cur_stop)
+                        cur_stop = None
+                elif is_moving(rolling_loc, thresholds_m) == False:
+                    if not cur_stop:
+                        cur_stop = Stop(track)
+                        cur_stop.start_idx = last_idx
 
             is_first = False
 
