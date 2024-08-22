@@ -53,6 +53,43 @@ def import_file(filename, ignore_invalid=False):
     with open(filename, 'r') as infile:
         print(importer(infile).load())
 
+class GluedFile:
+    def __init__(self, infile):
+        self.infile = infile
+        self.leftover = None
+        self.between_files = False
+        self.done = False
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.done:
+            raise StopIteration
+        return self
+
+    def read(self, size = None):
+        if self.leftover:
+            if self.between_files:
+                self.between_files = False
+                return ""
+            else:
+                curbytes = self.leftover
+                self.leftover = None
+                return curbytes
+
+        curbytes = self.infile.read(size)
+        if not curbytes or size is None:
+            self.done = True
+
+        if curbytes:
+            halves = re.split('\0+', curbytes, 1)
+            if len(halves) > 1:
+                self.leftover = halves[1]
+                self.between_files = True
+                return halves[0]
+        return curbytes
+
 class FileImporter(object):
     def __init__(self, infile):
         self.infile = infile
@@ -80,8 +117,10 @@ class ImportGpx(FileImporter):
         counts = Counter()
         recent_times = deque(maxlen=50)
         gpxfile = open(self.infile.name, 'r')
+
         try:
-            gpx = gpxpy.parse(gpxfile)
+            for part in GluedFile(gpxfile):
+                gpx = gpxpy.parse(part)
         except Exception as e:
             print(e)
             pos = gpxfile.tell()
