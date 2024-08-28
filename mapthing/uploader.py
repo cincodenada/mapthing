@@ -64,19 +64,23 @@ class GluedFile:
         return self
 
     def __next__(self):
-        if self.done:
+        if self.done and not self.leftover:
             raise StopIteration
         return self
 
+    def tell(self):
+        return self.infile.tell()
+
     def read(self, size = None):
         if self.leftover:
-            if self.between_files:
+            if self.between_files and size:
                 self.between_files = False
                 return ""
-            else:
-                curbytes = self.leftover
-                self.leftover = None
-                return curbytes
+
+            curbytes = self.leftover
+            self.leftover = None
+            self.between_files = False
+            return curbytes
 
         curbytes = self.infile.read(size)
         if not curbytes or size is None:
@@ -114,20 +118,26 @@ class ImportGpx(FileImporter):
     }
 
     def load(self):
+        gpxfile = open(self.infile.name, 'r')
+        total = Counter()
+        for part in GluedFile(gpxfile):
+            try:
+                total.update(self.load_xml(part))
+            except Exception as e:
+                print(e)
+                pos = gpxfile.tell()
+                gpxfile.seek(pos-200)
+                print(pos, gpxfile.read(200))
+                print(gpxfile.read(10).encode('utf-8'))
+                raise e
+
+        return total
+
+    def load_xml(self, xml):
         counts = Counter()
         recent_times = deque(maxlen=50)
-        gpxfile = open(self.infile.name, 'r')
 
-        try:
-            for part in GluedFile(gpxfile):
-                gpx = gpxpy.parse(part)
-        except Exception as e:
-            print(e)
-            pos = gpxfile.tell()
-            gpxfile.seek(pos-200)
-            print(pos, gpxfile.read(200))
-            print(gpxfile.read(10).encode('utf-8'))
-            raise e
+        gpx = gpxpy.parse(xml)
         epoch = datetime.datetime.utcfromtimestamp(0)
         
         # Ughhhhh this is a mess
