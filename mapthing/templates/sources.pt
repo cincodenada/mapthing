@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head metal:use-macro='load:../static/js/vue/dist/index.html'>
+<body>
+	<script type="text/javascript">
+		const params = ${json_params}
+	</script>
+  <div id="app"></div>
+  <div id="sources">
+  </div>
+</body>
+</html>
