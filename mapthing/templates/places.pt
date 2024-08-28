@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head metal:use-macro='load:../static/js/vue/dist/index.html'>
+<body>
+  <script type="text/javascript">
+    const places = ${places}
+  </script>
+  <div id="app"></div>
+  <table id="places">
+    <tr tal:repeat="place places">
+      <td>
+        ${place.name} (${place.id})
+      </td>
+      <td>
+        ${place.visits.count}
+      </td>
+      <td>
+        ${round(place.visits.length*24*60, 2)}min
+      </td>
+      <td>
+        ${place.type}
+      </td>
+      <td>
+        <a href="https://www.openstreetmap.org/#map=18/${place.latitude}/${place.longitude}">Map</a>
+        <!--<img src="https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${place.longitude},${place.latitude},16/100x100?access_token=pk.eyJ1IjoiY2luY29kZW5hZGEiLCJhIjoiY2pqcnpyMXVhMDNiaDNqbXJjcjAzZ25lciJ9.IpFp3-XNenP8cVBQSACkMg"/>-->
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
