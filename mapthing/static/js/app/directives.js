@@ -799,6 +799,7 @@ angular.module('mapApp.directives', [])
         }
         $scope.$watch('trips', function(cur, prev, scope) {
           const smallGap = 60*60*1000;
+          const minStop = 2*60*1000;
           if(cur) {
             const mergedTrips = []
 
@@ -807,7 +808,7 @@ angular.module('mapApp.directives', [])
             function finishTrip(trip) {
               const firstStop = trip.stops[0]
               const events = []
-              if(firstStop && firstStop.start !== trip.start) {
+              if(firstStop && firstStop.start !== trip.start && (firstStop.start - trip.start) > smallGap) {
                 events.push({
                   type: 'segment',
                   start: trip.start,
@@ -815,6 +816,10 @@ angular.module('mapApp.directives', [])
                 })
               }
               for(const [idx, stop] of Object.entries(trip.stops)) {
+                if((stop.end - stop.start) < minStop) {
+                  console.log("Skipping", idx, stop, trip);
+                  continue;
+                }
                 events.push({
                   ...stop,
                   type: 'stop'
