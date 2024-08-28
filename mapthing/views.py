@@ -197,22 +197,22 @@ def date_track(request):
             hist = gps_history.History(location_pool)
             for p in points:
                 hist.add_point(p)
-            analysis = Analysis.fromHistory(tid, hist.finish())
+
+            stops = hist.finish()
+
+            new_locs = [l for l in location_pool.locations if not l.id]
+            orm_locs = Location.fromHistLocations(new_locs)
+            db.add_all(orm_locs)
+            db.commit()
+
+            # Backpopulate our new ids to the locations
+            for idx, l in enumerate(orm_locs):
+                new_locs[idx].id = l.id
+
+            analysis = Analysis.fromHistory(tid, stops)
             new_trips += analysis.subtracks
             new_analyses.append(analysis)
                 
-    new_locs = [l for l in location_pool.locations if not l.id]
-    orm_locs = Location.fromHistLocations(new_locs)
-    db.add_all(orm_locs)
-
-    db.commit()
-
-    # Backpopulate our new ids to the locations
-    for idx, l in enumerate(orm_locs):
-        print(l.id, new_locs[idx])
-        new_locs[idx].id = l.id
-        print(l.id, new_locs[idx])
-            
     db.add_all(new_analyses)
     db.commit()
 
