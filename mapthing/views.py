@@ -5,7 +5,7 @@ from pyramid.httpexceptions import HTTPNotFound
 from pyramid.response import Response
 from pyramid.view import view_config, notfound_view_config
 
-from sqlalchemy import update
+from sqlalchemy import update, func
 from sqlalchemy.exc import DBAPIError
 
 import json
@@ -244,9 +244,19 @@ def edit_place(request):
     return { 'json_data': "yay" }
 
 @view_config(route_name='places', renderer='templates/places.pt')
-def edit_place(request):
+def places(request):
     db = getDb()
-    return { 'places': [l.to_dict() for l in db.query(Location)] }
+    visits = {loc_id: {"count": count, "length": length} for loc_id, length, count in db.query(
+        Stop.location_id,
+        func.avg(func.julianday(Stop.end_time) - func.julianday(Stop.start_time)),
+        func.count()
+    ).group_by(Stop.location_id)}
+    return {
+        'places': sorted([{
+            **l.to_dict(),
+            "visits": visits.get(l.id, {"count": 0, "length": 0})
+            } for l in db.query(Location)], key=lambda v: v["visits"]["count"], reverse=True),
+    }
 
 @view_config(route_name='upload_data', renderer='templates/json.pt')
 def upload_data(request):
