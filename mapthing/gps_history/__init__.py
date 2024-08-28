@@ -54,36 +54,9 @@ def is_moving(points, thresholds_m):
     return None
     #return dev[0]*1e5 >= min_move_m or dev[1]*1e5 >= min_move_m
 
-class LocationPool(object):
-    def __init__(self, locations = []):
-        self.locations = [Location(**l.to_dict()) for l in locations]
-        self.num_points = 0
-
-    def add_point(self, point, auto_radius, auto_type = LocationType.auto):
-        self.num_points += 1
-
-        for l in self.locations:
-            if l.add_point(point):
-                return l
-
-        newloc = Location(
-            radius=auto_radius,
-            latitude=point.lat,
-            longitude=point.lon,
-            type=auto_type,
-        )
-        self.locations.append(newloc)
-        return newloc
-
-    def add_points(self, points, auto_radius):
-        return [self.add_point(p) for p in points]
-
-    def get_serializable(self, full=True):
-        outmap = {}
-        for l in self.locations:
-            outmap[l.id] = l.get_serializable(full)
-
-        return outmap
+class LocationSplitter:
+    def __init__(self, locations):
+        self.locations = locations
 
     def locate(self, stop, min_secs=120):
         stay_duration = stop.end.time - stop.start.time
@@ -92,7 +65,7 @@ class LocationPool(object):
         lats, lons = splitLatsAndLons(stop.points)
         avg_point = LatLon(mean(lats), mean(lons))
         #print('\n'.join([str(p.time) for p in stop.points]))
-        return self.add_point(avg_point, 50, LocationType.waypoint if is_short else LocationType.auto)
+        return self.locations.add_point(avg_point, 50, LocationType.waypoint if is_short else LocationType.auto)
 
     def find_stops(self, track, window_size_sec=60, thresholds_m=(20, 50), max_gap_sec=60*10):
         # Can't do our calculations if we don't have at least two points
@@ -152,6 +125,37 @@ class LocationPool(object):
             stops.append(cur_stop)
 
         return StopSet(stops, track)
+
+class LocationPool(object):
+    def __init__(self, locations = []):
+        self.locations = [Location(**l.to_dict()) for l in locations]
+        self.num_points = 0
+
+    def add_point(self, point, auto_radius, auto_type = LocationType.auto):
+        self.num_points += 1
+
+        for l in self.locations:
+            if l.add_point(point):
+                return l
+
+        newloc = Location(
+            radius=auto_radius,
+            latitude=point.lat,
+            longitude=point.lon,
+            type=auto_type,
+        )
+        self.locations.append(newloc)
+        return newloc
+
+    def add_points(self, points, auto_radius):
+        return [self.add_point(p) for p in points]
+
+    def get_serializable(self, full=True):
+        outmap = {}
+        for l in self.locations:
+            outmap[l.id] = l.get_serializable(full)
+
+        return outmap
 
 @dataclass
 class Location(object):
@@ -403,7 +407,7 @@ class History(object):
         self.last_time = p.time
 
     def find_stops(self, track):
-        return self.locations.find_stops(track)
+        return LocationSplitter(self.locations).find_stops(track)
 
     def finish(self, min_length = 3):
         if(self.cur_outing.num_points() > 0):
