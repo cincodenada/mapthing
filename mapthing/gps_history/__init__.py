@@ -365,7 +365,7 @@ class History(object):
         self.stop_idx = 0
         self.cur_outing = Track()
         self.outing_gap = timedelta(seconds=outing_gap) # Convert to ms
-        self.locations = locations
+        self.locations = locations if locations else LocationPool()
         self.stops = []
 
     def get_stops(self, start, end):
