@@ -8,23 +8,18 @@ import zipfile
 import re
 from collections import deque
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.exc import IntegrityError
 from .models import (
     Track,
     Segment,
     Point,
+    getDb
     )
-
-engine = create_engine("sqlite:///%(here)s/../MapThing.sqlite")
-Session = sessionmaker(engine)
-DBSession = Session()
 
 import gpxpy
 from collections import Counter
 
-def import_file(filename, ignore_invalid=False):
+def import_file(db, filename, ignore_invalid=False):
     extmap = {
         '.gpx': ImportGpx,
         '.sqlite': ImportSqlite,
@@ -39,7 +34,7 @@ def import_file(filename, ignore_invalid=False):
             with zipfile.ZipFile(filename, 'r') as zipf:
                 zipf.extractall(zipdir)
             for extracted_file in glob.glob(zipdir + '/*'):
-                import_file(extracted_file, True)
+                import_file(db, extracted_file, True)
             return
     elif ext not in extmap:
         if ignore_invalid:
@@ -51,7 +46,7 @@ def import_file(filename, ignore_invalid=False):
     importer = extmap[ext]
     print(f"Importing {filename} with {importer.__name__}")
     with open(filename, 'r') as infile:
-        print(importer(infile).load())
+        print(importer(db, infile).load())
 
 class GluedFile:
     def __init__(self, infile):
@@ -95,11 +90,12 @@ class GluedFile:
         return curbytes
 
 class FileImporter(object):
-    def __init__(self, infile):
+    def __init__(self, db, infile):
+        self.db = db
         self.infile = infile
 
     @classmethod
-    def from_upload(cls, uploaded_file):
+    def from_upload(cls, db, uploaded_file):
         infile = tempfile.NamedTemporaryFile(delete=False)
         uploaded_file.file.seek(0)
         while True:
@@ -109,7 +105,7 @@ class FileImporter(object):
             infile.write(data)
         infile.close()
 
-        return cls(infile)
+        return cls(db, infile)
 
 class ImportGpx(FileImporter):
     extension_fields = {
@@ -126,7 +122,7 @@ class ImportGpx(FileImporter):
             except Exception as e:
                 print(e)
                 pos = gpxfile.tell()
-                gpxfile.seek(pos-200)
+                gpxfile.seek(max(0, pos-200))
                 print(pos, gpxfile.read(200))
                 print(gpxfile.read(10).encode('utf-8'))
                 raise e
@@ -143,12 +139,12 @@ class ImportGpx(FileImporter):
         # Ughhhhh this is a mess
         first_time = min([p.time for p in gpx.tracks[0].segments[0].points[0:10]])
         last_time = max([p.time for p in gpx.tracks[-1].segments[-1].points[-10:]])
-        early_points = DBSession.query(Point.time)\
+        early_points = self.db.query(Point.time)\
             .filter(Point.time >= first_time)\
             .order_by(Point.time)\
             .limit(10)\
             .all()
-        late_points = DBSession.query(Point.time)\
+        late_points = self.db.query(Point.time)\
             .filter(Point.time <= last_time)\
             .order_by(Point.time.desc())\
             .limit(10)\
@@ -160,7 +156,7 @@ class ImportGpx(FileImporter):
             t = Track()
             t.name = track.name
             t.created = gpx.time
-            DBSession.add(t)
+            self.db.add(t)
             for seg in track.segments:
                 counts['segments']+=1
                 s = Segment()
@@ -194,11 +190,11 @@ class ImportGpx(FileImporter):
                                 
                     s.points.append(p)
             try:
-                DBSession.commit()
+                self.db.commit()
             except IntegrityError as e:
                 print(e)
                 print("Duplicates found, rolling back...")
-                DBSession.rollback()
+                self.db.rollback()
 
         return counts
 
@@ -264,7 +260,7 @@ class ImportSqlite(FileImporter):
             else:
                 t = Track()
                 self.add_row_data(row, 'tracks', t)
-                DBSession.add(t)
+                self.db.add(t)
                 idmap['tracks'][row['tracks__id']] = t
             #And the segment
             if(row['segments__id'] in idmap['segments']):

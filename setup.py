@@ -8,10 +8,14 @@ with open(os.path.join(here, 'README.txt')) as f:
 with open(os.path.join(here, 'CHANGES.txt')) as f:
     CHANGES = f.read()
 
+dev_requires = [
+    'pyramid_debugtoolbar',
+    'pytest'
+]
+
 requires = [
     'pyramid',
     'pyramid_chameleon',
-    'pyramid_debugtoolbar',
     'pyramid_tm',
     'SQLAlchemy',
     'transaction',
@@ -37,6 +41,9 @@ setup(name='MapThing',
       zip_safe=False,
       test_suite='mapthing',
       install_requires=requires,
+      extras_require={
+         'dev': dev_requires,
+      },
       entry_points="""\
       [paste.app_factory]
       main = mapthing:main
