@@ -25,10 +25,10 @@ describe('Stop', () => {
     expect(clean(wrapper.html())).toMatchInlineSnapshot(`
       <div class="stop_time">2024/10/10 20:00</div>
       <div class="stop_container place">
-          <a href="#" class="trip_stop">
-              <span>Home</span>
-          </a>
-          <span class="stop_latlon">42.5, 122.5</span>
+        <a href="#" class="trip_stop">
+          <span>Home</span>
+        </a>
+        <span class="stop_latlon">42.5, 122.5</span>
       </div>
       <div class="stop_time">2024/10/11 08:30</div>
     `)
