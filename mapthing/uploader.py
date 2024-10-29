@@ -48,6 +48,7 @@ def import_file(db, filename, ignore_invalid=False):
     print(f"Importing {filename} with {importer.__name__}")
     with open(filename, 'r') as infile:
         stats = importer(db, infile).load()
+    return stats
 
 class GluedFile:
     def __init__(self, infile):
@@ -103,7 +104,6 @@ class FileImporter(object):
         self.db.add(self.source)
         self.db.commit()
         return stats
-
 
     @classmethod
     def from_upload(cls, db, uploaded_file):
