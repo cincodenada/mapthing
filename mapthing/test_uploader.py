@@ -27,4 +27,8 @@ def test_import(dbengine):
     assert(source.start_time == datetime(2023, 12, 25, 8, 0, 6))
     assert(source.end_time == datetime(2023, 12, 25, 8, 10, 15, 10000))
 
+    # Re-import
+    stats = uploader.import_file(db, './fixtures/tiny.gpx')
+
+
 
