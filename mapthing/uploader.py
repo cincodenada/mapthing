@@ -177,8 +177,16 @@ class ImportGpx(FileImporter):
         min_time = None
         max_time = None
 
+        def counts_match(existing, track):
+            if len(track.segments) != len(existing):
+                return False
+            for idx, (track, seg, num_points) in enumerate(existing):
+                if len(track.segments[idx].points) != num_points:
+                    return False
+            return True
+
         for track in gpx.tracks:
-            existing = self.db.query(func.count(Point.id))\
+            existing = self.db.query(Track, Segment, func.count(Point.id))\
                 .select_from(Track)\
                 .outerjoin(Segment)\
                 .outerjoin(Point)\
@@ -186,12 +194,14 @@ class ImportGpx(FileImporter):
                 .group_by(Segment.id)\
                 .order_by(Segment.id)\
                 .all()
-            if(existing):
-                if len(track.segments) != len(existing):
-                    raise RuntimeError("Duplicate track name, but segment counts differ!")
-                for idx, (num_points,) in enumerate(existing):
-                    if len(track.segments[idx].points) != num_points:
-                        raise RuntimeError("Duplicate track name, but point counts differ!")
+            if existing:
+                if counts_match(existing, track):
+                    print("Track already imported, skipping!")
+                    continue
+                else:
+                    print("Track partially imported, deleting!")
+                    self.db.delete(existing[0][0])
+                    self.db.commit()
 
             counts['tracks']+=1
             t = Track()
