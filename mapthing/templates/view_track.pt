@@ -169,6 +169,7 @@
                     </div>
                     <div class="stop_time">{{event.end|date:'yyyy/MM/dd HH:mm'}}</div>
                 </div>
+            </li>
             </ul>
             <div ng-if="trip.gapAfter > 1000*60*5" class="trip_gap">
                 <span ng-if="trip.gapAfter < 1000*60*60">
