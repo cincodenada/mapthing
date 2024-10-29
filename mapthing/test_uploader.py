@@ -1,5 +1,6 @@
 import pytest
 from pyramid import testing, registry
+from datetime import datetime
 
 from mapthing import uploader
 from mapthing.models import getDb, BaseModel, get_session_factory, Point
@@ -18,6 +19,12 @@ def test_import(dbengine):
     assert(db.query(Point).count() == 15)
     assert(db.query(Segment).count() == 2)
     assert(db.query(Track).count() == 1)
-    assert(db.query(Source).count() == 1)
+
+    sources = db.query(Source).all()
+    assert(len(sources) == 1)
+    source = sources[0]
+    assert(source.name == "tiny.gpx")
+    assert(source.start_time == datetime(2023, 12, 25, 8, 0, 6))
+    assert(source.end_time == datetime(2023, 12, 25, 8, 10, 15, 10000))
 
 

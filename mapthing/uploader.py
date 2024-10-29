@@ -95,7 +95,7 @@ class FileImporter(object):
     def __init__(self, db, infile):
         self.db = db
         self.infile = infile
-        self.source = Source(name=infile.name)
+        self.source = Source(name=os.path.basename(infile.name))
         self.type = "file"
 
     def finish(self, stats):
