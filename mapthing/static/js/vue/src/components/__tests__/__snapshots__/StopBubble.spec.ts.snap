@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`StopBubble > renders properly 1`] = `
+"<div data-start="2024-10-10 20:00:00" data-end="2024-10-11 08:30:00">
+  <div class="stop_time">2024/10/10 20:00</div>
+  <div class="stop_container place">
+    <a href="#" class="trip_stop">
+      <span></span>
+    </a>
+    <span class="stop_latlon">45.51234, -122.51234</span>
+  </div>
+  <div class="stop_time">2024/10/11 08:30</div>
+</div>
+"
+`;

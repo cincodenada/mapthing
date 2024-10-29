@@ -64,16 +64,6 @@
 }
 
 
-.stop_time, .stop_latlon {
-    font-size: 80%;
-    color: darkgray;
-    line-height: 2;
-}
-
-.stop_latlon {
-    padding-left: 2px;
-}
-
 #triplist ul {
   padding-left: 1em;
   margin: 0;

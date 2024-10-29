@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "axios": "^1.6.8",
+    "temporal-polyfill": "^0.2.5",
     "vue": "^3.4.21",
     "xml-formatter": "^3.6.3"
   },
