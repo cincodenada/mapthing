@@ -82,8 +82,10 @@ class Track(BaseModel):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     created = Column(DateTime(timezone=True))
+    source_id = Column(Integer, ForeignKey('sources.id'))
     
-    analysis = relationship("Analysis", back_populates="track", uselist=False) 
+    analysis = relationship("Analysis", back_populates="track", uselist=False)
+    source = relationship("Source", back_populates="tracks", uselist=False)
     segments = relationship(Segment)
 
     @classmethod

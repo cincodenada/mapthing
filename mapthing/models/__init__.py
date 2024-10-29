@@ -3,6 +3,7 @@ from .point import Point, Segment, Track
 from .location import Location, LocationType
 from .stop import Stop, Subtrack
 from .analysis import Analysis
+from .source import Source
 
 from sqlalchemy import engine_from_config
 from sqlalchemy.orm import scoped_session, sessionmaker, declarative_mixin, declared_attr
