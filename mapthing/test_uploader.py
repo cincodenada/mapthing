@@ -7,7 +7,7 @@ from mapthing.models import Point, Segment, Track, Source
 
 def test_import(dbengine):
     db = get_session_factory(dbengine)()
-    uploader.import_file(db, './fixtures/tiny.gpx')
+    stats = uploader.import_file(db, './fixtures/tiny.gpx')
 
     assert(db.query(Point).count() == 15)
     assert(db.query(Segment).count() == 2)

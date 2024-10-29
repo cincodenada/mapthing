@@ -13,6 +13,7 @@ from .models import (
     Track,
     Segment,
     Point,
+    Source,
     getDb
     )
 
@@ -46,7 +47,7 @@ def import_file(db, filename, ignore_invalid=False):
     importer = extmap[ext]
     print(f"Importing {filename} with {importer.__name__}")
     with open(filename, 'r') as infile:
-        print(importer(db, infile).load())
+        stats = importer(db, infile).load()
 
 class GluedFile:
     def __init__(self, infile):
@@ -93,6 +94,16 @@ class FileImporter(object):
     def __init__(self, db, infile):
         self.db = db
         self.infile = infile
+        self.source = Source(name=infile.name)
+        self.type = "file"
+
+    def finish(self, stats):
+        self.source.start_time = stats["start"]
+        self.source.end_time = stats["end"]
+        self.db.add(self.source)
+        self.db.commit()
+        return stats
+
 
     @classmethod
     def from_upload(cls, db, uploaded_file):
@@ -116,9 +127,16 @@ class ImportGpx(FileImporter):
     def load(self):
         gpxfile = open(self.infile.name, 'r')
         total = Counter()
+        min_time = None
+        max_time = None
         for part in GluedFile(gpxfile):
             try:
-                total.update(self.load_xml(part))
+                results = self.load_xml(part)
+                total.update(results["counts"])
+                if min_time is None or results["start"] < min_time:
+                    min_time = results["start"]
+                if max_time is None or results["end"] > max_time:
+                    max_time = results["end"]
             except Exception as e:
                 print(e)
                 pos = gpxfile.tell()
@@ -127,7 +145,11 @@ class ImportGpx(FileImporter):
                 print(gpxfile.read(10).encode('utf-8'))
                 raise e
 
-        return total
+        return self.finish({
+            "counts": total,
+            "start": min_time,
+            "end": max_time,
+        })
 
     def load_xml(self, xml):
         counts = Counter()
@@ -151,6 +173,9 @@ class ImportGpx(FileImporter):
             .all()
         border_points = set([v for v, in early_points+late_points])
 
+        min_time = None
+        max_time = None
+
         for track in gpx.tracks:
             counts['tracks']+=1
             t = Track()
@@ -163,9 +188,17 @@ class ImportGpx(FileImporter):
                 t.segments.append(s)
                 for point in seg.points:
                     # Sometimes we get duplicate network points??
-                    if point.time in recent_times or point.time.replace(tzinfo=None) in border_points:
+                    if point.time in recent_times:
+                        continue
+                    # Ignore duplicate times if they're on the edge
+                    if point.time.replace(tzinfo=None) in border_points:
                         continue
                     recent_times.append(point.time)
+
+                    if min_time is None or point.time < min_time:
+                        min_time = point.time
+                    if max_time is None or point.time > max_time:
+                        max_time = point.time
 
                     counts['points']+=1
 
@@ -196,7 +229,11 @@ class ImportGpx(FileImporter):
                 print("Duplicates found, rolling back...")
                 self.db.rollback()
 
-        return counts
+        return {
+            "counts": counts,
+            "start": min_time,
+            "end": max_time,
+        }
 
 class ImportSqlite(FileImporter):
     tables = {
