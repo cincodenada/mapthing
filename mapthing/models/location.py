@@ -49,8 +49,8 @@ class Location(BaseModel, SerializableMixin):
     @classmethod
     def fromHistLocation(cls, l):
         return Location(
-            latitude=l.center().lat,
-            longitude=l.center().lon,
+            latitude=float(l.center().lat),
+            longitude=float(l.center().lon),
             radius=l.radius,
             type=l.type,
             #num_points=l.num_points,

@@ -140,8 +140,8 @@ class LocationPool(object):
 
         newloc = Location(
             radius=auto_radius,
-            latitude=point.lat,
-            longitude=point.lon,
+            latitude=float(point.lat),
+            longitude=float(point.lon),
             type=auto_type,
         )
         self.locations.append(newloc)
