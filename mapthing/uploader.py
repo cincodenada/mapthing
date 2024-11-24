@@ -6,7 +6,6 @@ import os
 import glob
 import zipfile
 import re
-from collections import deque
 
 from sqlalchemy.sql import func
 from sqlalchemy.exc import IntegrityError, NoResultFound
@@ -22,6 +21,7 @@ import gpxpy
 from collections import Counter
 
 from .section_timer import SectionTimer
+from .hashdeque import HashDeque as deque
 
 def import_file(db, filename, ignore_invalid=False):
     extmap = {
