@@ -222,6 +222,7 @@ class ImportGpx(FileImporter):
         min_time = None
         max_time = None
 
+        raw_points = []
         for idx, track in enumerate(gpx.tracks):
             print(f"Building track {idx}...")
             counts['tracks']+=1
@@ -257,14 +258,15 @@ class ImportGpx(FileImporter):
                     counts['points']+=1
 
                     timer.section("build")
-                    p = Point()
-                    p.latitude = point.latitude
-                    p.longitude = point.longitude
-                    p.time = point.time
-                    p.speed = point.speed
-                    p.altitude = point.elevation
-                    p.bearing = point.course
-                    p.src = point.source
+                    pointdata = {
+                        "latitude": point.latitude,
+                        "longitude": point.longitude,
+                        "time": point.time,
+                        "speed": point.speed,
+                        "altitude": point.elevation,
+                        "bearing": point.course,
+                        "src": point.source,
+                    }
                     # TODO: Import src
                     timer.section("extensions")
                     if point.extensions:
@@ -273,12 +275,12 @@ class ImportGpx(FileImporter):
                                 for child in elm:
                                     basetag = re.sub(r'^\{.*\}','',child.tag)
                                     try:
-                                        setattr(p, self.extension_fields[basetag], child.text)
+                                        pointdata[self.extension_fields[basetag]] = child.text
                                     except KeyError:
                                         print(f"Unhandled extension field {basetag}={child.text}")
 
                     timer.section("append")
-                    s.points.append(p)
+                    raw_points.append((s, pointdata))
 
                 timer.summary()
             # TODO: Ugh, we have to parse the file to compare counts
@@ -293,6 +295,10 @@ class ImportGpx(FileImporter):
                     # TODO: Can we skip this commit somehow?
                     # Was running into conflicts w/o it
                     self.db.commit()
+
+            print("Adding points...")
+            for s, points in raw_points:
+                s.points = [Point(**data) for data in points]
 
             try:
                 print("Committing...")
