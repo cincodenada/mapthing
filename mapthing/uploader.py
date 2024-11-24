@@ -235,7 +235,7 @@ class ImportGpx(FileImporter):
                 s = Segment()
                 t.segments.append(s)
                 print(f"Adding {len(seg.points)} points...")
-                timer = SectionTimer()
+                timer = SectionTimer(False)
                 for point in seg.points:
                     timer.start("dedup")
                     # Sometimes we get duplicate network points??

@@ -3,12 +3,15 @@ from collections import defaultdict
 import time
 
 class SectionTimer:
-    def __init__(self):
+    def __init__(self, enabled=True):
         self.runs = []
         self.cur_section = None
         self.total_start = None
+        self.enabled = enabled
 
     def start(self, sec_name = "__start__"):
+        if not self.enabled:
+            return
         if self.cur_section:
             self.end()
         self.sec_start = time.time()
@@ -18,6 +21,8 @@ class SectionTimer:
         self.cur_section = sec_name
 
     def section(self, name):
+        if not self.enabled:
+            return
         now = time.time()
         if self.cur_section:
             self.cur_run.append((self.cur_section, now - self.sec_start))
@@ -28,12 +33,16 @@ class SectionTimer:
         self.sec_start = now
 
     def end(self):
+        if not self.enabled:
+            return
         self.section('__end__')
         self.runs.append(self.cur_run)
         self.cur_section = None
         self.total_end = time.time()
 
     def summary(self):
+        if not self.enabled:
+            return
         start = time.time()
         times = defaultdict(list)
         for run in self.runs:
@@ -48,5 +57,5 @@ class SectionTimer:
             else:
                 pct = 0
             stats = [s*1e6 for s in (median(times), fmean(times), stdev(times))]
-            print(f"{pct:0.2f}% {name}: median {stats[0]:0.3}us/mean {stats[1]:0.3}us, stdev {stats[2]:0.3}us")
-        print(f"Stats calculated in {calc_time*1e6:0.3}us")
+            print(f"{pct:0.2f}% {name}: median {stats[0]:0.3f}us/mean {stats[1]:0.3f}us, stdev {stats[2]:0.3f}us")
+        print(f"Stats calculated in {calc_time*1e3:0.3}ms")
