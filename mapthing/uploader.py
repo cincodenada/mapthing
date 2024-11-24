@@ -9,7 +9,7 @@ import re
 from collections import deque
 
 from sqlalchemy.sql import func
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from .models import (
     Track,
     Segment,
@@ -96,13 +96,20 @@ class FileImporter(object):
     def __init__(self, db, infile):
         self.db = db
         self.infile = infile
-        self.source = Source(name=os.path.basename(infile.name))
         self.type = "file"
+
+        self.source = Source.from_file(infile)
+        try:
+            existing = self.db.query(Source)\
+                .filter(Source.hash==self.source.hash)\
+                .one()
+            self.source = existing
+        except NoResultFound:
+            self.db.add(self.source)
 
     def finish(self, stats):
         self.source.start_time = stats["start"]
         self.source.end_time = stats["end"]
-        self.db.add(self.source)
         self.db.commit()
         return stats
 
@@ -178,35 +185,50 @@ class ImportGpx(FileImporter):
         max_time = None
 
         def counts_match(existing, track):
-            if len(track.segments) != len(existing):
+            if len(track.segments) != len(existing['segments']):
                 return False
-            for idx, (track, seg, num_points) in enumerate(existing):
+            for idx, (seg, num_points) in enumerate(existing['segments']):
+                print(len(track.segments[idx].points), num_points)
                 if len(track.segments[idx].points) != num_points:
                     return False
             return True
 
-        for track in gpx.tracks:
-            existing = self.db.query(Track, Segment, func.count(Point.id))\
+        existing = None
+        if self.source.id:
+            q = self.db.query(Track, Segment, func.count(Point.id))\
                 .select_from(Track)\
                 .outerjoin(Segment)\
                 .outerjoin(Point)\
-                .filter(Track.name == track.name)\
-                .group_by(Segment.id)\
-                .order_by(Segment.id)\
-                .all()
-            if existing:
-                if counts_match(existing, track):
+                .filter(Track.source_id == self.source.id)\
+                .group_by(Track.id, Segment.id)\
+                .order_by(Track.id, Segment.id)
+
+            existing = {}
+            for track, segment, pcount in q.all():
+                if track.id not in existing:
+                    existing[track.id] = {
+                        "track": track,
+                        "segments": [],
+                    }
+                existing[track.id]["segments"].append((segment, pcount))
+            existing = list(existing.values())
+
+        for idx, track in enumerate(gpx.tracks):
+            if existing and existing[idx]:
+                if counts_match(existing[idx], track):
                     print("Track already imported, skipping!")
                     continue
                 else:
                     print("Track partially imported, deleting!")
-                    self.db.delete(existing[0][0])
+                    self.db.delete(existing[idx]["track"])
                     self.db.commit()
 
             counts['tracks']+=1
-            t = Track()
-            t.name = track.name
-            t.created = gpx.time
+            t = Track(
+                source=self.source,
+                name=track.name,
+                created=gpx.time
+            )
             self.db.add(t)
             for seg in track.segments:
                 counts['segments']+=1
