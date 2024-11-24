@@ -169,12 +169,13 @@ class ImportGpx(FileImporter):
         gpx = gpxpy.parse(xml)
         epoch = datetime.datetime.utcfromtimestamp(0)
         
-        def counts_match(existing, track):
+        def counts_match(existing, track, seg_points):
             if len(track.segments) != len(existing['segments']):
                 return False
             for idx, (seg, num_points) in enumerate(existing['segments']):
-                print(len(track.segments[idx].points), num_points)
-                if len(track.segments[idx].points) != num_points:
+                (seg, points) = seg_points[idx]
+                print(len(points), num_points)
+                if len(points) != num_points:
                     return False
             return True
 
@@ -238,6 +239,7 @@ class ImportGpx(FileImporter):
                 t.segments.append(s)
                 print(f"Adding {len(seg.points)} points...")
                 timer = SectionTimer(False)
+                seg_points = []
                 for point in seg.points:
                     timer.start("dedup")
                     # Sometimes we get duplicate network points??
@@ -280,14 +282,15 @@ class ImportGpx(FileImporter):
                                         print(f"Unhandled extension field {basetag}={child.text}")
 
                     timer.section("append")
-                    raw_points.append((s, pointdata))
+                    seg_points.append(pointdata)
+                raw_points.append((s, seg_points))
 
                 timer.summary()
 
             # TODO: Ugh, we have to parse the file to compare counts
             # because we filter out some points...reconsider?
             if existing and existing[idx]:
-                if counts_match(existing[idx], t):
+                if counts_match(existing[idx], t, raw_points):
                     print("Track already imported, skipping!")
                     continue
                 else:
