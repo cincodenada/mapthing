@@ -165,6 +165,7 @@ class ImportGpx(FileImporter):
         counts = Counter()
         recent_times = deque(maxlen=50)
 
+        print("Parsing gpx...")
         gpx = gpxpy.parse(xml)
         epoch = datetime.datetime.utcfromtimestamp(0)
         
