@@ -283,6 +283,7 @@ class ImportGpx(FileImporter):
                     raw_points.append((s, pointdata))
 
                 timer.summary()
+
             # TODO: Ugh, we have to parse the file to compare counts
             # because we filter out some points...reconsider?
             if existing and existing[idx]:
