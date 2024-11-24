@@ -21,6 +21,8 @@ from .models import (
 import gpxpy
 from collections import Counter
 
+from .section_timer import SectionTimer
+
 def import_file(db, filename, ignore_invalid=False):
     extmap = {
         '.gpx': ImportGpx,
@@ -233,15 +235,19 @@ class ImportGpx(FileImporter):
                 s = Segment()
                 t.segments.append(s)
                 print(f"Adding {len(seg.points)} points...")
+                timer = SectionTimer()
                 for point in seg.points:
+                    timer.start("dedup")
                     # Sometimes we get duplicate network points??
                     if point.time in recent_times:
                         continue
                     # Ignore duplicate times if they're on the edge
                     if point.time.replace(tzinfo=None) in border_points:
                         continue
+                    timer.section("recent")
                     recent_times.append(point.time)
 
+                    timer.section("minmax")
                     if min_time is None or point.time < min_time:
                         min_time = point.time
                     if max_time is None or point.time > max_time:
@@ -249,6 +255,7 @@ class ImportGpx(FileImporter):
 
                     counts['points']+=1
 
+                    timer.section("build")
                     p = Point()
                     p.latitude = point.latitude
                     p.longitude = point.longitude
@@ -258,6 +265,7 @@ class ImportGpx(FileImporter):
                     p.bearing = point.course
                     p.src = point.source
                     # TODO: Import src
+                    timer.section("extensions")
                     if point.extensions:
                         for elm in point.extensions:
                             if len(elm):
@@ -268,8 +276,10 @@ class ImportGpx(FileImporter):
                                     except KeyError:
                                         print(f"Unhandled extension field {basetag}={child.text}")
 
+                    timer.section("append")
                     s.points.append(p)
 
+                timer.summary()
             # TODO: Ugh, we have to parse the file to compare counts
             # because we filter out some points...reconsider?
             if existing and existing[idx]:
