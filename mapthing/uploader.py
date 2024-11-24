@@ -175,6 +175,7 @@ class ImportGpx(FileImporter):
                     return False
             return True
 
+        print("Looking up existing tracks...")
         existing = None
         existing_seg_ids = set()
         if self.source.id:
@@ -219,6 +220,7 @@ class ImportGpx(FileImporter):
         max_time = None
 
         for idx, track in enumerate(gpx.tracks):
+            print(f"Building track {idx}...")
             counts['tracks']+=1
             t = Track(
                 source=self.source,
@@ -226,9 +228,11 @@ class ImportGpx(FileImporter):
                 created=gpx.time
             )
             for seg in track.segments:
+                print(f"Adding segment...")
                 counts['segments']+=1
                 s = Segment()
                 t.segments.append(s)
+                print(f"Adding {len(seg.points)} points...")
                 for point in seg.points:
                     # Sometimes we get duplicate network points??
                     if point.time in recent_times:
@@ -280,6 +284,7 @@ class ImportGpx(FileImporter):
                     self.db.commit()
 
             try:
+                print("Committing...")
                 self.db.add(t)
                 self.db.commit()
             except IntegrityError as e:
