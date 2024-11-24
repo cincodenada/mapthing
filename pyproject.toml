@@ -40,3 +40,8 @@ dependencies = [
     "zope-interface==5.4.0",
     "zope-sqlalchemy==1.5",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.3",
+]
