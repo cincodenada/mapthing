@@ -3,7 +3,7 @@ name = "mapthing"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "certifi==2021.5.30",
     "chameleon==3.9.1",
@@ -15,7 +15,6 @@ dependencies = [
     "olefile==0.46",
     "paste==3.5.0",
     "pastedeploy==2.1.1",
-    "pillow==8.3.1",
     "plaster-pastedeploy==0.7",
     "plaster==1.0",
     "pygments==2.9.0",
@@ -39,6 +38,7 @@ dependencies = [
     "zope-deprecation==4.4.0",
     "zope-interface==5.4.0",
     "zope-sqlalchemy==1.5",
+    "pillow>=11.0.0",
 ]
 
 [dependency-groups]
