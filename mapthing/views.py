@@ -246,11 +246,10 @@ def edit_place(request):
 @view_config(route_name='places', renderer='templates/places.pt')
 def places(request):
     db = getDb()
-    visits = {loc_id: {"count": count, "length": length} for loc_id, length, count in db.query(
-        Stop.location_id,
-        func.avg(func.julianday(Stop.end_time) - func.julianday(Stop.start_time)),
-        func.count()
-    ).group_by(Stop.location_id)}
+    visits = {
+        loc_id: {"count": count, "length": length}
+        for loc_id, length, count in Stop.getAsPlace(db)
+    }
     return {
         'places': sorted([{
             **l.to_dict(),

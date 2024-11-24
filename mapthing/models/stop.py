@@ -7,12 +7,13 @@ from sqlalchemy import (
     DateTime,
     String,
     ForeignKey,
+    select,
     func,
     literal_column,
     asc
 )
 from sqlalchemy.orm import relationship, selectinload
-from sqlalchemy import select
+from sqlalchemy.sql import extract
 
 from mapthing.models import BaseModel, SerializableMixin, DBSession
 from .location import Location
@@ -64,6 +65,14 @@ class Stop(BaseModel, SerializableMixin):
     @classmethod
     def fromHistStops(cls, slist):
         return [cls.fromHistStop(s) for s in slist]
+
+    @classmethod
+    def getAsPlace(cls, db):
+        return db.query(
+            Stop.location_id,
+            func.avg(extract('julian', Stop.end_time) - extract('julian', Stop.start_time)),
+            func.count()
+        ).group_by(Stop.location_id)
 
 class Subtrack(BaseModel, SerializableMixin):
     __tablename__ = 'subtracks'
