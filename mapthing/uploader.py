@@ -214,22 +214,12 @@ class ImportGpx(FileImporter):
             existing = list(existing.values())
 
         for idx, track in enumerate(gpx.tracks):
-            if existing and existing[idx]:
-                if counts_match(existing[idx], track):
-                    print("Track already imported, skipping!")
-                    continue
-                else:
-                    print("Track partially imported, deleting!")
-                    self.db.delete(existing[idx]["track"])
-                    self.db.commit()
-
             counts['tracks']+=1
             t = Track(
                 source=self.source,
                 name=track.name,
                 created=gpx.time
             )
-            self.db.add(t)
             for seg in track.segments:
                 counts['segments']+=1
                 s = Segment()
@@ -268,9 +258,24 @@ class ImportGpx(FileImporter):
                                         setattr(p, self.extension_fields[basetag], child.text)
                                     except KeyError:
                                         print(f"Unhandled extension field {basetag}={child.text}")
-                                
+
                     s.points.append(p)
+
+            # TODO: Ugh, we have to parse the file to compare counts
+            # because we filter out some points...reconsider?
+            if existing and existing[idx]:
+                if counts_match(existing[idx], t):
+                    print("Track already imported, skipping!")
+                    continue
+                else:
+                    print("Track partially imported, deleting!")
+                    self.db.delete(existing[idx]["track"])
+                    # TODO: Can we skip this commit somehow?
+                    # Was running into conflicts w/o it
+                    self.db.commit()
+
             try:
+                self.db.add(t)
                 self.db.commit()
             except IntegrityError as e:
                 print(e)

@@ -32,7 +32,10 @@ class Source(BaseModel):
     name = Column(String)
     hash = Column(String)
 
-    tracks = relationship("Track", back_populates="source")
+    tracks = relationship("Track",
+        back_populates="source",
+        passive_deletes="all"
+    )
 
     def from_file(file):
         sha1 = hashlib.sha1()
