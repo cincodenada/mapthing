@@ -1,4 +1,5 @@
 import sys
+import traceback
 from mapthing import uploader
 
 from mapthing.models import get_session_factory, get_engine
@@ -11,5 +12,6 @@ with bootstrap('development.ini') as env:
         try:
             uploader.import_file(db, filename)
         except Exception as e:
-            print(f"Failed to import {filename}: {e}")
+            print(f"Failed to import {filename}")
+            print(traceback.format_exc())
             db.rollback()
