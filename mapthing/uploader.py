@@ -166,24 +166,6 @@ class ImportGpx(FileImporter):
         gpx = gpxpy.parse(xml)
         epoch = datetime.datetime.utcfromtimestamp(0)
         
-        # Ughhhhh this is a mess
-        first_time = min([p.time for p in gpx.tracks[0].segments[0].points[0:10]])
-        last_time = max([p.time for p in gpx.tracks[-1].segments[-1].points[-10:]])
-        early_points = self.db.query(Point.time)\
-            .filter(Point.time >= first_time)\
-            .order_by(Point.time)\
-            .limit(10)\
-            .all()
-        late_points = self.db.query(Point.time)\
-            .filter(Point.time <= last_time)\
-            .order_by(Point.time.desc())\
-            .limit(10)\
-            .all()
-        border_points = set([v for v, in early_points+late_points])
-
-        min_time = None
-        max_time = None
-
         def counts_match(existing, track):
             if len(track.segments) != len(existing['segments']):
                 return False
@@ -194,6 +176,7 @@ class ImportGpx(FileImporter):
             return True
 
         existing = None
+        existing_seg_ids = set()
         if self.source.id:
             q = self.db.query(Track, Segment, func.count(Point.id))\
                 .select_from(Track)\
@@ -211,7 +194,29 @@ class ImportGpx(FileImporter):
                         "segments": [],
                     }
                 existing[track.id]["segments"].append((segment, pcount))
+                existing_seg_ids.add(segment.id)
             existing = list(existing.values())
+
+        print("Finding border points...")
+        # Ughhhhh this is a mess
+        first_time = min([p.time for p in gpx.tracks[0].segments[0].points[0:10]])
+        last_time = max([p.time for p in gpx.tracks[-1].segments[-1].points[-10:]])
+        early_points = self.db.query(Point.time)\
+            .filter(Point.time >= first_time)\
+            .filter(Point.segment_id.not_in(existing_seg_ids))\
+            .order_by(Point.time)\
+            .limit(10)\
+            .all()
+        late_points = self.db.query(Point.time)\
+            .filter(Point.time <= last_time)\
+            .filter(Point.segment_id.not_in(existing_seg_ids))\
+            .order_by(Point.time.desc())\
+            .limit(10)\
+            .all()
+        border_points = set([v for v, in early_points+late_points])
+
+        min_time = None
+        max_time = None
 
         for idx, track in enumerate(gpx.tracks):
             counts['tracks']+=1
