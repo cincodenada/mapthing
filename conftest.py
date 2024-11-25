@@ -10,6 +10,7 @@ from mapthing.models import BaseModel as Base
 
 def pytest_addoption(parser):
     parser.addoption('--ini', action='store', metavar='INI_FILE')
+    parser.addoption('--keep-db', action='store_true', default=False)
 
 @pytest.fixture(scope='session')
 def ini_file(request):
@@ -21,7 +22,7 @@ def app_settings(ini_file):
     return get_appsettings(ini_file)
 
 @pytest.fixture(scope='session')
-def dbengine(app_settings, ini_file):
+def dbengine(app_settings, ini_file, request):
     engine = models.get_engine(app_settings)
 
     Base.metadata.drop_all(bind=engine)
@@ -29,7 +30,8 @@ def dbengine(app_settings, ini_file):
 
     yield engine
 
-    Base.metadata.drop_all(bind=engine)
+    if not request.config.getoption("--keep-db"):
+        Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture(scope='session')
 def app(app_settings, dbengine):
