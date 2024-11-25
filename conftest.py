@@ -9,13 +9,13 @@ from mapthing import models
 from mapthing.models import BaseModel as Base
 
 def pytest_addoption(parser):
-    parser.addoption('--ini', action='store', metavar='INI_FILE')
+    parser.addoption('--ini', action='store', default='testing.ini', metavar='INI_FILE')
     parser.addoption('--keep-db', action='store_true', default=False)
 
 @pytest.fixture(scope='session')
 def ini_file(request):
     # potentially grab this path from a pytest option
-    return os.path.abspath(request.config.getoption("--ini", default='testing.ini'))
+    return os.path.abspath(request.config.getoption("--ini"))
 
 @pytest.fixture(scope='session')
 def app_settings(ini_file):
