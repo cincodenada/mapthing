@@ -14,7 +14,7 @@ def pytest_addoption(parser):
 @pytest.fixture(scope='session')
 def ini_file(request):
     # potentially grab this path from a pytest option
-    return os.path.abspath(request.config.option.ini or 'testing.ini')
+    return os.path.abspath(request.config.getoption("--ini", default='testing.ini'))
 
 @pytest.fixture(scope='session')
 def app_settings(ini_file):
