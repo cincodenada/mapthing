@@ -34,7 +34,8 @@ class Source(BaseModel):
 
     tracks = relationship("Track",
         back_populates="source",
-        passive_deletes="all"
+        cascade="all,delete-orphan",
+        passive_deletes=True
     )
 
     def from_file(file):

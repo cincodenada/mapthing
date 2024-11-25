@@ -75,7 +75,8 @@ class Segment(BaseModel):
     track_id = Column(Integer, ForeignKey('tracks.id'))
 
     points = relationship("Point",
-        passive_deletes="all"
+        cascade="all,delete-orphan",
+        passive_deletes=True
     )
     #stops = relationship(Stop)
 
@@ -89,7 +90,8 @@ class Track(BaseModel):
     analysis = relationship("Analysis", back_populates="track", uselist=False)
     source = relationship("Source")
     segments = relationship("Segment",
-        passive_deletes="all"
+        cascade="all,delete-orphan",
+        passive_deletes=True
     )
 
     @classmethod
