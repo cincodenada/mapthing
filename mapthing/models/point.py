@@ -28,7 +28,7 @@ class Point(BaseModel):
     altitude = Column(Float)
     bearing = Column(Float)
     src = Column(String)
-    segment_id = Column(Integer, ForeignKey('segments.id'))
+    segment_id = Column(Integer, ForeignKey('segments.id', ondelete="CASCADE"))
 
     @classmethod
     def getByDate(cls, start, end):
@@ -72,7 +72,7 @@ class Point(BaseModel):
 class Segment(BaseModel):
     __tablename__ = 'segments'
     id = Column(Integer, primary_key=True)
-    track_id = Column(Integer, ForeignKey('tracks.id'))
+    track_id = Column(Integer, ForeignKey('tracks.id', ondelete="CASCADE"))
 
     points = relationship("Point",
         cascade="all,delete-orphan",
@@ -85,7 +85,7 @@ class Track(BaseModel):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     created = Column(DateTime(timezone=True))
-    source_id = Column(Integer, ForeignKey('sources.id'))
+    source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"))
     
     analysis = relationship("Analysis", back_populates="track", uselist=False)
     source = relationship("Source")

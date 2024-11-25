@@ -1,11 +1,19 @@
 from pyramid.config import Configurator
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config, event
+from sqlalchemy.engine import Engine
 
 from .models import (
     DBSession,
     BaseModel,
     )
 
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if type(dbapi_connection).__module__ == "sqlite3":
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
