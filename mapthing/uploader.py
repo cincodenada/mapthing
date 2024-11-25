@@ -168,7 +168,7 @@ class ImportGpx(FileImporter):
         print("Parsing gpx...")
         gpx = gpxpy.parse(xml)
         epoch = datetime.datetime.utcfromtimestamp(0)
-        
+
         def counts_match(existing, track, seg_points):
             if len(track.segments) != len(existing['segments']):
                 return False
@@ -299,6 +299,9 @@ class ImportGpx(FileImporter):
                     # TODO: Can we skip this commit somehow?
                     # Was running into conflicts w/o it
                     self.db.commit()
+                    # SQLAlchemy gets worried if we have duplicates laying
+                    # around from above, so purge them
+                    self.db.expunge_all()
 
             print("Adding points...")
             for s, points in raw_points:
