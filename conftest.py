@@ -32,6 +32,10 @@ def dbengine(app_settings, ini_file):
     Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture(scope='session')
+def db(dbengine):
+    return models.get_session_factory(dbengine)()
+
+@pytest.fixture(scope='session')
 def app(app_settings, dbengine):
     return main({}, dbengine=dbengine, **app_settings)
 
