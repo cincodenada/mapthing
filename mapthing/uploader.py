@@ -135,6 +135,10 @@ class ImportGpx(FileImporter):
     }
 
     def load(self):
+        if self.source.id:
+            print("Already imported, skipping")
+            return
+
         gpxfile = open(self.infile.name, 'r')
         total = Counter()
         min_time = None
