@@ -32,3 +32,11 @@ angular.module('mapApp.services', ['ngResource'])
         $scope.pointbounds = new mxn.BoundingBox();
       }
     })
+    .factory('OsmPlace', function() {
+      return $resource("https://overpass-api.de/api/interpreter", {
+        "query": {
+          method: "POST",
+          isArray: true,
+        }
+      })
+    })
