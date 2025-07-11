@@ -42,7 +42,7 @@ class Stop(BaseModel, SerializableMixin):
                 .filter(Location.latitude <= ne[0])\
                 .filter(Location.longitude >= sw[1])\
                 .filter(Location.longitude <= ne[1])\
-                .order_by(Stop.start)
+                .order_by(Stop.start_time)
 
     @classmethod
     def getByDate(cls, start, end):

@@ -9,7 +9,7 @@ angular.module('mapApp.services', ['ngResource'])
       return $resource('/points.json')
     })
     .factory('Location', function($resource) {
-      return $resource('/locations.json')
+      return $resource('/places.json')
     })
     .service('pointSource', function(Track, Point) {
       var points;
