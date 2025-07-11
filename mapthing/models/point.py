@@ -73,8 +73,10 @@ class Segment(BaseModel):
     __tablename__ = 'segments'
     id = Column(Integer, primary_key=True)
     track_id = Column(Integer, ForeignKey('tracks.id'))
-    
-    points = relationship(Point)
+
+    points = relationship("Point",
+        passive_deletes="all"
+    )
     #stops = relationship(Stop)
 
 class Track(BaseModel):
@@ -85,8 +87,10 @@ class Track(BaseModel):
     source_id = Column(Integer, ForeignKey('sources.id'))
     
     analysis = relationship("Analysis", back_populates="track", uselist=False)
-    source = relationship("Source", back_populates="tracks", uselist=False)
-    segments = relationship(Segment)
+    source = relationship("Source")
+    segments = relationship("Segment",
+        passive_deletes="all"
+    )
 
     @classmethod
     def getByDate(cls, session, start, end):

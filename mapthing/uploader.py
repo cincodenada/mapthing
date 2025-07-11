@@ -6,10 +6,9 @@ import os
 import glob
 import zipfile
 import re
-from collections import deque
 
 from sqlalchemy.sql import func
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from .models import (
     Track,
     Segment,
@@ -20,6 +19,9 @@ from .models import (
 
 import gpxpy
 from collections import Counter
+
+from .section_timer import SectionTimer
+from .hashdeque import HashDeque as deque
 
 def import_file(db, filename, ignore_invalid=False):
     extmap = {
@@ -96,13 +98,20 @@ class FileImporter(object):
     def __init__(self, db, infile):
         self.db = db
         self.infile = infile
-        self.source = Source(name=os.path.basename(infile.name))
         self.type = "file"
+
+        self.source = Source.from_file(infile)
+        try:
+            existing = self.db.query(Source)\
+                .filter(Source.hash==self.source.hash)\
+                .one()
+            self.source = existing
+        except NoResultFound:
+            self.db.add(self.source)
 
     def finish(self, stats):
         self.source.start_time = stats["start"]
         self.source.end_time = stats["end"]
-        self.db.add(self.source)
         self.db.commit()
         return stats
 
@@ -156,19 +165,56 @@ class ImportGpx(FileImporter):
         counts = Counter()
         recent_times = deque(maxlen=50)
 
+        print("Parsing gpx...")
         gpx = gpxpy.parse(xml)
         epoch = datetime.datetime.utcfromtimestamp(0)
         
+        def counts_match(existing, track, seg_points):
+            if len(track.segments) != len(existing['segments']):
+                return False
+            for idx, (seg, num_points) in enumerate(existing['segments']):
+                (seg, points) = seg_points[idx]
+                print(len(points), num_points)
+                if len(points) != num_points:
+                    return False
+            return True
+
+        print("Looking up existing tracks...")
+        existing = None
+        existing_seg_ids = set()
+        if self.source.id:
+            q = self.db.query(Track, Segment, func.count(Point.id))\
+                .select_from(Track)\
+                .outerjoin(Segment)\
+                .outerjoin(Point)\
+                .filter(Track.source_id == self.source.id)\
+                .group_by(Track.id, Segment.id)\
+                .order_by(Track.id, Segment.id)
+
+            existing = {}
+            for track, segment, pcount in q.all():
+                if track.id not in existing:
+                    existing[track.id] = {
+                        "track": track,
+                        "segments": [],
+                    }
+                existing[track.id]["segments"].append((segment, pcount))
+                existing_seg_ids.add(segment.id)
+            existing = list(existing.values())
+
+        print("Finding border points...")
         # Ughhhhh this is a mess
         first_time = min([p.time for p in gpx.tracks[0].segments[0].points[0:10]])
         last_time = max([p.time for p in gpx.tracks[-1].segments[-1].points[-10:]])
         early_points = self.db.query(Point.time)\
             .filter(Point.time >= first_time)\
+            .filter(Point.segment_id.not_in(existing_seg_ids))\
             .order_by(Point.time)\
             .limit(10)\
             .all()
         late_points = self.db.query(Point.time)\
             .filter(Point.time <= last_time)\
+            .filter(Point.segment_id.not_in(existing_seg_ids))\
             .order_by(Point.time.desc())\
             .limit(10)\
             .all()
@@ -177,50 +223,35 @@ class ImportGpx(FileImporter):
         min_time = None
         max_time = None
 
-        def counts_match(existing, track):
-            if len(track.segments) != len(existing):
-                return False
-            for idx, (track, seg, num_points) in enumerate(existing):
-                if len(track.segments[idx].points) != num_points:
-                    return False
-            return True
-
-        for track in gpx.tracks:
-            existing = self.db.query(Track, Segment, func.count(Point.id))\
-                .select_from(Track)\
-                .outerjoin(Segment)\
-                .outerjoin(Point)\
-                .filter(Track.name == track.name)\
-                .group_by(Segment.id)\
-                .order_by(Segment.id)\
-                .all()
-            if existing:
-                if counts_match(existing, track):
-                    print("Track already imported, skipping!")
-                    continue
-                else:
-                    print("Track partially imported, deleting!")
-                    self.db.delete(existing[0][0])
-                    self.db.commit()
-
+        raw_points = []
+        for idx, track in enumerate(gpx.tracks):
+            print(f"Building track {idx}...")
             counts['tracks']+=1
-            t = Track()
-            t.name = track.name
-            t.created = gpx.time
-            self.db.add(t)
+            t = Track(
+                source=self.source,
+                name=track.name,
+                created=gpx.time
+            )
             for seg in track.segments:
+                print(f"Adding segment...")
                 counts['segments']+=1
                 s = Segment()
                 t.segments.append(s)
+                print(f"Adding {len(seg.points)} points...")
+                timer = SectionTimer(False)
+                seg_points = []
                 for point in seg.points:
+                    timer.start("dedup")
                     # Sometimes we get duplicate network points??
                     if point.time in recent_times:
                         continue
                     # Ignore duplicate times if they're on the edge
                     if point.time.replace(tzinfo=None) in border_points:
                         continue
+                    timer.section("recent")
                     recent_times.append(point.time)
 
+                    timer.section("minmax")
                     if min_time is None or point.time < min_time:
                         min_time = point.time
                     if max_time is None or point.time > max_time:
@@ -228,27 +259,54 @@ class ImportGpx(FileImporter):
 
                     counts['points']+=1
 
-                    p = Point()
-                    p.latitude = point.latitude
-                    p.longitude = point.longitude
-                    p.time = point.time
-                    p.speed = point.speed
-                    p.altitude = point.elevation
-                    p.bearing = point.course
-                    p.src = point.source
+                    timer.section("build")
+                    pointdata = {
+                        "latitude": point.latitude,
+                        "longitude": point.longitude,
+                        "time": point.time,
+                        "speed": point.speed,
+                        "altitude": point.elevation,
+                        "bearing": point.course,
+                        "src": point.source,
+                    }
                     # TODO: Import src
+                    timer.section("extensions")
                     if point.extensions:
                         for elm in point.extensions:
                             if len(elm):
                                 for child in elm:
                                     basetag = re.sub(r'^\{.*\}','',child.tag)
                                     try:
-                                        setattr(p, self.extension_fields[basetag], child.text)
+                                        pointdata[self.extension_fields[basetag]] = child.text
                                     except KeyError:
                                         print(f"Unhandled extension field {basetag}={child.text}")
-                                
-                    s.points.append(p)
+
+                    timer.section("append")
+                    seg_points.append(pointdata)
+                raw_points.append((s, seg_points))
+
+                timer.summary()
+
+            # TODO: Ugh, we have to parse the file to compare counts
+            # because we filter out some points...reconsider?
+            if existing and existing[idx]:
+                if counts_match(existing[idx], t, raw_points):
+                    print("Track already imported, skipping!")
+                    continue
+                else:
+                    print("Track partially imported, deleting!")
+                    self.db.delete(existing[idx]["track"])
+                    # TODO: Can we skip this commit somehow?
+                    # Was running into conflicts w/o it
+                    self.db.commit()
+
+            print("Adding points...")
+            for s, points in raw_points:
+                s.points = [Point(**data) for data in points]
+
             try:
+                print("Committing...")
+                self.db.add(t)
                 self.db.commit()
             except IntegrityError as e:
                 print(e)

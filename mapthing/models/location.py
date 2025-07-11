@@ -26,7 +26,7 @@ class LocationType(str, enum.Enum):
 
 class Location(BaseModel, SerializableMixin):
     __tablename__ = 'locations'
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True)
     name = Column(String)
     latitude = Column(Float)
     longitude = Column(Float)
@@ -49,8 +49,8 @@ class Location(BaseModel, SerializableMixin):
     @classmethod
     def fromHistLocation(cls, l):
         return Location(
-            latitude=l.center().lat,
-            longitude=l.center().lon,
+            latitude=float(l.center().lat),
+            longitude=float(l.center().lon),
             radius=l.radius,
             type=l.type,
             #num_points=l.num_points,

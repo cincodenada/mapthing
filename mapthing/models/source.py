@@ -1,3 +1,10 @@
+import os
+import hashlib
+
+# BUF_SIZE is totally arbitrary
+BUF_SIZE = 65536  # lets read stuff in 64kb chunks!
+
+
 from sqlalchemy import (
     Column,
     Index,
@@ -23,5 +30,27 @@ class Source(BaseModel):
     start_time = Column(DateTime(timezone=True))
     end_time = Column(DateTime(timezone=True))
     name = Column(String)
+    hash = Column(String)
 
-    tracks = relationship("Track", back_populates="source")
+    tracks = relationship("Track",
+        back_populates="source",
+        passive_deletes="all"
+    )
+
+    def from_file(file):
+        sha1 = hashlib.sha1()
+
+        # Open a separate time, so we don't have to rewind
+        # and also to ensure rb and cause I don't wanna deal
+        with open(file.name, 'rb') as f:
+            while True:
+                data = f.read(BUF_SIZE)
+                if not data:
+                    break
+                sha1.update(data)
+
+        return Source(
+            name=os.path.basename(file.name),
+            hash=sha1.hexdigest()
+        )
+
