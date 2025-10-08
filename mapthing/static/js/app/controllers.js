@@ -16,6 +16,7 @@ angular.module('mapApp.controllers', [])
 
       $scope.params.view_range = [];
       $scope.params.anim_range = [];
+      $scope.params.cur_point = null;
       $scope.params.sel_range = [];
       $scope.params.sel_loc = null;
       $scope.data.map = {};

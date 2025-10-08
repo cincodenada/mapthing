@@ -310,6 +310,7 @@ angular.module('mapApp.directives', [])
         start: '=',
         end: '=',
         selRange: '=',
+        curPoint: '=',
         pointData: '=',
         pointBounds: '=',
         uniParams: '=',
@@ -329,6 +330,25 @@ angular.module('mapApp.directives', [])
         scope.timerange.canvas.attr('width', scope.timerange.canvas.innerWidth());
         scope.timerange.canvas.attr('height', scope.timerange.canvas.innerHeight());
         scope.timerange.dc = scope.timerange.canvas[0].getContext('2d');
+
+        scope.timerange.elm.on('mousemove', function(evt) {
+          console.log(evt)
+          scope.$apply(function(scope) {
+            if(!scope.pointData) { return }
+            /*
+            const starttime = moment(scope.start,'X');
+            const endtime = moment(scope.end,'X');
+            const msperpx = (endtime - starttime)/scope.timerange.dc.canvas.width;
+            const curts = scope.start + Math.floor(msperpx*(evt.clientX - scope.timerange.elm.prop('offsetLeft')))
+            scope.curPoint = scope.pointData.timepoints[curts]
+            */
+            scope.selRange = [
+              Math.floor(scope.start/1000/scope.uniParams.interval),
+              Math.ceil(scope.end/1000/scope.uniParams.interval)
+            ]
+          })
+            
+        })
 
         // Set up UI callback for selected timerange
         scope.timerange.elm.timerange({
@@ -475,6 +495,7 @@ angular.module('mapApp.directives', [])
         data: '=',
         range: '=',
         selRange: '=',
+        curPoint: '=',
         selLocId: '=selLoc',
         pendingLoc: '=',
         editingLoc: '=',
@@ -491,6 +512,12 @@ angular.module('mapApp.directives', [])
         
         scope.map.resizer = makeResizer(scope.map, Location)
         scope.map.outlineCache = new OutlineCache(scope.map)
+
+        /*
+        scope.pointMarker = new mxn.Marker()
+        scope.pointMarker.setIcon('/static/point.png')
+        scope.map.addMarker(scope.pointMarker);
+        */
 
         const parent = scope.$parent;
 
@@ -513,6 +540,14 @@ angular.module('mapApp.directives', [])
           scope.update();
         });
 
+        scope.$watch('curPoint', function(cur, prev, scope) {
+          const curpoint = $scope.pointData.timepoints[idx];
+
+          var center = new mxn.LatLonPoint(
+            loc.lat,
+            loc.lon
+          );
+        })
         scope.$watch('selRange', function(cur, prev, scope) {
           console.log('new range', cur, scope.data.segs)
           if(cur) {
@@ -992,7 +1027,7 @@ angular.module('mapApp.directives', [])
                   if(dayStops[startDate]) {
                     dayStops[startDate].push(annotated)
                   } else {
-                    console.warning("Unexpected missing date", startDate)
+                    console.warn("Unexpected missing date", startDate)
                   }
                 }
               }
