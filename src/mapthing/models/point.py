@@ -73,7 +73,8 @@ class Point(BaseModel):
 class Segment(BaseModel):
     __tablename__ = 'segments'
     id = Column(Integer, primary_key=True)
-    track_id = Column(Integer, ForeignKey('tracks.id'))
+    track_id = Column(Integer, ForeignKey('tracks.id', ondelete="CASCADE"))
+    track = relationship("Track", back_populates="segments")
 
     points = relationship("Point",
         back_populates="segment",
@@ -89,10 +90,17 @@ class Track(BaseModel):
     created = Column(DateTime(timezone=True))
     source_id = Column(Integer, ForeignKey('sources.id'))
     
-    analysis = relationship("Analysis", back_populates="track", uselist=False)
+    analysis = relationship("Analysis",
+        uselist=False,
+        back_populates="track",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
     source = relationship("Source")
     segments = relationship("Segment",
-        passive_deletes="all"
+        back_populates="track",
+        cascade="all, delete",
+        passive_deletes=True,
     )
 
     @classmethod
