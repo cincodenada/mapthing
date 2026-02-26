@@ -145,7 +145,7 @@ wheels = [
 [[package]]
 name = "mapthing"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "certifi" },
     { name = "chameleon" },
@@ -229,7 +229,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "mapthing", virtual = "." },
+    { name = "mapthing", editable = "." },
     { name = "pyramid-debugtoolbar", specifier = "==4.9" },
     { name = "pytest", specifier = ">=9.0.2" },
 ]

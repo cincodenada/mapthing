@@ -1,7 +1,7 @@
 [project]
 name = "mapthing"
 version = "0.1.0"
-description = "Add your description here"
+description = "A tool to browse and categorize my gps history"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -42,11 +42,11 @@ dependencies = [
 ]
 
 [project.scripts]
-cli = "cli"
-#paste.app_factory.main = "mapthing:main"
+#cli = "cli.py"
 initialize_db = "mapthing.scripts.initializedb:main"
 
-
+[project.entry-points.'paste.app_factory']
+main = "mapthing:main"
 
 [dependency-groups]
 dev = [
@@ -55,5 +55,9 @@ dev = [
     "pytest>=9.0.2",
 ]
 
+[tool.uv]
+package = true
+
 [tool.uv.sources]
 mapthing = { workspace = true }
+
