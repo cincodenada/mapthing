@@ -60,4 +60,3 @@ package = true
 
 [tool.uv.sources]
 mapthing = { workspace = true }
-
