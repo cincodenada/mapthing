@@ -43,7 +43,7 @@ dependencies = [
 
 [project.scripts]
 cli = "cli"
-paste.app_factory.main = "mapthing:main"
+#paste.app_factory.main = "mapthing:main"
 initialize_db = "mapthing.scripts.initializedb:main"
 
 

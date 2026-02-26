@@ -164,7 +164,6 @@ dependencies = [
     { name = "pyproj" },
     { name = "pyramid" },
     { name = "pyramid-chameleon" },
-    { name = "pyramid-debugtoolbar" },
     { name = "pyramid-mako" },
     { name = "pyramid-tm" },
     { name = "pyshp" },
@@ -186,6 +185,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "pyramid-debugtoolbar" },
     { name = "pytest" },
 ]
 
@@ -208,7 +208,6 @@ requires-dist = [
     { name = "pyproj", specifier = "==3.6.0" },
     { name = "pyramid", specifier = "==1.10.8" },
     { name = "pyramid-chameleon", specifier = "==0.3" },
-    { name = "pyramid-debugtoolbar", specifier = "==4.9" },
     { name = "pyramid-mako", specifier = "==1.1.0" },
     { name = "pyramid-tm", specifier = "==2.4" },
     { name = "pyshp", specifier = "==2.1.3" },
@@ -231,6 +230,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "mapthing", virtual = "." },
+    { name = "pyramid-debugtoolbar", specifier = "==4.9" },
     { name = "pytest", specifier = ">=9.0.2" },
 ]
 
