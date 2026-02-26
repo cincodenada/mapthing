@@ -152,10 +152,12 @@ class ImportGpx(FileImporter):
         gpxfile = open(self.infile.name, 'r')
         min_time = None
         max_time = None
+        states = set()
         for part in GluedFile(gpxfile):
             try:
                 results = self.load_xml(part)
                 total.update(results["counts"])
+                states.add(results["state"])
                 if min_time is None or results["start"] < min_time:
                     min_time = results["start"]
                 if max_time is None or results["end"] > max_time:
@@ -168,10 +170,19 @@ class ImportGpx(FileImporter):
                 print(gpxfile.read(10).encode('utf-8'))
                 raise e
 
+        # Hackyyy
+        state = None
+        if len(states) > 1:
+            # TODO
+            pass
+        else:
+            state = states.pop()
+
         return self.finish({
             "counts": total,
             "start": min_time,
             "end": max_time,
+            "state": state,
         })
 
     def load_xml(self, xml):
