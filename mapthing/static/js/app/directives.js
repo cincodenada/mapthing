@@ -541,11 +541,6 @@ angular.module('mapApp.directives', [])
         scope.map.resizer = makeResizer(scope.map, Location)
         scope.map.outlineCache = new OutlineCache(scope.map)
 
-        /*
-        scope.pointMarker = new mxn.Marker()
-        scope.pointMarker.setIcon('/static/point.png')
-        scope.map.addMarker(scope.pointMarker);
-        */
 
         const parent = scope.$parent;
 
@@ -569,12 +564,16 @@ angular.module('mapApp.directives', [])
         });
 
         scope.$watch('curPoint', function(cur, prev, scope) {
-          const curpoint = $scope.pointData.timepoints[idx];
-
-          var center = new mxn.LatLonPoint(
-            loc.lat,
-            loc.lon
-          );
+          if(cur) {
+              var center = new mxn.LatLonPoint(
+                cur.lat,
+                cur.lon
+              );
+              var marker = new mxn.Marker(center);
+              marker.setIcon('/static/point.png')
+              scope.map.addMarker(marker);
+              //scope.map.getMap().render();
+          }
         })
         scope.$watch('selRange', function(cur, prev, scope) {
           console.log('new range', cur, scope.data.segs)
@@ -753,6 +752,17 @@ angular.module('mapApp.directives', [])
             $scope.map.resizer.activate($scope.pendingLoc)
           } else {
             $scope.map.resizer.deactivate()
+          }
+
+          if($scope.curPoint) {
+            $scope.pointMarker = new mxn.Marker(
+              new mxn.LatLonPoint(
+                $scope.curPoint.lat,
+                $scope.curPoint.lon
+              )
+            )
+            $scope.pointMarker.setIcon('/static/point.png')
+            $scope.map.addMarker($scope.pointMarker);
           }
         }
       },
