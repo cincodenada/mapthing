@@ -335,17 +335,16 @@ angular.module('mapApp.directives', [])
           console.log(evt)
           scope.$apply(function(scope) {
             if(!scope.pointData) { return }
-            /*
-            const starttime = moment(scope.start,'X');
-            const endtime = moment(scope.end,'X');
-            const msperpx = (endtime - starttime)/scope.timerange.dc.canvas.width;
-            const curts = scope.start + Math.floor(msperpx*(evt.clientX - scope.timerange.elm.prop('offsetLeft')))
-            scope.curPoint = scope.pointData.timepoints[curts]
-            */
+            const numBins = scope.tsBins.length;
+            const offsetPx = evt.clientX - scope.timerange.elm.prop('offsetLeft')
+            const binIdx = Math.floor((offsetPx/scope.timerange.dc.canvas.width)*numBins)
+            const bin = scope.tsBins[binIdx]
+            const interval = scope.uniParams.interval
             scope.selRange = [
-              Math.floor(scope.start/1000/scope.uniParams.interval),
-              Math.ceil(scope.end/1000/scope.uniParams.interval)
+              scope.pointData.timepoints[bin[0]+1].time,
+              scope.pointData.timepoints[bin[1]-1].time
             ]
+            //scope.curPoint = scope.pointData.timepoints[scope.tsBins[binIdx][0]+1]
           })
             
         })
@@ -414,6 +413,13 @@ angular.module('mapApp.directives', [])
         });
       },
       controller: function($scope) {
+        $scope.makeBins = function(prevBinIdx, binIdx, prevIdx, idx) {
+          $scope.tsBins[prevBinIdx] = [prevIdx-1, idx]
+          for(let bin=prevBinIdx+1; bin < binIdx; bin++) {
+            $scope.tsBins[bin] = [idx-1, idx]
+          }
+        }
+
         $scope.draw = function() {
           var mintime = $scope.start.unix();
           var maxtime = $scope.end.unix();
@@ -430,9 +436,29 @@ angular.module('mapApp.directives', [])
           var point_count = {};
           var max_count = 0;
 
+          $scope.tsBins = []
+          const numBins = 1000;
+          const secPerBin = (maxtime-mintime)/numBins
+          let curBinStart = mintime
+          let nextBinStart = curBinStart + secPerBin
+          let curBinIdx = 0
+          let curBinStartIdx = 0
+
           for(var idx in $scope.pointData.timepoints) {
               var curpoint = $scope.pointData.timepoints[idx];
               var curtime = curpoint.time/1000;
+
+              if(curtime >= nextBinStart) {
+                const relBinIdx = Math.floor((curtime-mintime)/secPerBin)
+                $scope.makeBins(curBinIdx, relBinIdx, curBinStartIdx, Number(idx))
+                // This may accumulate error but ehhh
+                curBinStart = nextBinStart
+                nextBinStart = curBinStart + secPerBin
+                curBinIdx = relBinIdx
+                curBinStartIdx = Number(idx)
+              }
+              
+
               if((mintime && (curtime < mintime))
                   || (maxtime && (curtime > maxtime))
               ) { continue; }
@@ -447,6 +473,8 @@ angular.module('mapApp.directives', [])
                 max_count = point_count[barpos];
               }
           }
+          $scope.makeBins(curBinIdx, numBins, curBinStartIdx, $scope.pointData.timepoints.length)
+
           var height = $scope.timerange.canvas.attr('height');
           console.log(point_count)
           for(var bp=0; bp<canvas_width/bar_total; bp++) {
@@ -745,6 +773,7 @@ angular.module('mapApp.directives', [])
       templateUrl: 'trip_list.html',
       link: function(scope, elm, attrs) {
         scope.elm = elm.find('#triplist');
+        /*
         scope.elm.on('click','li a.trip_segment',function() {
           const trip = $(this).scope().trip
           const interval = scope.uniParams.interval
@@ -755,6 +784,7 @@ angular.module('mapApp.directives', [])
             ]
           })
         });
+        */
         scope.elm.on('mouseover','li a.trip_segment',function() {
           const elm = $(this)
           console.log('Highlighting trip from', elm)
