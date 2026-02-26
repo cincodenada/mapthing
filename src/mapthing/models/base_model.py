@@ -9,8 +9,10 @@ from sqlalchemy import (
     ForeignKey,
     func,
     literal_column,
+    event,
     )
 
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker, declarative_mixin, declared_attr
 
@@ -18,6 +20,13 @@ DBSession = scoped_session(sessionmaker())
 
 BaseModel = declarative_base()
 BaseModel.query = DBSession.query
+
+# From https://docs.sqlalchemy.org/en/14/dialects/sqlite.html#sqlite-foreign-keys
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 def getDb():
     return scoped_session(sessionmaker())
