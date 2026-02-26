@@ -13,7 +13,7 @@ class Analysis(BaseModel, SerializableMixin):
     __tablename__ = "analyses"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    track_id = Column(Integer, ForeignKey('tracks.id'))
+    track_id = Column(Integer, ForeignKey('tracks.id', ondelete="CASCADE"))
     created = Column(DateTime(timezone=True), server_default=func.now())
 
     track = relationship("Track", back_populates="analysis")
