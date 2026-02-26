@@ -6,6 +6,7 @@ import os
 import glob
 import zipfile
 import re
+import logging
 
 from sqlalchemy.sql import func
 from sqlalchemy.exc import IntegrityError, NoResultFound
@@ -22,6 +23,8 @@ from collections import Counter
 
 from .section_timer import SectionTimer
 from .hashdeque import HashDeque as deque
+
+log = logging.getLogger(__name__)
 
 def import_file(db, filename, ignore_invalid=False):
     extmap = {
@@ -135,12 +138,18 @@ class ImportGpx(FileImporter):
     }
 
     def load(self):
+        total = Counter()
+
         if self.source.id:
-            print("Already imported, skipping")
-            return
+            log.info("Already imported, skipping")
+            return {
+                "counts": total,
+                "start_time": None,
+                "end_time": None,
+                "state": "already_imported"
+            }
 
         gpxfile = open(self.infile.name, 'r')
-        total = Counter()
         min_time = None
         max_time = None
         for part in GluedFile(gpxfile):
@@ -248,9 +257,11 @@ class ImportGpx(FileImporter):
                     timer.start("dedup")
                     # Sometimes we get duplicate network points??
                     if point.time in recent_times:
+                        counter["points_skipped_recent"] += 1
                         continue
                     # Ignore duplicate times if they're on the edge
                     if point.time.replace(tzinfo=None) in border_points:
+                        counter["points_skipped_border"] += 1
                         continue
                     timer.section("recent")
                     recent_times.append(point.time)
@@ -293,11 +304,14 @@ class ImportGpx(FileImporter):
 
             # TODO: Ugh, we have to parse the file to compare counts
             # because we filter out some points...reconsider?
+            state = "imported"
             if existing and existing[idx]:
                 if counts_match(existing[idx], t, raw_points):
+                    state = "already_imported"
                     print("Track already imported, skipping!")
                     continue
                 else:
+                    state = "reimported"
                     print("Track partially imported, deleting!")
                     self.db.delete(existing[idx]["track"])
                     # TODO: Can we skip this commit somehow?
@@ -321,6 +335,7 @@ class ImportGpx(FileImporter):
             "counts": counts,
             "start": min_time,
             "end": max_time,
+            "state": state,
         }
 
 class ImportSqlite(FileImporter):
