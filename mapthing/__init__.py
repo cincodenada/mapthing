@@ -27,5 +27,5 @@ def main(global_config, **settings):
     config.add_route('places', '/places')
     config.add_route('upload_data', '/upload')
     config.add_route('ajax_times', '/times.json')
-    config.scan()
+    config.scan('.views')
     return config.make_wsgi_app()
