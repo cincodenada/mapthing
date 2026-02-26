@@ -1,3 +1,5 @@
+import mapthing.warning_filter
+
 import os
 from pyramid.paster import get_appsettings
 from pyramid.scripting import prepare
