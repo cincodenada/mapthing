@@ -18,7 +18,6 @@
     width: 100%;
     height: 100%;
     position: relative;
-    top: -3px;
 }
 .uni_view { height: 1em; }
 .uni_view canvas {

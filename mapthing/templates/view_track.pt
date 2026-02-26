@@ -67,6 +67,7 @@
         </trip-list>
         <path-map id="map"
             data="data.map"
+            cur-point="params.cur_point"
             sel-range="params.sel_range"
             sel-loc="params.sel_loc"
             pending-loc="params.pending_loc"
@@ -79,6 +80,7 @@
         start="daterange.startDate"
         end="daterange.endDate"
         bounds="params.track_bounds"
+        cur-point="params.cur_point"
         sel-range="params.view_range"
         anim-range="params.anim_range"
         uni-params="uni"
