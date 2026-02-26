@@ -34,6 +34,6 @@ def test_import(db):
     db.delete(db.query(Segment).all()[0])
     db.commit()
     assert(db.query(Point).count() == 5)
-    stats = uploader.import_file(db, './fixtures/tiny.gpx')
+    stats = uploader.import_file(db, './fixtures/tiny.gpx', force=True)
     assert(db.query(Point).count() == 15)
     assert(stats['state'] == 'reimported')

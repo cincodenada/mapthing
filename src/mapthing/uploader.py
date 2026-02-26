@@ -26,7 +26,7 @@ from .hashdeque import HashDeque as deque
 
 log = logging.getLogger(__name__)
 
-def import_file(db, filename, ignore_invalid=False):
+def import_file(db, filename, ignore_invalid=False, force=False):
     extmap = {
         '.gpx': ImportGpx,
         '.sqlite': ImportSqlite,
@@ -53,7 +53,7 @@ def import_file(db, filename, ignore_invalid=False):
     importer = extmap[ext]
     print(f"Importing {filename} with {importer.__name__}")
     with open(filename, 'r') as infile:
-        stats = importer(db, infile).load()
+        stats = importer(db, infile).load(force)
     return stats
 
 class GluedFile:
@@ -137,10 +137,10 @@ class ImportGpx(FileImporter):
         "speed": "speed",
     }
 
-    def load(self):
+    def load(self, force = False):
         total = Counter()
 
-        if self.source.id:
+        if self.source.id and not force:
             log.info("Already imported, skipping")
             return {
                 "counts": total,
