@@ -1,9 +1,12 @@
 import sys
 import traceback
-from mapthing import uploader
 
+from mapthing import uploader
 from mapthing.models import get_session_factory, get_engine
+
 from pyramid.paster import bootstrap
+
+from celery import Celery
 
 def run(args, db):
     for filename in args:
