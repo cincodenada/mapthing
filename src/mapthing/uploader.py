@@ -196,8 +196,8 @@ class ImportGpx(FileImporter):
         def counts_match(existing, track, seg_points):
             if len(track.segments) != len(existing['segments']):
                 return False
-            for idx, (seg, num_points) in enumerate(existing['segments']):
-                (seg, points) = seg_points[idx]
+            for idx, (seg_id, num_points) in enumerate(existing['segments']):
+                points = seg_points[idx]
                 print(len(points), num_points)
                 if len(points) != num_points:
                     return False
@@ -222,7 +222,7 @@ class ImportGpx(FileImporter):
                         "track": track,
                         "segments": [],
                     }
-                existing[track.id]["segments"].append((segment, pcount))
+                existing[track.id]["segments"].append((segment.id, pcount))
                 existing_seg_ids.add(segment.id)
             existing = list(existing.values())
 
@@ -259,8 +259,10 @@ class ImportGpx(FileImporter):
             for seg in track.segments:
                 print(f"Adding segment...")
                 counts['segments']+=1
+                print(dict(self.db.identity_map).keys())
                 s = Segment()
                 t.segments.append(s)
+                print(dict(self.db.identity_map).keys())
                 print(f"Adding {len(seg.points)} points...")
                 timer = SectionTimer(False)
                 seg_points = []
@@ -324,10 +326,12 @@ class ImportGpx(FileImporter):
                 else:
                     state = "reimported"
                     print("Track partially imported, deleting!")
+                    print(dict(self.db.identity_map))
                     self.db.delete(existing[idx]["track"])
                     # TODO: Can we skip this commit somehow?
                     # Was running into conflicts w/o it
                     self.db.commit()
+                    print(dict(self.db.identity_map))
 
             print("Adding points...")
             for s, points in raw_points:
