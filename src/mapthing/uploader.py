@@ -200,13 +200,7 @@ class GpxParser():
                 timer.section("extensions")
                 if point.extensions:
                     for elm in point.extensions:
-                        if len(elm):
-                            for child in elm:
-                                basetag = re.sub(r'^\{.*\}','',child.tag)
-                                try:
-                                    pointdata[self.extension_fields[basetag]] = child.text
-                                except KeyError:
-                                    print(f"Unhandled extension field {basetag}={child.text}")
+                        self.add_extension(pointdata, elm)
 
                 timer.section("append")
                 seg_points.append(pointdata)
@@ -215,6 +209,18 @@ class GpxParser():
             timer.summary()
 
         return (t, raw_points)
+
+    def add_extension(self, pointdata, elm):
+        if not len(elm):
+            return
+
+        for child in elm:
+            basetag = re.sub(r'^\{.*\}','',child.tag)
+            field = self.extension_fields[basetag]
+            try:
+                pointdata[field] = child.text
+            except KeyError:
+                print(f"Unhandled extension field {basetag}={child.text}")
 
     def parse(self, gpx, existing, border_points, source):
         for idx, track in enumerate(gpx.tracks):
