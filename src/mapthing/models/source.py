@@ -23,6 +23,20 @@ from sqlalchemy.orm import relationship
 from mapthing.models import BaseModel
 from LatLon23 import LatLon
 
+def hash_file(filename):
+    sha1 = hashlib.sha1()
+
+    # Open a separate time, so we don't have to rewind
+    # and also to ensure rb and cause I don't wanna deal
+    with open(filename, 'rb') as f:
+        while True:
+            data = f.read(BUF_SIZE)
+            if not data:
+                break
+            sha1.update(data)
+
+    return sha1
+
 class Source(BaseModel):
     __tablename__ = 'sources'
     id = Column(Integer, primary_key=True)
@@ -38,16 +52,7 @@ class Source(BaseModel):
     )
 
     def from_file(file):
-        sha1 = hashlib.sha1()
-
-        # Open a separate time, so we don't have to rewind
-        # and also to ensure rb and cause I don't wanna deal
-        with open(file.name, 'rb') as f:
-            while True:
-                data = f.read(BUF_SIZE)
-                if not data:
-                    break
-                sha1.update(data)
+        sha1 = hash_file(file.name)
 
         return Source(
             name=os.path.basename(file.name),

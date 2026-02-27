@@ -259,10 +259,8 @@ class ImportGpx(FileImporter):
             for seg in track.segments:
                 print(f"Adding segment...")
                 counts['segments']+=1
-                print(dict(self.db.identity_map).keys())
                 s = Segment()
                 t.segments.append(s)
-                print(dict(self.db.identity_map).keys())
                 print(f"Adding {len(seg.points)} points...")
                 timer = SectionTimer(False)
                 seg_points = []
@@ -326,12 +324,10 @@ class ImportGpx(FileImporter):
                 else:
                     state = "reimported"
                     print("Track partially imported, deleting!")
-                    print(dict(self.db.identity_map))
                     self.db.delete(existing[idx]["track"])
                     # TODO: Can we skip this commit somehow?
                     # Was running into conflicts w/o it
                     self.db.commit()
-                    print(dict(self.db.identity_map))
 
             print("Adding points...")
             for s, points in raw_points:
