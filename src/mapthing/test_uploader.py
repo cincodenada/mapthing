@@ -12,8 +12,8 @@ def test_import(db):
     assert(stats["counts"]["points"] == 15)
     assert(stats["counts"]["segments"] == 2)
     assert(stats["counts"]["tracks"] == 1)
-    assert(stats["start"].isoformat() == "2023-12-25T08:00:06+00:00")
-    assert(stats["end"].isoformat() == "2023-12-25T08:10:15.010000+00:00")
+    assert(stats["span"].start.isoformat() == "2023-12-25T08:00:06+00:00")
+    assert(stats["span"].end.isoformat() == "2023-12-25T08:10:15.010000+00:00")
 
     assert(db.query(Point).count() == 15)
     assert(db.query(Segment).count() == 2)

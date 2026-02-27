@@ -23,6 +23,7 @@ from collections import Counter
 
 from .section_timer import SectionTimer
 from .hashdeque import HashDeque as deque
+from .util import Span
 
 log = logging.getLogger(__name__)
 
@@ -113,8 +114,8 @@ class FileImporter(object):
             self.db.add(self.source)
 
     def finish(self, stats):
-        self.source.start_time = stats["start"]
-        self.source.end_time = stats["end"]
+        self.source.start_time = stats["span"].start
+        self.source.end_time = stats["span"].end
         self.db.commit()
         return stats
 
@@ -140,8 +141,7 @@ class GpxParser():
     def __init__(self, db):
         self.db = db
         self.counts = Counter()
-        self.min_time = None
-        self.max_time = None
+        self.timespan = Span()
 
     def counts_match(self, existing, track, seg_points):
         if len(track.segments) != len(existing['segments']):
@@ -183,11 +183,7 @@ class GpxParser():
                 recent_times.append(point.time)
 
                 timer.section("minmax")
-                if self.min_time is None or point.time < self.min_time:
-                    self.min_time = point.time
-                if self.max_time is None or point.time > self.max_time:
-                    self.max_time = point.time
-
+                self.timespan.extend(point.time)
                 self.counts['points']+=1
 
                 timer.section("build")
@@ -258,8 +254,7 @@ class GpxParser():
 
         return {
             "counts": self.counts,
-            "start": self.min_time,
-            "end": self.max_time,
+            "span": self.timespan,
             "state": state,
         }
 
@@ -272,24 +267,19 @@ class ImportGpx(FileImporter):
             log.info("Already imported, skipping")
             return {
                 "counts": total,
-                "start_time": None,
-                "end_time": None,
+                "span": Span(),
                 "state": "already_imported"
             }
 
         gpxfile = open(self.infile.name, 'r')
-        min_time = None
-        max_time = None
+        timespan = Span()
         states = set()
         for part in GluedFile(gpxfile):
             try:
                 results = self.load_xml(part)
                 total.update(results["counts"])
                 states.add(results["state"])
-                if min_time is None or results["start"] < min_time:
-                    min_time = results["start"]
-                if max_time is None or results["end"] > max_time:
-                    max_time = results["end"]
+                timespan.merge(results["span"])
             except Exception as e:
                 print(e)
                 pos = gpxfile.tell()
@@ -308,8 +298,7 @@ class ImportGpx(FileImporter):
 
         return self.finish({
             "counts": total,
-            "start": min_time,
-            "end": max_time,
+            "span": timespan,
             "state": state,
         })
 
