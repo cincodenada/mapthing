@@ -153,73 +153,79 @@ class GpxParser():
                 return False
         return True
 
-    def parse(self, gpx, existing, border_points, source):
+    def build_track(self, track, border_points):
         recent_times = deque(maxlen=50)
         raw_points = []
+
+        self.counts['tracks']+=1
+        t = Track(
+            name=track.name,
+        )
+        for seg in track.segments:
+            print(f"Adding segment...")
+            self.counts['segments']+=1
+            s = Segment()
+            t.segments.append(s)
+            print(f"Adding {len(seg.points)} points...")
+            timer = SectionTimer(False)
+            seg_points = []
+            for point in seg.points:
+                timer.start("dedup")
+                # Sometimes we get duplicate network points??
+                if point.time in recent_times:
+                    counter["points_skipped_recent"] += 1
+                    continue
+                # Ignore duplicate times if they're on the edge
+                if point.time.replace(tzinfo=None) in border_points:
+                    counter["points_skipped_border"] += 1
+                    continue
+                timer.section("recent")
+                recent_times.append(point.time)
+
+                timer.section("minmax")
+                if self.min_time is None or point.time < self.min_time:
+                    self.min_time = point.time
+                if self.max_time is None or point.time > self.max_time:
+                    self.max_time = point.time
+
+                self.counts['points']+=1
+
+                timer.section("build")
+                pointdata = {
+                    "latitude": point.latitude,
+                    "longitude": point.longitude,
+                    "time": point.time,
+                    "speed": point.speed,
+                    "altitude": point.elevation,
+                    "bearing": point.course,
+                    "src": point.source,
+                }
+                # TODO: Import src
+                timer.section("extensions")
+                if point.extensions:
+                    for elm in point.extensions:
+                        if len(elm):
+                            for child in elm:
+                                basetag = re.sub(r'^\{.*\}','',child.tag)
+                                try:
+                                    pointdata[self.extension_fields[basetag]] = child.text
+                                except KeyError:
+                                    print(f"Unhandled extension field {basetag}={child.text}")
+
+                timer.section("append")
+                seg_points.append(pointdata)
+            raw_points.append((s, seg_points))
+
+            timer.summary()
+
+        return (t, raw_points)
+
+    def parse(self, gpx, existing, border_points, source):
         for idx, track in enumerate(gpx.tracks):
             print(f"Building track {idx}...")
-            self.counts['tracks']+=1
-            t = Track(
-                source=source,
-                name=track.name,
-                created=gpx.time
-            )
-            for seg in track.segments:
-                print(f"Adding segment...")
-                self.counts['segments']+=1
-                s = Segment()
-                t.segments.append(s)
-                print(f"Adding {len(seg.points)} points...")
-                timer = SectionTimer(False)
-                seg_points = []
-                for point in seg.points:
-                    timer.start("dedup")
-                    # Sometimes we get duplicate network points??
-                    if point.time in recent_times:
-                        counter["points_skipped_recent"] += 1
-                        continue
-                    # Ignore duplicate times if they're on the edge
-                    if point.time.replace(tzinfo=None) in border_points:
-                        counter["points_skipped_border"] += 1
-                        continue
-                    timer.section("recent")
-                    recent_times.append(point.time)
-
-                    timer.section("minmax")
-                    if self.min_time is None or point.time < self.min_time:
-                        self.min_time = point.time
-                    if self.max_time is None or point.time > self.max_time:
-                        self.max_time = point.time
-
-                    self.counts['points']+=1
-
-                    timer.section("build")
-                    pointdata = {
-                        "latitude": point.latitude,
-                        "longitude": point.longitude,
-                        "time": point.time,
-                        "speed": point.speed,
-                        "altitude": point.elevation,
-                        "bearing": point.course,
-                        "src": point.source,
-                    }
-                    # TODO: Import src
-                    timer.section("extensions")
-                    if point.extensions:
-                        for elm in point.extensions:
-                            if len(elm):
-                                for child in elm:
-                                    basetag = re.sub(r'^\{.*\}','',child.tag)
-                                    try:
-                                        pointdata[self.extension_fields[basetag]] = child.text
-                                    except KeyError:
-                                        print(f"Unhandled extension field {basetag}={child.text}")
-
-                    timer.section("append")
-                    seg_points.append(pointdata)
-                raw_points.append((s, seg_points))
-
-                timer.summary()
+            t, raw_points = self.build_track(track, border_points)
+            t.source = source
+            t.created = gpx.time
 
             # TODO: Ugh, we have to parse the file to compare counts
             # because we filter out some points...reconsider?
