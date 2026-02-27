@@ -137,7 +137,8 @@ class GpxParser():
         "speed": "speed",
     }
 
-    def __init__(self):
+    def __init__(self, db):
+        self.db = db
         self.counts = Counter()
         self.min_time = None
         self.max_time = None
@@ -352,7 +353,7 @@ class ImportGpx(FileImporter):
             .all()
         border_points = set([v for v, in early_points+late_points])
 
-        return GpxParser().parse(gpx, existing, border_points, self.source)
+        return GpxParser(self.db).parse(gpx, existing, border_points, self.source)
 
 
 class ImportSqlite(FileImporter):
