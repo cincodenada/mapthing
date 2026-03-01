@@ -22,7 +22,7 @@ from .point import Point, Track
 class Stop(BaseModel, SerializableMixin):
     __tablename__ = 'stops'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    subtrack_id = Column(Integer, ForeignKey('subtracks.id'))
+    trip_id = Column(Integer, ForeignKey('trips.id'))
     location_id = Column(Integer, ForeignKey('locations.id'))
     start_id = Column(Integer, ForeignKey('points.id'))
     start_time = Column(DateTime(timezone=True))
@@ -74,8 +74,8 @@ class Stop(BaseModel, SerializableMixin):
             func.count()
         ).group_by(Stop.location_id)
 
-class Subtrack(BaseModel, SerializableMixin):
-    __tablename__ = 'subtracks'
+class Trip(BaseModel, SerializableMixin):
+    __tablename__ = 'trips'
     id = Column(Integer, primary_key=True, autoincrement=True)
     analysis_id = Column(Integer, ForeignKey('analyses.id'))
     start_id = Column(Integer, ForeignKey('points.id'))
@@ -84,23 +84,23 @@ class Subtrack(BaseModel, SerializableMixin):
     end_time = Column(DateTime(timezone=True))
 
     stops = relationship(Stop)
-    analysis = relationship("Analysis", back_populates="subtracks")
+    analysis = relationship("Analysis", back_populates="trips")
     start = relationship(Point, foreign_keys=[start_id])
     end = relationship(Point, foreign_keys=[end_id])
 
     @classmethod
     def getByDate(cls, session, start, end):
         # Shouldn't have to do isoformat() here but...
-        return session.query(Subtrack)\
-                .options(selectinload(Subtrack.stops))\
-                .where(Subtrack.end_time >= start.isoformat())\
-                .where(Subtrack.start_time <= end.isoformat())\
-                .order_by(Subtrack.id)
+        return session.query(Trip)\
+                .options(selectinload(Trip.stops))\
+                .where(Trip.end_time >= start.isoformat())\
+                .where(Trip.start_time <= end.isoformat())\
+                .order_by(Trip.id)
 
     @classmethod
     def getByTrack(cls, tids):
-        return DBSession.execute(select(Subtrack)\
-                .options(selectinload(Subtrack.stops))\
-                .options(selectinload(Subtrack.track))\
-                .where(Subtrack.track_id.in_(tids))\
-                .order_by(Subtrack.id))
+        return DBSession.execute(select(Trip)\
+                .options(selectinload(Trip.stops))\
+                .options(selectinload(Trip.track))\
+                .where(Trip.track_id.in_(tids))\
+                .order_by(Trip.id))
