@@ -23,7 +23,7 @@ def app_settings(ini_file):
     return get_appsettings(ini_file)
 
 @pytest.fixture(scope='session')
-def dbengine(app_settings, ini_file):
+def dbengine(app_settings):
     engine = models.get_engine(app_settings)
 
     Base.metadata.drop_all(bind=engine)
@@ -31,7 +31,8 @@ def dbengine(app_settings, ini_file):
 
     yield engine
 
-    Base.metadata.drop_all(bind=engine)
+    if not app_settings['preserve_db']:
+        Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture(scope='session')
 def db(dbengine):
