@@ -58,4 +58,3 @@ class Source(BaseModel):
             name=os.path.basename(file.name),
             hash=sha1.hexdigest()
         )
-
