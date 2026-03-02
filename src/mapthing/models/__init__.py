@@ -1,7 +1,7 @@
 from .base_model import BaseModel, DBSession, SerializableMixin, getDb
 from .point import Point, Segment, Track
 from .location import Location, LocationType
-from .stop import Stop, Subtrack
+from .stop import Stop, Trip
 from .analysis import Analysis
 from .source import Source
 
@@ -20,4 +20,3 @@ def get_session_factory(engine):
 
 def getDb():
     return scoped_session(sessionmaker())
-

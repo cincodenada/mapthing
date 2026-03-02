@@ -17,4 +17,4 @@ class Analysis(BaseModel, SerializableMixin):
     created = Column(DateTime(timezone=True), server_default=func.now())
 
     track = relationship("Track", back_populates="analysis")
-    subtracks = relationship("Subtrack", back_populates="analysis")
+    trip = relationship("Trip", back_populates="analysis")

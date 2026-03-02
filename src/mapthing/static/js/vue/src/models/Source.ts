@@ -1,7 +1,7 @@
-import Subtrack from './Subtrack'
+import Trip from './Trip'
 export default interface Source {
   id: number
   start: number
   end: number
-  subtracks: Subtrack[]
+  trip: Trip[]
 }

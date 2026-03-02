@@ -1,5 +1,5 @@
 import Stop from './Stop'
-export default interface Subtrack {
+export default interface Trip {
   id: number
   start_time: number
   start_id: number

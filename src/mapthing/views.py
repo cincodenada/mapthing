@@ -30,7 +30,7 @@ from .models import (
     Location,
     Stop,
     Analysis as AnalysisModel,
-    Subtrack,
+    Trip,
     getDb
     )
 
@@ -84,14 +84,14 @@ def sources(request):
     enddate = date_parse(request.params['end'])
     #TODO: This ain't great
     trackdata = {}
-    subtracks = defaultdict(list)
+    trip = defaultdict(list)
     for track in Track.getByDate(db, startdate, enddate):
         trackdata[track.id] = dict(track)
-        trackdata[track.id]['subtracks'] = []
+        trackdata[track.id]['trip'] = []
     print(trackdata)
-    for subtrack in Subtrack.getByDate(db, startdate, enddate):
-        dv = subtrack.to_dict()
-        trackdata[subtrack.track_id]['subtracks'].append(dv)
+    for trip in Trip.getByDate(db, startdate, enddate):
+        dv = trip.to_dict()
+        trackdata[trip.track_id]['trip'].append(dv)
         
     return { 'json_data': json.dumps(list(trackdata.values()), cls=DatetimeEncoder) }
 
@@ -177,7 +177,7 @@ def date_track(request):
         jsonifier.add_point(p, s, t)
         track_ids.add(t.id)
 
-    analyses = {a.track_id: a for a in db.query(AnalysisModel).join(Subtrack).filter(AnalysisModel.track_id.in_(track_ids))}
+    analyses = {a.track_id: a for a in db.query(AnalysisModel).join(Trip).filter(AnalysisModel.track_id.in_(track_ids))}
     print('Analyses', analyses)
 
     points_by_track = defaultdict(list)
@@ -191,7 +191,7 @@ def date_track(request):
     for tid, points in points_by_track.items():
         if tid in analyses:
             print("Using existing trips for track", tid)
-            existing_trips += analyses[tid].subtracks
+            existing_trips += analyses[tid].trip
         else:
             print("Generating trips for track", tid)
             hist = gps_history.History(location_pool)
@@ -210,7 +210,7 @@ def date_track(request):
                 new_locs[idx].id = l.id
 
             analysis = Analysis.fromHistory(tid, stops)
-            new_trips += analysis.subtracks
+            new_trips += analysis.trip
             new_analyses.append(analysis)
                 
     db.add_all(new_analyses)
