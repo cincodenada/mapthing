@@ -13,8 +13,13 @@ from sqlalchemy import (
     )
 
 from sqlalchemy.engine import Engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import scoped_session, sessionmaker, declarative_mixin, declared_attr
+from sqlalchemy.orm import (
+    scoped_session,
+    sessionmaker,
+    declarative_base,
+    declarative_mixin,
+    declared_attr,
+)
 
 DBSession = scoped_session(sessionmaker())
 
