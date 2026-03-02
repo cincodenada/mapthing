@@ -55,6 +55,7 @@ dev = [
     "mapthing",
     "pyramid-debugtoolbar==4.9",
     "pytest>=9.0.2",
+    "pytest-watch>=4.2.0",
 ]
 
 [tool.uv]
